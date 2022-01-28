@@ -20,32 +20,35 @@ contract("Porter Bond", function (accounts) {
     maturityDate = (await time.latest()).add(time.duration.years(1));
 
     this.bond = await SimpleBond.new(name, symbol);
-  });
 
-  it("should be owner", async function () {
-    expect(await this.bond.owner()).to.be.equal(initialAccount);
-  });
-
-  it("should return total supply", async function () {
     await this.bond.issueBond(
       payToAccount,
       faceValue,
       maturityValue,
       maturityDate
     );
-    expect(await this.bond.totalSupply()).to.be.bignumber.equal(maturityValue);
   });
 
-  it("should return interest rate", async function () {
-    // console.log("this.bond");
+  it("should be owner", async function () {
+    expect(await this.bond.owner()).to.be.equal(initialAccount);
+  });
+
+  it("should return total value for an account", async function () {
+    expect(await this.bond.balanceOf(payToAccount)).to.be.bignumber.equal(
+      faceValue
+    );
   });
 
   it("should return payment due date", async function () {
-    // console.log("this.bond");
+    expect(await this.bond.getDueDate(payToAccount)).to.be.bignumber.equal(
+      maturityDate
+    );
   });
 
   it("should return how much is owed", async function () {
-    // console.log("this.bond");
+    expect(await this.bond.getOwedAmount(payToAccount)).to.be.bignumber.equal(
+      maturityValue
+    );
   });
 
   it("should return bond state", async function () {

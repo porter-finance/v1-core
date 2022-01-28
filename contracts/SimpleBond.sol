@@ -23,7 +23,6 @@ import "hardhat/console.sol";
 
 contract SimpleBond is ERC20, Ownable {
   mapping(address => uint256) payAccountMaturityDate;
-  mapping(address => uint256) payAccountFaceValueDate;
   mapping(address => uint256) payAccountMaturityValue;
 
   constructor(string memory _name, string memory _symbol)
@@ -38,20 +37,23 @@ contract SimpleBond is ERC20, Ownable {
     uint256 _maturityValue,
     uint256 _maturityDate
   ) public onlyOwner {
-    payAccountMaturityDate[_payToAccount] = _maturityValue;
     payAccountMaturityDate[_payToAccount] = _maturityDate;
-    payAccountMaturityDate[_payToAccount] = _maturityDate;
+    payAccountMaturityValue[_payToAccount] = _maturityValue;
 
-    _mint(_payToAccount, _maturityValue);
+    _mint(_payToAccount, _faceValue);
 
-    console.log(
-      "Minted maturity value to pay account",
-      _maturityValue,
-      _payToAccount
-    );
+    console.log("Minted face value to pay account", _faceValue, _payToAccount);
   }
 
-  function repayLoan(address _onBehalfOf) public {
+  function getDueDate(address _payToAccount) public view returns (uint256) {
+    return payAccountMaturityDate[_payToAccount];
+  }
+
+  function getOwedAmount(address _payToAccount) public view returns (uint256) {
+    return payAccountMaturityValue[_payToAccount];
+  }
+
+  function repayLoan(address _onBehalfOf, address _payToAccount) public view {
     // do not need to check who sends it
     require(block.timestamp < payAccountMaturityDate[_onBehalfOf]);
     // amountWithInterest = amount * (1 + (maturityDate - startTime) * interestRate);
