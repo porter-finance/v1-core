@@ -1,18 +1,18 @@
-import { expect, assert } from "chai";
+import { assert } from "chai";
 import { ethers } from "hardhat";
 
 import increaseTime from "./helpers/increaseTime";
 
-describe("SimpleBond", function (accounts) {
+describe("SimpleBond", function () {
   let bond;
   let name = "Simple Bond";
   let par = 1000;
   let parDecimals = 0;
-  let coupon = 1;
   let term = 31557600 * 2; // 2 years
   let cap = 1000;
-  let tkn = 0x0; // we use eth
+  let tokenToRedeem = 0x0; // we use eth
   let limit = 50;
+  const accounts: Array<string> = [];
 
   let transferrableBonds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -21,42 +21,27 @@ describe("SimpleBond", function (accounts) {
   beforeEach(async () => {
     const SimpleBond = await ethers.getContractFactory("SimpleBond");
 
+    const [owner, addr0, addr1, addr2] = await ethers.getSigners();
+    accounts.push(addr0.address, addr1.address, addr2.address);
+
     bond = await SimpleBond.deploy(
       name,
       par,
       parDecimals,
       term,
       cap,
-      tkn,
+      owner.address,
       limit
     );
 
-    await simpleBond.deployed();
+    await bond.deployed();
 
-    await bond.donate({ from: accounts[0], value: 10 ** 16 });
+    console.log("donate");
+    await bond.donate({ from: 0x0, value: 10 ** 16 });
 
-    await bond.mintBond(accounts[1], limit, { from: accounts[0] });
-
-    // wait until the transaction is mined
-    await setGreetingTx.wait();
+    await bond.mintBond(addr1.address, limit, { from: addr0.address });
   });
 
-  it("Should return the new greeting once it's changed", async function () {});
-
-  it("Should return the new greeting once it's changed", async function () {
-    const Greeter = await ethers.getContractFactory("Greeter");
-    const greeter = await Greeter.deploy("Hello, world!");
-    await greeter.deployed();
-
-    expect(await greeter.greet()).to.equal("Hello, world!");
-
-    const setGreetingTx = await greeter.setGreeting("Hola, mundo!");
-
-    // wait until the transaction is mined
-    await setGreetingTx.wait();
-
-    expect(await greeter.greet()).to.equal("Hola, mundo!");
-  });
   it("should redeem value", async () => {
     assert.equal(await bond.getTotalDebt(), 60000);
 
