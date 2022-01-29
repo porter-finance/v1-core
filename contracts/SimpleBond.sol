@@ -26,15 +26,15 @@ contract SimpleBond is ERC20, Ownable {
   function issueBond(
     address _payToAccount,
     uint256 _faceValue,
-    uint256 _maturityValue,
-    uint256 _maturityDate
+    uint256 _maturityValue
+    // uint256 _maturityDate
   ) public onlyOwner {
     require(
       totalSupply() >= _faceValue,
       "Not enough tokens minted to issue this bond"
     );
 
-    payAccountMaturityDate[_payToAccount] = _maturityDate;
+    // payAccountMaturityDate[_payToAccount] = _maturityDate;
     payAccountMaturityValue[_payToAccount] = _maturityValue;
 
     console.log("Passed issueBond checks");
@@ -48,9 +48,9 @@ contract SimpleBond is ERC20, Ownable {
     );
   }
 
-  function getDueDate(address _payToAccount) public view returns (uint256) {
-    return payAccountMaturityDate[_payToAccount];
-  }
+  // function getDueDate(address _payToAccount) public view returns (uint256) {
+  //   return payAccountMaturityDate[_payToAccount];
+  // }
 
   function getOwedAmount(address _payToAccount) public view returns (uint256) {
     return payAccountMaturityValue[_payToAccount];
