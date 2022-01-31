@@ -7,7 +7,7 @@ const { loadFixture } = waffle;
 
 describe("SimpleBond", async () => {
   const totalSupply = 2500;
-  const faceValue = 1000;
+  const faceValue = 1;
   const maturityValue = 1200;
   let payToAccount: any;
   let payToAddress: any;
@@ -35,7 +35,6 @@ describe("SimpleBond", async () => {
     initialAccount = ownerAddress;
     await bond.issueBond(
       payToAddress,
-      faceValue,
       maturityValue
       // maturityDate
     );

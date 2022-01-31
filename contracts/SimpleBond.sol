@@ -23,30 +23,23 @@ contract SimpleBond is ERC20Burnable, Ownable {
     console.log("Created token for bond with totalSupply of", totalCoins);
   }
 
-  function issueBond(
-    address _payToAccount,
-    uint256 _faceValue,
-    uint256 _maturityValue
-  )
+  function issueBond(address _payToAccount, uint256 _maturityValue)
     public
     // uint256 _maturityDate
     onlyOwner
   {
-    require(
-      totalSupply() >= _faceValue,
-      "Not enough tokens minted to issue this bond"
-    );
+    require(totalSupply() >= 1, "Not enough tokens minted to issue this bond");
 
     // payAccountMaturityDate[_payToAccount] = _maturityDate;
     payAccountMaturityValue[_payToAccount] = _maturityValue;
 
     console.log("Passed issueBond checks");
 
-    transfer(_payToAccount, _faceValue);
+    transfer(_payToAccount, 1); 
 
     console.log(
-      "Transferred face value to pay account, from supply",
-      _faceValue,
+      "Transferred token to pay account from supply",
+      1,
       _payToAccount
     );
   }
