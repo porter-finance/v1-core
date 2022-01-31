@@ -1,17 +1,16 @@
-import { Wallet, Contract } from 'ethers'
+import { Wallet, Contract } from "ethers";
 import { expect } from "chai";
 import { ethers, waffle } from "hardhat";
-const { loadFixture } = waffle
+const { loadFixture } = waffle;
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
 
-describe('SimpleBond', async () => {
-
+describe("SimpleBond", async () => {
   const totalSupply = 2500;
   const faceValue = 1000;
   const maturityValue = 1200;
   let payToAccount: any;
-  let secondaryAccount: any
+  let secondaryAccount: any;
 
   const name = "My Token";
   const symbol = "MTKN";
@@ -20,26 +19,24 @@ describe('SimpleBond', async () => {
   let initialAccount: any;
 
   async function fixture() {
-    const [owner, ...otherAccounts] = await ethers.getSigners()
+    const [owner, ...otherAccounts] = await ethers.getSigners();
     payToAccount = await otherAccounts[0].getAddress();
     secondaryAccount = await otherAccounts[1].getAddress();
-    const Greeter = await ethers.getContractFactory("SimpleBond");
-    const ownerAddress = await owner.getAddress()
-    bond = await Greeter.deploy(name, symbol, ownerAddress, totalSupply);
+    const SimpleBond = await ethers.getContractFactory("SimpleBond");
+    const ownerAddress = await owner.getAddress();
+    bond = await SimpleBond.deploy(name, symbol, totalSupply);
     return { bond, ownerAddress };
   }
 
   beforeEach(async () => {
     const { bond, ownerAddress } = await loadFixture(fixture);
-    initialAccount = ownerAddress
-    await bond.approve(payToAccount, maturityValue);
+    initialAccount = ownerAddress;
     await bond.issueBond(
       payToAccount,
       faceValue,
-      maturityValue,
+      maturityValue
       // maturityDate
     );
-
   });
   it("should have total supply in owner account", async function () {
     expect(await bond.balanceOf(initialAccount)).to.be.equal(totalSupply);
@@ -58,9 +55,7 @@ describe('SimpleBond', async () => {
   // });
 
   it("should return how much is owed", async function () {
-    expect(await bond.getOwedAmount(payToAccount)).to.be.equal(
-      maturityValue
-    );
+    expect(await bond.getOwedAmount(payToAccount)).to.be.equal(maturityValue);
   });
 
   it("should return bond state to be not repaid", async function () {
@@ -68,9 +63,9 @@ describe('SimpleBond', async () => {
   });
 
   it("should pay back bond and return correct repaid state", async function () {
-    // Fund this account with some test tokens
-    await bond.transferFrom(initialAccount, secondaryAccount, faceValue);
-    await bond.transferFrom(secondaryAccount, payToAccount, faceValue);
+    expect(await bond.balanceOf(payToAccount)).to.be.equal(faceValue);
+
+    await bond.transferFrom(payToAccount, initialAccount, faceValue);
     expect(await bond.isBondRepaid(payToAccount)).to.be.equal(true);
   });
 
