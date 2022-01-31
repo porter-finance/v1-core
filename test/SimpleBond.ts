@@ -1,7 +1,9 @@
-import { Wallet, Contract } from "ethers";
+import { Contract } from "ethers";
 import { expect } from "chai";
-import { ethers, waffle } from "hardhat";
-const { loadFixture } = waffle;
+import { loadFixture, deployContract } from "ethereum-waffle";
+
+const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
+
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
 
@@ -11,28 +13,26 @@ describe("SimpleBond", async () => {
   const maturityValue = 1200;
   let payToAccount: any;
   let payToAddress: any;
-  let secondaryAccount: any;
 
   const name = "My Token";
   const symbol = "MTKN";
-  // let bond: Contract;
   let bond: Contract;
   let initialAccount: any;
 
-  async function fixture() {
-    const [owner, ...otherAccounts] = await ethers.getSigners();
-    payToAccount = otherAccounts[0];
-    payToAddress = await otherAccounts[0].getAddress();
-    secondaryAccount = await otherAccounts[1].getAddress();
-    const SimpleBond = await ethers.getContractFactory("SimpleBond");
-    const ownerAddress = await owner.getAddress();
-    bond = await SimpleBond.deploy(name, symbol, totalSupply);
-    return { bond, ownerAddress };
+  async function fixture([wallet, other]) {
+    bond = await deployContract(wallet, SimpleBond, [
+      name,
+      symbol,
+      totalSupply,
+    ]);
+    return { bond, wallet, other };
   }
 
   beforeEach(async () => {
-    const { bond, ownerAddress } = await loadFixture(fixture);
-    initialAccount = ownerAddress;
+    const { bond, wallet, other } = await loadFixture(fixture);
+    payToAccount = other;
+    initialAccount = await wallet.getAddress();
+    payToAddress = await other.getAddress();
     await bond.issueBond(
       payToAddress,
       maturityValue
