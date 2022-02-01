@@ -9,10 +9,11 @@ const { loadFixture, deployContract } = waffle;
 const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
 
 describe("SimpleBond", async () => {
-  // 3 years from now
-  const maturityDate = new Date(
-    new Date().setFullYear(new Date().getFullYear() + 3)
-  ).getTime();
+  // 3 years from now, in seconds
+  const maturityDate = Math.round(
+    new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
+      1000
+  );
 
   const totalSupply = 2500;
   const faceValue = 1;
@@ -97,6 +98,9 @@ describe("SimpleBond", async () => {
 
     // TODO: this should approve the token payment not the bond token?
     await payeeBond.approve(payToAddress, maturityValue);
+
+    // From milliseconds to seconds
+    await ethers.provider.send("evm_mine", [maturityDate]);
 
     // TODO: this should redeem the token payment?
     await payeeBond.redeemBond(payToAddress);
