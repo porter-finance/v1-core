@@ -9,6 +9,11 @@ const { loadFixture, deployContract } = waffle;
 const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
 
 describe("SimpleBond", async () => {
+  // 3 years from now
+  const maturityDate = new Date(
+    new Date().setFullYear(new Date().getFullYear() + 3)
+  ).getTime();
+
   const totalSupply = 2500;
   const faceValue = 1;
   const maturityValue = 1200;
@@ -20,6 +25,7 @@ describe("SimpleBond", async () => {
   let bond: SimpleBondType;
   let initialAccount: any;
 
+  // no args because of gh issue:
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
   async function fixture() {
     const [wallet, other] = await ethers.getSigners();
@@ -36,11 +42,7 @@ describe("SimpleBond", async () => {
     payToAccount = other;
     initialAccount = await wallet.getAddress();
     payToAddress = await other.getAddress();
-    await bond.issueBond(
-      payToAddress,
-      maturityValue
-      // maturityDate
-    );
+    await bond.issueBond(payToAddress, maturityValue, maturityDate);
   });
 
   it("should have total supply less bond issuance in owner account", async function () {
@@ -58,9 +60,9 @@ describe("SimpleBond", async () => {
     expect(await bond.balanceOf(payToAddress)).to.be.equal(faceValue);
   });
 
-  // it("should return payment due date", async function () {
-  //   expect(await bond.getDueDate(payToAddress)).to.be.equal(maturityDate);
-  // });
+  it("should return payment due date", async function () {
+    expect(await bond.getDueDate(payToAddress)).to.be.equal(maturityDate);
+  });
 
   it("should return how much is owed", async function () {
     expect(await bond.getOwedAmount(payToAddress)).to.be.equal(maturityValue);

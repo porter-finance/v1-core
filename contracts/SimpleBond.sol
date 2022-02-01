@@ -23,14 +23,14 @@ contract SimpleBond is ERC20Burnable, Ownable {
     console.log("Created token for bond with totalSupply of", _totalCoins);
   }
 
-  function issueBond(address _payToAccount, uint256 _maturityValue)
-    public
-    // uint256 _maturityDate
-    onlyOwner
-  {
+  function issueBond(
+    address _payToAccount,
+    uint256 _maturityValue,
+    uint256 _maturityDate
+  ) public onlyOwner {
     require(totalSupply() >= 1, "Not enough tokens minted to issue this bond");
 
-    // payAccountMaturityDate[_payToAccount] = _maturityDate;
+    payAccountMaturityDate[_payToAccount] = _maturityDate;
     payAccountMaturityValue[_payToAccount] = _maturityValue;
 
     console.log("Passed issueBond checks");
@@ -44,9 +44,11 @@ contract SimpleBond is ERC20Burnable, Ownable {
     );
   }
 
-  // function getDueDate(address _payToAccount) public view returns (uint256) {
-  //   return payAccountMaturityDate[_payToAccount];
-  // }
+  function getDueDate(address _payToAccount) public view returns (uint256) {
+    require(msg.sender == owner(), "Only the owner can call this");
+
+    return payAccountMaturityDate[_payToAccount];
+  }
 
   function getOwedAmount(address _payToAccount) public view returns (uint256) {
     return payAccountMaturityValue[_payToAccount];
@@ -66,9 +68,12 @@ contract SimpleBond is ERC20Burnable, Ownable {
       balanceOf(_payToAccount) == 0 && paymentTokenBalances[_payToAccount] == 0;
   }
 
-  function repayAccount(address _payToAccount) public {
-    uint256 repayAmount = getOwedAmount(_payToAccount) -
-      balanceOf(_payToAccount);
+  function repayAccount(address _payToAccount) public onlyOwner {
+    uint256 balance = balanceOf(_payToAccount);
+    uint256 repayAmount = getOwedAmount(_payToAccount) - balance;
+
+    require(balance > 0, "payee must have a balance");
+    require(repayAmount > 0, "repay amount must be greater than 0");
 
     approve(owner(), repayAmount);
     transferFrom(owner(), _payToAccount, repayAmount);
@@ -80,7 +85,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
 
     require(_payToAccount == msg.sender, "you do not own this bond");
     require(expiry <= block.timestamp, "can't withdraw until maturity date");
-    // require(paymentTokenBalances[_payToAccount] >= payout, "not enough funds");
+    require(paymentTokenBalances[_payToAccount] >= payout, "not enough funds");
 
     console.log("redeemBond() checks passed, payout required: ", payout);
     console.log("1 balanceOf(_payToAccount)", balanceOf(_payToAccount));
