@@ -120,6 +120,11 @@ contract SimpleBond is ERC20Burnable, Ownable {
     paymentTokenBalances[_payToAccount] =
       paymentTokenBalances[_payToAccount] -
       payout;
+
+    address payable to = payable(_payToAccount);
+    to.transfer(payout);
+
+    emit Withdrawal(to, payout);
   }
 
   receive() external payable {
@@ -127,15 +132,5 @@ contract SimpleBond is ERC20Burnable, Ownable {
 
     console.log("Received payment from", msg.sender);
     emit Deposit(msg.sender, msg.value);
-  }
-
-  // Perhaps only the owner can withdraw eth?
-  // Users are meant to withdraw using redeemBond()
-  function withdraw() external payable onlyOwner {
-    address payable to = payable(msg.sender);
-    uint256 val = paymentTokenBalances[msg.sender];
-    to.transfer(paymentTokenBalances[msg.sender]);
-    paymentTokenBalances[msg.sender] = 0;
-    emit Withdrawal(to, val);
   }
 }
