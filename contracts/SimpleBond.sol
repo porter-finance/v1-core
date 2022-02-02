@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "hardhat/console.sol";
 
 contract SimpleBond is ERC20Burnable, Ownable {
-    event Withdrawal(address receiver, uint256 amount);
+    event Redeem(address receiver, uint256 amount);
     event Deposit(address sender, uint256 amount);
 
     // @dev this is the address of the token that the DAO owes.
@@ -25,6 +25,11 @@ contract SimpleBond is ERC20Burnable, Ownable {
     // @dev this date is when the DAO must have repaid it's debt and
     // @dev when bondholders can redeem their bonds
     uint256 public maturityDate;
+
+    // probably shouldn't be a string
+    // this would go into default if maturityDate passes and the loan contract has not been paid back
+    // 'good' | 'default'
+    string public bondStanding = "good";
 
     mapping(address => uint256) public paymentTokenBalances;
 
@@ -46,33 +51,6 @@ contract SimpleBond is ERC20Burnable, Ownable {
         console.log("Created tokenized bonds with totalSupply of", _totalBonds);
     }
 
-    // Thinking through this more - I'm not sure this is needed.
-    // I was thinking that the bonds would be issued immedatly after being created
-    // and sent to the auction contract. Then the auction contract controls
-    // allowing only the winning bidders to withdraw the bonds.
-
-    // function issueBond(address _payToAccount, uint256 _maturityDate)
-    //     public
-    //     onlyOwner
-    // {
-    //     require(
-    //         totalSupply() >= 1,
-    //         "Not enough tokens minted to issue this bond"
-    //     );
-    //     payAccountMaturityDate[_payToAccount] = _maturityDate;
-    //     payAccountMaturityValue[_payToAccount] = faceValue;
-
-    //     console.log("Passed issueBond checks");
-
-    //     transfer(_payToAccount, 1);
-
-    //     console.log(
-    //         "Transferred token to pay account from supply",
-    //         1,
-    //         _payToAccount
-    //     );
-    // }
-
     function setMatuirtyDate(uint256 _maturityDate) public onlyOwner {
         maturityDate = _maturityDate;
     }
@@ -82,44 +60,6 @@ contract SimpleBond is ERC20Burnable, Ownable {
     function getMaturityDate() public view onlyOwner returns (uint256) {
         return maturityDate;
     }
-
-    // function isBondRepaid(address _payToAccount) public view returns (bool) {
-    //     require(
-    //         msg.sender == _payToAccount || msg.sender == owner(),
-    //         "Only the owner can call this"
-    //     );
-
-    //     return balanceOf(_payToAccount) == getOwedAmount(_payToAccount);
-    // }
-
-    // function isBondRedeemed(address _payToAccount) public view returns (bool) {
-    //     console.log(
-    //         "isBondRedeemed",
-    //         balanceOf(_payToAccount),
-    //         paymentTokenBalances[_payToAccount]
-    //     );
-
-    //     require(
-    //         msg.sender == _payToAccount || msg.sender == owner(),
-    //         "Only the owner can call this"
-    //     );
-
-    //     return
-    //         getOwedAmount(_payToAccount) == 0 &&
-    //         balanceOf(_payToAccount) == 0 &&
-    //         paymentTokenBalances[_payToAccount] == 0;
-    // }
-
-    // function repayAccount(address _payToAccount) public onlyOwner {
-    //     uint256 balance = balanceOf(_payToAccount);
-    //     uint256 repayAmount = getOwedAmount(_payToAccount) - balance;
-
-    //     require(balance > 0, "payee must have a balance");
-    //     require(repayAmount > 0, "repay amount must be greater than 0");
-
-    //     approve(owner(), repayAmount);
-    //     transferFrom(owner(), _payToAccount, repayAmount);
-    // }
 
     function redeemBond(uint256 amount) public {
         require(
@@ -138,12 +78,13 @@ contract SimpleBond is ERC20Burnable, Ownable {
         // this burns however amount of bonds investor sent to the redeem method
         burn(amount);
 
-        // code needs added here that sends the investor their payment in whatever currency
-        // the dao paid back their debt in
+        // code needs added here that sends the investor their how much they are owed in paymentToken
+        // this might be calling the auction contract with AuctionContract.redeem(msg.sender, amount * faceValue)
 
-        emit Withdrawal(msg.sender, amount);
+        emit Redeem(msg.sender, amount);
     }
 
+    // is this just a fallback? I don't think people should ever be sending ether to this cont
     receive() external payable {
         paymentTokenBalances[msg.sender] += msg.value;
 
