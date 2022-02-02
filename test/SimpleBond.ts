@@ -125,7 +125,7 @@ describe("SimpleBond", async () => {
     // This is failing, likely because sendTransaction isn't sending value in
     // a format it's expecting? not sure ...
     expect(await payToAccount.getBalance()).to.be.equal(
-      currentBal.sub(maturityValue)
+      currentBal.add(maturityValue)
     );
 
     expect(await payeeBond.isBondRedeemed(payToAddress)).to.be.equal(true);
