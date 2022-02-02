@@ -16,9 +16,10 @@ describe("SimpleBond", async () => {
       1000
   );
 
-  const totalSupply = 2500;
+  const totalSupply = 
+  2500;
   const faceValue = 1;
-  const maturityValue = 1200;
+  const maturityValue = 1;
   let payToAccount: any;
   let payToAddress: any;
 
@@ -44,7 +45,7 @@ describe("SimpleBond", async () => {
     payToAccount = other;
     initialAccount = await wallet.getAddress();
     payToAddress = await other.getAddress();
-    await bond.issueBond(payToAddress, maturityValue, maturityDate);
+    await bond.issueBond(payToAddress, maturityDate);
   });
 
   it("should have total supply less bond issuance in owner account", async function () {
@@ -97,7 +98,7 @@ describe("SimpleBond", async () => {
 
   it("should redeem bond at maturity", async function () {
     // Connect the pay account to this contract
-    const payeeBond = await bond.connect(payToAccount);
+    const payeeBond = bond.connect(payToAccount);
 
     // quick check to make sure payTo has a bond issued
     expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(faceValue);
