@@ -23,9 +23,6 @@ contract SimpleBond is ERC20Burnable, Ownable {
   /// @notice holds address to bond standings
   BondStanding public bondStanding;
 
-  /// @notice whether the user has repaid their bond
-  bool private hasPaidBackBond;
-
   /// @dev New bond contract will be deployed before each auction
   /// @dev The Auction contract will be the owner
   /// @param _name Name of the bond.
@@ -53,11 +50,6 @@ contract SimpleBond is ERC20Burnable, Ownable {
     bondStanding = standing;
   }
 
-  function setHasPaidBackBond(bool hasPaid) public onlyOwner {
-    hasPaidBackBond = hasPaid;
-    bondStanding = BondStanding.PAID;
-  }
-
   function redeemBond(uint256 amount) public {
     require(amount > 0, "invalid amount");
 
@@ -68,7 +60,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
     );
 
     // check that the DAO has already paid back the bond, set from auction
-    require(hasPaidBackBond == true, "bond not yet paid");
+    require(bondStanding == BondStanding.PAID, "bond not yet paid");
 
     burn(amount);
 
