@@ -15,6 +15,7 @@ describe("SimpleBond", async () => {
       1000
   );
 
+  // A realistic number for this is like 2m
   const totalSupply = 2500;
   const faceValue = 1;
   const maturityValue = 1;

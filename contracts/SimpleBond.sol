@@ -16,11 +16,12 @@ contract SimpleBond is ERC20Burnable, Ownable {
   /// @notice to be set from the auction
   enum BondStanding {
     GOOD,
-    DEFAULTED
+    DEFAULTED,
+    PAID
   }
 
   /// @notice holds address to bond standings
-  mapping(address => BondStanding) private bondStandings;
+  BondStanding public bondStanding;
 
   /// @notice whether the user has repaid their bond
   mapping(address => bool) private hasPaidBackBond;
@@ -48,11 +49,8 @@ contract SimpleBond is ERC20Burnable, Ownable {
   }
 
   /// @notice To be set after the auction ends
-  function setBondStanding(address _address, BondStanding standing)
-    public
-    onlyOwner
-  {
-    bondStandings[_address] = standing;
+  function setBondStanding(BondStanding standing) public onlyOwner {
+    bondStanding = standing;
   }
 
   function setHasPaidBackBond(address _address, bool hasPaid) public onlyOwner {
