@@ -17,11 +17,12 @@ contract SimpleBond is ERC20Burnable, Ownable {
   enum BondStanding {
     GOOD,
     DEFAULTED,
-    PAID
+    PAID,
+    REDEEMED
   }
 
   /// @notice holds address to bond standings
-  BondStanding public bondStanding;
+  BondStanding public currentBondStanding;
 
   /// @dev New bond contract will be deployed before each auction
   /// @dev The Auction contract will be the owner
@@ -41,13 +42,14 @@ contract SimpleBond is ERC20Burnable, Ownable {
     // sends them to the auction contract
     _mint(msg.sender, _totalBonds);
     maturityDate = _maturityDate;
+    setBondStanding(BondStanding.GOOD);
 
     console.log("Created tokenized bonds with totalSupply of", _totalBonds);
   }
 
   /// @notice To be set after the auction ends
   function setBondStanding(BondStanding standing) public onlyOwner {
-    bondStanding = standing;
+    currentBondStanding = standing;
   }
 
   function redeemBond(uint256 amount) public {
@@ -57,12 +59,13 @@ contract SimpleBond is ERC20Burnable, Ownable {
     require(block.timestamp >= maturityDate, "bond still immature");
 
     // check that the DAO has already paid back the bond, set from auction
-    require(bondStanding == BondStanding.PAID, "bond not yet paid");
+    require(currentBondStanding == BondStanding.PAID, "bond not yet paid");
 
     burn(amount);
 
     // TODO: code needs added here that sends the investor their how much they are owed in paymentToken
     // this might be calling the auction contract with AuctionContract.redeem(msg.sender, amount * faceValue)
+    setBondStanding(BondStanding.REDEEMED);
 
     emit Redeem(msg.sender, amount);
   }

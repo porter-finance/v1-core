@@ -17,8 +17,7 @@ describe("SimpleBond", async () => {
 
   // A realistic number for this is like 2m
   const totalSupply = 2500;
-  const faceValue = 1;
-  const maturityValue = 1;
+  const parValue = 1;
   let payToAccount: any;
   let payToAddress: any;
 
@@ -35,23 +34,25 @@ describe("SimpleBond", async () => {
       name,
       symbol,
       totalSupply,
+      maturityDate,
     ]);
     return { bond, wallet, other };
   }
 
   beforeEach(async () => {
-    const { bond, wallet, other } = await loadFixture(fixture);
+    const { wallet, other } = await loadFixture(fixture);
     payToAccount = other;
     initialAccount = await wallet.getAddress();
     payToAddress = await other.getAddress();
-    await bond.issueBond(payToAddress, maturityDate);
+    await bond.transfer(payToAddress, parValue);
   });
 
   it("should have total supply less bond issuance in owner account", async function () {
     expect(await bond.balanceOf(initialAccount)).to.be.equal(
-      totalSupply - faceValue
+      totalSupply - parValue
     );
-    expect(await bond.balanceOf(payToAddress)).to.be.equal(faceValue);
+
+    expect(await bond.balanceOf(payToAddress)).to.be.equal(parValue);
   });
 
   it("should be owner", async function () {
@@ -61,73 +62,69 @@ describe("SimpleBond", async () => {
   it("should return total value for an account", async function () {
     const payeeBond = await bond.connect(payToAccount);
 
-    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(faceValue);
+    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(parValue);
   });
 
   it("should return payment due date", async function () {
     const payeeBond = await bond.connect(payToAccount);
 
-    expect(await payeeBond.getDueDate(payToAddress)).to.be.equal(maturityDate);
-  });
-
-  it("should return how much is owed", async function () {
-    const payeeBond = await bond.connect(payToAccount);
-
-    expect(await payeeBond.getOwedAmount(payToAddress)).to.be.equal(
-      maturityValue
-    );
+    expect(await payeeBond.maturityDate()).to.be.equal(maturityDate);
   });
 
   it("should return bond state to be not repaid", async function () {
     const payeeBond = await bond.connect(payToAccount);
 
-    expect(await payeeBond.isBondRepaid(payToAddress)).to.be.equal(false);
+    expect(await payeeBond.currentBondStanding()).to.be.equal(0);
   });
 
+  // failing until hooked up with auction
   it("should pay back bond and return correct repaid state", async function () {
     // quick check to make sure payTo has a bond issued
-    expect(await bond.balanceOf(payToAddress)).to.be.equal(faceValue);
+    expect(await bond.balanceOf(payToAddress)).to.be.equal(parValue);
 
     // and that it's not already paid off
-    expect(await bond.isBondRepaid(payToAddress)).to.be.equal(false);
+    expect(await bond.currentBondStanding()).to.be.equal(0);
 
-    await bond.repayAccount(payToAddress);
-    expect(await bond.isBondRepaid(payToAddress)).to.be.equal(true);
+    // This should repay using auction contract
+    // await auctionContract.repay(address)...
+    expect(await bond.currentBondStanding()).to.be.equal(2);
   });
 
+  // failing until hooked up with auction
   it("should redeem bond at maturity", async function () {
     // Connect the pay account to this contract
     const payeeBond = bond.connect(payToAccount);
 
     // quick check to make sure payTo has a bond issued
-    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(faceValue);
+    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(parValue);
 
     // and that it's not already paid off
-    expect(await payeeBond.isBondRepaid(payToAddress)).to.be.equal(false);
-    await bond.repayAccount(payToAddress);
-    expect(await payeeBond.isBondRepaid(payToAddress)).to.be.equal(true);
+    expect(await payeeBond.currentBondStanding()).to.be.equal(0);
+    // This should repay using auction contract
+    // await auctionContract.repay(address)...
+    expect(await payeeBond.currentBondStanding()).to.be.equal(2);
 
     // TODO: this should approve the token payment not the bond token?
-    await payeeBond.approve(payToAddress, maturityValue);
+    await payeeBond.approve(payToAddress, parValue);
 
     // Pays 1:1 to the bond token
     await payToAccount.sendTransaction({
       to: payeeBond.address,
-      value: maturityValue,
+      value: parValue,
     });
 
     // Fast forward to expire
     await ethers.provider.send("evm_mine", [maturityDate]);
 
     const currentBal = await payToAccount.getBalance();
-    await payeeBond.redeemBond(payToAddress);
+    await payeeBond.redeemBond(parValue);
 
     // This is failing, likely because sendTransaction isn't sending value in
     // a format it's expecting? not sure ...
     expect(await payToAccount.getBalance()).to.be.equal(
-      currentBal.add(maturityValue)
+      currentBal.add(parValue)
     );
 
-    expect(await payeeBond.isBondRedeemed(payToAddress)).to.be.equal(true);
+    expect(await payeeBond.currentBondStanding()).to.be.equal(3);
   });
 });
