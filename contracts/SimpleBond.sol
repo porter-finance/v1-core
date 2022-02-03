@@ -53,8 +53,9 @@ contract SimpleBond is ERC20Burnable, Ownable {
     bondStanding = standing;
   }
 
-  function setHasPaidBackBond(address _address, bool hasPaid) public onlyOwner {
+  function setHasPaidBackBond(bool hasPaid) public onlyOwner {
     hasPaidBackBond = hasPaid;
+    bondStanding = BondStanding.PAID;
   }
 
   function redeemBond(uint256 amount) public {
