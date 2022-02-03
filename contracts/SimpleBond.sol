@@ -54,10 +54,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
     require(amount > 0, "invalid amount");
 
     // the first check at least confirms maturityDate is a timestamp >= 2020
-    require(
-      block.timestamp >= maturityDate,
-      "can't withdraw until maturity date"
-    );
+    require(block.timestamp >= maturityDate, "bond still immature");
 
     // check that the DAO has already paid back the bond, set from auction
     require(bondStanding == BondStanding.PAID, "bond not yet paid");
