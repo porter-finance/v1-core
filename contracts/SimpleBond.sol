@@ -24,7 +24,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
   BondStanding public bondStanding;
 
   /// @notice whether the user has repaid their bond
-  mapping(address => bool) private hasPaidBackBond;
+  bool private hasPaidBackBond;
 
   /// @dev New bond contract will be deployed before each auction
   /// @dev The Auction contract will be the owner
@@ -54,10 +54,10 @@ contract SimpleBond is ERC20Burnable, Ownable {
   }
 
   function setHasPaidBackBond(address _address, bool hasPaid) public onlyOwner {
-    hasPaidBackBond[_address] = hasPaid;
+    hasPaidBackBond = hasPaid;
   }
 
-  function redeemBond(uint256 amount, address _address) public {
+  function redeemBond(uint256 amount) public {
     require(amount > 0, "invalid amount");
 
     // the first check at least confirms maturityDate is a timestamp >= 2020
@@ -67,9 +67,9 @@ contract SimpleBond is ERC20Burnable, Ownable {
     );
 
     // check that the DAO has already paid back the bond, set from auction
-    require(hasPaidBackBond[_address] == true, "bond not yet paid");
+    require(hasPaidBackBond == true, "bond not yet paid");
 
-    burnFrom(_address, amount);
+    burn(amount);
 
     // TODO: code needs added here that sends the investor their how much they are owed in paymentToken
     // this might be calling the auction contract with AuctionContract.redeem(msg.sender, amount * faceValue)
