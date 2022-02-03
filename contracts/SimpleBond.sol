@@ -63,6 +63,8 @@ contract SimpleBond is ERC20Burnable, Ownable {
   }
 
   function redeemBond(uint256 amount, address _address) public {
+    require(amount > 0, "invalid amount");
+
     // the first check at least confirms maturityDate is a timestamp >= 2020
     require(
       block.timestamp >= maturityDate,
@@ -72,9 +74,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
     // check that the DAO has already paid back the bond, set from auction
     require(hasPaidBackBond[_address] == true, "bond not yet paid");
 
-    // not sure difference between burn and burnFrom
-    // this burns however amount of bonds investor sent to the redeem method
-    burn(amount);
+    burnFrom(_address, amount);
 
     // TODO: code needs added here that sends the investor their how much they are owed in paymentToken
     // this might be calling the auction contract with AuctionContract.redeem(msg.sender, amount * faceValue)
