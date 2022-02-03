@@ -14,16 +14,16 @@ contract SimpleBond is ERC20Burnable, Ownable {
     // @dev the DAO has paid back their loan & the maturity date has been reached
     address public paymentToken;
 
-    // @notice This is the ratio is which the bonds can be exchanged for the
-    // underlying collateral. For stablecoins this should be 1
+    // @notice This is the ratio in which the bonds can be exchanged for the
+    // underlying asset. For stablecoins this should be 1
     // Another number might make sense if the paymentToken is something other
     // than a stable coin
     // faceValue * number of bonds = number of paymentTokens the investor should get
     // at redeem()
     uint8 public faceValue = 1;
 
-    // @dev this date is when the DAO must have repaid it's debt and
-    // @dev when bondholders can redeem their bonds
+    // @notice this date is when the DAO must have repaid its debt
+    // @notice when bondholders can redeem their bonds
     uint256 public maturityDate;
 
     // probably shouldn't be a string
@@ -51,7 +51,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
         console.log("Created tokenized bonds with totalSupply of", _totalBonds);
     }
 
-    function setMatuirtyDate(uint256 _maturityDate) public onlyOwner {
+    function setMaturityDate(uint256 _maturityDate) public onlyOwner {
         maturityDate = _maturityDate;
     }
 
