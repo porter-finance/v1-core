@@ -33,21 +33,18 @@ contract SimpleBond is ERC20Burnable, Ownable {
   constructor(
     string memory _name,
     string memory _symbol,
-    uint256 _totalBonds
+    uint256 _totalBonds,
+    uint256 _maturityDate
   ) ERC20(_name, _symbol) {
     require(_totalBonds > 0, "zeroMintAmount");
+    require(_maturityDate > 1580752251, "invalid date");
+
     // This mints bonds based on the config given in the auction contract and
     // sends them to the auction contract
     _mint(msg.sender, _totalBonds);
+    maturityDate = _maturityDate;
 
     console.log("Created tokenized bonds with totalSupply of", _totalBonds);
-  }
-
-  /// @notice To be set after the auction ends
-  function setMaturityDate(uint256 _maturityDate) public onlyOwner {
-    require(_maturityDate > 1580752251, "invalid date");
-
-    maturityDate = _maturityDate;
   }
 
   /// @notice To be set after the auction ends
