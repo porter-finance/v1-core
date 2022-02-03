@@ -5,7 +5,6 @@ import { SimpleBond as SimpleBondType } from "../typechain";
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
 const { ethers, waffle } = require("hardhat");
 const { loadFixture, deployContract } = waffle;
-const { BigNumber } = ethers;
 
 const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
 
@@ -16,8 +15,7 @@ describe("SimpleBond", async () => {
       1000
   );
 
-  const totalSupply = 
-  2500;
+  const totalSupply = 2500;
   const faceValue = 1;
   const maturityValue = 1;
   let payToAccount: any;
