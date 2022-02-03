@@ -4,6 +4,7 @@ It may help if we start with the simplest design - no factories - no convertibil
 
 
 # Auction
+// Can we wrap EasyAuction? 
 The auction contract adapts the [EasyAuction](https://github.com/gnosis/ido-contracts#easyauction) contract from Gnosis. This contract sets up, accepts bids, and pays out using a [batch auction mechanism](https://github.com/gnosis/ido-contracts#the-batch-auction-mechanism). The auction contract tracks all auctions (current, and past) via an `auctionId` and stores all relevant auction data within a `auctionData` mapping. 
 
 The basic flow is:
