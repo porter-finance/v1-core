@@ -28,23 +28,23 @@ contract SimpleBond is ERC20Burnable, Ownable {
   /// @dev The Auction contract will be the owner
   /// @param _name Name of the bond.
   /// @param _symbol Bond ticket symbol
-  /// @param _totalBonds Total number of bonds being issued - this is determined by auction config
+  /// @param _totalBondSupply Total number of bonds being issued - this is determined by auction config
   constructor(
     string memory _name,
     string memory _symbol,
-    uint256 _totalBonds,
+    uint256 _totalBondSupply,
     uint256 _maturityDate
   ) ERC20(_name, _symbol) {
-    require(_totalBonds > 0, "zeroMintAmount");
+    require(_totalBondSupply > 0, "zeroMintAmount");
     require(_maturityDate > 1580752251, "invalid date");
 
     // This mints bonds based on the config given in the auction contract and
     // sends them to the auction contract
-    _mint(msg.sender, _totalBonds);
+    _mint(msg.sender, _totalBondSupply);
     maturityDate = _maturityDate;
     setBondStanding(BondStanding.GOOD);
 
-    console.log("Created tokenized bonds with totalSupply of", _totalBonds);
+    console.log("Created tokenized bonds with totalSupply of", _totalBondSupply);
   }
 
   /// @notice To be set after the auction ends
@@ -52,8 +52,8 @@ contract SimpleBond is ERC20Burnable, Ownable {
     currentBondStanding = standing;
   }
 
-  function redeemBond(uint256 amount) public {
-    require(amount > 0, "invalid amount");
+  function redeemBond(uint256 numberOfBonds) public {
+    require(numberOfBonds > 0, "invalid numberOfBonds");
 
     // the first check at least confirms maturityDate is a timestamp >= 2020
     require(block.timestamp >= maturityDate, "bond still immature");
@@ -61,12 +61,12 @@ contract SimpleBond is ERC20Burnable, Ownable {
     // check that the DAO has already paid back the bond, set from auction
     require(currentBondStanding == BondStanding.PAID, "bond not yet paid");
 
-    burn(amount);
+    burn(numberOfBonds);
 
     // TODO: code needs added here that sends the investor their how much they are owed in paymentToken
-    // this might be calling the auction contract with AuctionContract.redeem(msg.sender, amount * faceValue)
+    // this might be calling the auction contract with AuctionContract.redeem(msg.sender, numberOfBonds * faceValue)
     setBondStanding(BondStanding.REDEEMED);
 
-    emit Redeem(msg.sender, amount);
+    emit Redeem(msg.sender, numberOfBonds);
   }
 }
