@@ -9,6 +9,7 @@
     "@openzeppelin/test-helpers": "^0.5.15",
     "@typechain/ethers-v5": "^7.2.0",
     "@typechain/hardhat": "^2.3.1",
+    "@typechain/truffle-v5": "^7.0.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.0.0",
     "@types/node": "^12.20.42",
@@ -37,6 +38,7 @@
     "web3": "^1.7.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.4.2"
+    "@openzeppelin/contracts": "^4.4.2",
+    "hardhat-typechain": "^0.3.5"
   }
 }
