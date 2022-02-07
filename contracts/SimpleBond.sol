@@ -44,7 +44,10 @@ contract SimpleBond is ERC20Burnable, Ownable {
     maturityDate = _maturityDate;
     setBondStanding(BondStanding.GOOD);
 
-    console.log("Created tokenized bonds with totalSupply of", _totalBondSupply);
+    console.log(
+      "Created tokenized bonds with totalSupply of",
+      _totalBondSupply
+    );
   }
 
   /// @notice To be set after the auction ends
@@ -53,9 +56,11 @@ contract SimpleBond is ERC20Burnable, Ownable {
   }
 
   function redeemBond(uint256 numberOfBonds) public {
-    require(numberOfBonds > 0, "invalid numberOfBonds");
-
-    // the first check at least confirms maturityDate is a timestamp >= 2020
+    require(totalSupply() > 0, "invalid total supply");
+    require(
+      numberOfBonds > 0 || numberOfBonds > totalSupply(),
+      "invalid numberOfBonds"
+    );
     require(block.timestamp >= maturityDate, "bond still immature");
 
     // check that the DAO has already paid back the bond, set from auction
@@ -65,7 +70,11 @@ contract SimpleBond is ERC20Burnable, Ownable {
 
     // TODO: code needs added here that sends the investor their how much they are owed in paymentToken
     // this might be calling the auction contract with AuctionContract.redeem(msg.sender, numberOfBonds * faceValue)
-    setBondStanding(BondStanding.REDEEMED);
+
+    // once all bonds are burned, then this can be set to redeemed
+    if (totalSupply() <= 0) {
+      setBondStanding(BondStanding.REDEEMED);
+    }
 
     emit Redeem(msg.sender, numberOfBonds);
   }
