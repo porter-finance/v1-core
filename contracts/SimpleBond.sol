@@ -4,26 +4,13 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "hardhat/console.sol";
 
-// Bond is created by Porter automatically when an auction is won.
-// At that time, certain amount of tokens are pre-approved
-// by the payTo of the auction to be deposited into the bond.
-// The tokens will be locked in until maturity. The interest will be set
-// at _interestRate and the bond itself will be a tradeable asset.\
-
-// Investors allowed to purchase this bond (whitelist)
-
-// address payTos[] = {totalValue,address}
-
-// cusip bond unique id
-// once 2k units of this bond bought
-// issue tokens on separate erc20 to investors, unique per bond
-// 80 cents /
-// settlement is finished, i will receive the erc20 tokens representing my share of the bond
-// 10k units totalsupply, 2k units given
-
 contract SimpleBond is ERC20, Ownable {
+  event Withdrawal(address receiver, uint256 amount);
+  event Deposit(address sender, uint256 amount);
+
   mapping(address => uint256) payAccountMaturityDate;
   mapping(address => uint256) payAccountMaturityValue;
+  mapping(address => uint256) ETHBalances;
 
   constructor(string memory _name, string memory _symbol)
     ERC20(_name, _symbol)
@@ -53,23 +40,40 @@ contract SimpleBond is ERC20, Ownable {
     return payAccountMaturityValue[_payToAccount];
   }
 
-  function repayLoan(address _onBehalfOf, address _payToAccount) public view {
-    // do not need to check who sends it
-    require(block.timestamp < payAccountMaturityDate[_onBehalfOf]);
-    // amountWithInterest = amount * (1 + (maturityDate - startTime) * interestRate);
-    // ERC20BurnablePorter(_borrowedToken).transferFrom(
-    //   _onBehalfOf,
-    //   _payTo,
-    //   amountWithInterest
-    // );
+  function isBondRepaid(address _payToAccount) public view returns (bool) {
+    return balanceOf(_payToAccount) == 0;
   }
 
-  function withdrawWithInterest() public {
-    //
+  receive() external payable {
+    ETHBalances[msg.sender] += msg.value;
+
+    console.log("Received payment from", msg.sender);
+    emit Deposit(msg.sender, msg.value);
   }
 
-  function test() public {
-    // Your transaction goes here
-    // Press "Compile & Debug" when ready
+  function redeemBond(address _onBehalfOf, address _payToAccount)
+    external
+    payable
+  {
+    uint256 payout = payAccountMaturityValue[_onBehalfOf];
+    uint256 expiry = payAccountMaturityDate[_onBehalfOf];
+
+    require(_onBehalfOf == msg.sender, "you do not own this bond");
+    require(expiry <= block.timestamp, "can't withdraw until maturity date");
+    require(ETHBalances[_onBehalfOf] >= payout, "not enough funds");
+
+    console.log("checks passed");
+
+    ETHBalances[_onBehalfOf] = ETHBalances[_onBehalfOf] - (payout);
+    transferFrom(_onBehalfOf, _payToAccount, payout);
+  }
+
+  // Perhaps only the owner can withdraw eth?
+  function withdraw() external payable onlyOwner {
+    address payable to = payable(msg.sender);
+    uint256 val = ETHBalances[msg.sender];
+    to.transfer(ETHBalances[msg.sender]);
+    ETHBalances[msg.sender] = 0;
+    emit Withdrawal(to, val);
   }
 }

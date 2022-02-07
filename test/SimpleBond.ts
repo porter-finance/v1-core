@@ -10,6 +10,7 @@ contract("Porter Bond", function (accounts) {
   const maturityValue = new BN(1200);
 
   const payToAccount = otherAccounts[0];
+  const secondaryAccount = otherAccounts[1];
 
   const name = "My Token";
   const symbol = "MTKN";
@@ -51,15 +52,18 @@ contract("Porter Bond", function (accounts) {
     );
   });
 
-  it("should return bond state", async function () {
-    // console.log("this.bond");
+  it("should return bond state to be not repaid", async function () {
+    expect(await this.bond.isBondRepaid(payToAccount)).to.be.equal(false);
   });
 
-  it("should pay back bond", async function () {
-    // console.log("this.bond");
+  it("should pay back bond and return correct repaid state", async function () {
+    await this.bond.transferFrom(initialAccount, secondaryAccount, faceValue);
+    await this.bond.transferFrom(secondaryAccount, payToAccount, faceValue);
+    expect(await this.bond.isBondRepaid(payToAccount)).to.be.equal(true);
   });
 
   it("should redeem bond at maturity", async function () {
-    // console.log("this.bond");
+    await this.bond.redeemBond(secondaryAccount, payToAccount);
+    expect(await this.bond.isBondRepaid(payToAccount)).to.be.equal(true);
   });
 });
