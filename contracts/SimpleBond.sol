@@ -10,7 +10,7 @@ contract SimpleBond is ERC20, Ownable {
 
   mapping(address => uint256) payAccountMaturityDate;
   mapping(address => uint256) payAccountMaturityValue;
-  mapping(address => uint256) ETHBalances;
+  mapping(address => uint256) paymentTokenBalances;
 
   constructor(
     string memory _name,
@@ -59,14 +59,25 @@ contract SimpleBond is ERC20, Ownable {
   }
 
   function isBondRepaid(address _payToAccount) public view returns (bool) {
-    return balanceOf(_payToAccount) == 0;
+    return balanceOf(_payToAccount) == getOwedAmount(_payToAccount);
   }
 
-  receive() external payable {
-    ETHBalances[msg.sender] += msg.value;
+  function isBondRedeemed(address _payToAccount) public view returns (bool) {
+    console.log(
+      "isBondRedeemed",
+      balanceOf(_payToAccount),
+      paymentTokenBalances[_payToAccount] == 0
+    );
+    return
+      balanceOf(_payToAccount) == 0 && paymentTokenBalances[_payToAccount] == 0;
+  }
 
-    console.log("Received payment from", msg.sender);
-    emit Deposit(msg.sender, msg.value);
+  function repayAccount(address _payToAccount) public {
+    uint256 repayAmount = getOwedAmount(_payToAccount) -
+      balanceOf(_payToAccount);
+
+    approve(owner(), repayAmount);
+    transferFrom(owner(), _payToAccount, repayAmount);
   }
 
   function redeemBond(address _onBehalfOf, address _payToAccount)
@@ -78,20 +89,27 @@ contract SimpleBond is ERC20, Ownable {
 
     require(_onBehalfOf == msg.sender, "you do not own this bond");
     require(expiry <= block.timestamp, "can't withdraw until maturity date");
-    require(ETHBalances[_onBehalfOf] >= payout, "not enough funds");
+    require(paymentTokenBalances[_onBehalfOf] >= payout, "not enough funds");
 
     console.log("checks passed");
 
-    ETHBalances[_onBehalfOf] = ETHBalances[_onBehalfOf] - (payout);
-    transferFrom(_onBehalfOf, _payToAccount, payout);
+    transferFrom(_payToAccount, _onBehalfOf, payout);
+    paymentTokenBalances[_onBehalfOf] = 0;
+  }
+
+  receive() external payable {
+    paymentTokenBalances[msg.sender] += msg.value;
+
+    console.log("Received payment from", msg.sender);
+    emit Deposit(msg.sender, msg.value);
   }
 
   // Perhaps only the owner can withdraw eth?
   function withdraw() external payable onlyOwner {
     address payable to = payable(msg.sender);
-    uint256 val = ETHBalances[msg.sender];
-    to.transfer(ETHBalances[msg.sender]);
-    ETHBalances[msg.sender] = 0;
+    uint256 val = paymentTokenBalances[msg.sender];
+    to.transfer(paymentTokenBalances[msg.sender]);
+    paymentTokenBalances[msg.sender] = 0;
     emit Withdrawal(to, val);
   }
 }

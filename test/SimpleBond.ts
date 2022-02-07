@@ -38,8 +38,12 @@ describe("SimpleBond", async () => {
       // maturityDate
     );
   });
-  it("should have total supply in owner account", async function () {
-    expect(await bond.balanceOf(initialAccount)).to.be.equal(totalSupply);
+
+  it("should have total supply less bond issuance in owner account", async function () {
+    expect(await bond.balanceOf(initialAccount)).to.be.equal(
+      totalSupply - faceValue
+    );
+    expect(await bond.balanceOf(payToAccount)).to.be.equal(faceValue);
   });
 
   it("should be owner", async function () {
@@ -63,14 +67,27 @@ describe("SimpleBond", async () => {
   });
 
   it("should pay back bond and return correct repaid state", async function () {
+    // quick check to make sure payTo has a bond issued
     expect(await bond.balanceOf(payToAccount)).to.be.equal(faceValue);
 
-    await bond.transferFrom(payToAccount, initialAccount, faceValue);
+    // and that it's not already paid off
+    expect(await bond.isBondRepaid(payToAccount)).to.be.equal(false);
+
+    await bond.repayAccount(payToAccount);
     expect(await bond.isBondRepaid(payToAccount)).to.be.equal(true);
   });
 
   it("should redeem bond at maturity", async function () {
-    await bond.redeemBond(secondaryAccount, payToAccount);
+    // quick check to make sure payTo has a bond issued
+    expect(await bond.balanceOf(payToAccount)).to.be.equal(faceValue);
+
+    // and that it's not already paid off
+    expect(await bond.isBondRepaid(payToAccount)).to.be.equal(false);
+    await bond.repayAccount(payToAccount);
     expect(await bond.isBondRepaid(payToAccount)).to.be.equal(true);
+
+    await bond.redeemBond(initialAccount, payToAccount);
+
+    expect(await bond.isBondRedeemed(payToAccount)).to.be.equal(true);
   });
 });
