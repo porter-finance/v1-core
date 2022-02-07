@@ -10,6 +10,7 @@ describe("SimpleBond", async () => {
   const faceValue = 1000;
   const maturityValue = 1200;
   let payToAccount: any;
+  let payToAddress: any;
   let secondaryAccount: any;
 
   const name = "My Token";
@@ -20,7 +21,8 @@ describe("SimpleBond", async () => {
 
   async function fixture() {
     const [owner, ...otherAccounts] = await ethers.getSigners();
-    payToAccount = await otherAccounts[0].getAddress();
+    payToAccount = otherAccounts[0];
+    payToAddress = await otherAccounts[0].getAddress();
     secondaryAccount = await otherAccounts[1].getAddress();
     const SimpleBond = await ethers.getContractFactory("SimpleBond");
     const ownerAddress = await owner.getAddress();
@@ -32,7 +34,7 @@ describe("SimpleBond", async () => {
     const { bond, ownerAddress } = await loadFixture(fixture);
     initialAccount = ownerAddress;
     await bond.issueBond(
-      payToAccount,
+      payToAddress,
       faceValue,
       maturityValue
       // maturityDate
@@ -43,7 +45,7 @@ describe("SimpleBond", async () => {
     expect(await bond.balanceOf(initialAccount)).to.be.equal(
       totalSupply - faceValue
     );
-    expect(await bond.balanceOf(payToAccount)).to.be.equal(faceValue);
+    expect(await bond.balanceOf(payToAddress)).to.be.equal(faceValue);
   });
 
   it("should be owner", async function () {
@@ -51,43 +53,50 @@ describe("SimpleBond", async () => {
   });
 
   it("should return total value for an account", async function () {
-    expect(await bond.balanceOf(payToAccount)).to.be.equal(faceValue);
+    expect(await bond.balanceOf(payToAddress)).to.be.equal(faceValue);
   });
 
   // it("should return payment due date", async function () {
-  //   expect(await bond.getDueDate(payToAccount)).to.be.equal(maturityDate);
+  //   expect(await bond.getDueDate(payToAddress)).to.be.equal(maturityDate);
   // });
 
   it("should return how much is owed", async function () {
-    expect(await bond.getOwedAmount(payToAccount)).to.be.equal(maturityValue);
+    expect(await bond.getOwedAmount(payToAddress)).to.be.equal(maturityValue);
   });
 
   it("should return bond state to be not repaid", async function () {
-    expect(await bond.isBondRepaid(payToAccount)).to.be.equal(false);
+    expect(await bond.isBondRepaid(payToAddress)).to.be.equal(false);
   });
 
   it("should pay back bond and return correct repaid state", async function () {
     // quick check to make sure payTo has a bond issued
-    expect(await bond.balanceOf(payToAccount)).to.be.equal(faceValue);
+    expect(await bond.balanceOf(payToAddress)).to.be.equal(faceValue);
 
     // and that it's not already paid off
-    expect(await bond.isBondRepaid(payToAccount)).to.be.equal(false);
+    expect(await bond.isBondRepaid(payToAddress)).to.be.equal(false);
 
-    await bond.repayAccount(payToAccount);
-    expect(await bond.isBondRepaid(payToAccount)).to.be.equal(true);
+    await bond.repayAccount(payToAddress);
+    expect(await bond.isBondRepaid(payToAddress)).to.be.equal(true);
   });
 
   it("should redeem bond at maturity", async function () {
+    // Connect the pay account to this contract
+    const payeeBond = await bond.connect(payToAccount);
+
     // quick check to make sure payTo has a bond issued
-    expect(await bond.balanceOf(payToAccount)).to.be.equal(faceValue);
+    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(faceValue);
 
     // and that it's not already paid off
-    expect(await bond.isBondRepaid(payToAccount)).to.be.equal(false);
-    await bond.repayAccount(payToAccount);
-    expect(await bond.isBondRepaid(payToAccount)).to.be.equal(true);
+    expect(await payeeBond.isBondRepaid(payToAddress)).to.be.equal(false);
+    await bond.repayAccount(payToAddress);
+    expect(await payeeBond.isBondRepaid(payToAddress)).to.be.equal(true);
 
-    await bond.redeemBond(initialAccount, payToAccount);
+    // TODO: this should approve the token payment not the bond token?
+    await payeeBond.approve(payToAddress, maturityValue);
 
-    expect(await bond.isBondRedeemed(payToAccount)).to.be.equal(true);
+    // TODO: this should redeem the token payment?
+    await payeeBond.redeemBond(payToAddress);
+
+    expect(await payeeBond.isBondRedeemed(payToAddress)).to.be.equal(true);
   });
 });

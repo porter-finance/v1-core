@@ -80,21 +80,21 @@ contract SimpleBond is ERC20, Ownable {
     transferFrom(owner(), _payToAccount, repayAmount);
   }
 
-  function redeemBond(address _onBehalfOf, address _payToAccount)
-    external
-    payable
-  {
-    uint256 payout = payAccountMaturityValue[_onBehalfOf];
-    uint256 expiry = payAccountMaturityDate[_onBehalfOf];
+  function redeemBond(address _payToAccount) external payable {
+    uint256 payout = getOwedAmount(_payToAccount);
+    uint256 expiry = payAccountMaturityDate[_payToAccount];
 
-    require(_onBehalfOf == msg.sender, "you do not own this bond");
+    require(_payToAccount == msg.sender, "you do not own this bond");
     require(expiry <= block.timestamp, "can't withdraw until maturity date");
-    require(paymentTokenBalances[_onBehalfOf] >= payout, "not enough funds");
+    // require(paymentTokenBalances[_payToAccount] >= payout, "not enough funds");
 
-    console.log("checks passed");
+    console.log("redeemBond() checks passed, payout required: ", payout);
+    console.log("1 balanceOf(_payToAccount)", balanceOf(_payToAccount));
 
-    transferFrom(_payToAccount, _onBehalfOf, payout);
-    paymentTokenBalances[_onBehalfOf] = 0;
+    transfer(owner(), payout);
+
+    console.log("2 balanceOf(_payToAccount)", balanceOf(_payToAccount));
+    paymentTokenBalances[_payToAccount] = 0;
   }
 
   receive() external payable {
