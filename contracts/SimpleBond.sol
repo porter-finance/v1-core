@@ -84,7 +84,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
     uint256 expiry = payAccountMaturityDate[_payToAccount];
 
     require(_payToAccount == msg.sender, "you do not own this bond");
-    require(expiry <= block.timestamp, "can't withdraw until maturity date");
+    require(block.timestamp >= expiry, "can't withdraw until maturity date");
     require(paymentTokenBalances[_payToAccount] >= payout, "not enough funds");
 
     console.log("redeemBond() checks passed, payout required: ", payout);
@@ -104,6 +104,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
   }
 
   // Perhaps only the owner can withdraw eth?
+  // Users are meant to withdraw using redeemBond()
   function withdraw() external payable onlyOwner {
     address payable to = payable(msg.sender);
     uint256 val = paymentTokenBalances[msg.sender];
