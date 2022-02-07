@@ -15,10 +15,9 @@ contract SimpleBond is ERC20, Ownable {
   constructor(
     string memory _name,
     string memory _symbol,
-    address initialAccount,
     uint256 totalCoins
   ) ERC20(_name, _symbol) {
-    _mint(initialAccount, totalCoins);
+    _mint(msg.sender, totalCoins);
 
     console.log("Created token for bond with totalSupply of", totalCoins);
   }
@@ -27,8 +26,11 @@ contract SimpleBond is ERC20, Ownable {
     address _payToAccount,
     uint256 _faceValue,
     uint256 _maturityValue
+  )
+    public
     // uint256 _maturityDate
-  ) public onlyOwner {
+    onlyOwner
+  {
     require(
       totalSupply() >= _faceValue,
       "Not enough tokens minted to issue this bond"
@@ -39,7 +41,7 @@ contract SimpleBond is ERC20, Ownable {
 
     console.log("Passed issueBond checks");
 
-    transferFrom(msg.sender, _payToAccount, _faceValue);
+    transfer(_payToAccount, _faceValue);
 
     console.log(
       "Transferred face value to pay account, from supply",
