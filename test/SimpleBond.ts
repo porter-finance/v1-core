@@ -58,19 +58,29 @@ describe("SimpleBond", async () => {
   });
 
   it("should return total value for an account", async function () {
-    expect(await bond.balanceOf(payToAddress)).to.be.equal(faceValue);
+    const payeeBond = await bond.connect(payToAccount);
+
+    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(faceValue);
   });
 
   it("should return payment due date", async function () {
-    expect(await bond.getDueDate(payToAddress)).to.be.equal(maturityDate);
+    const payeeBond = await bond.connect(payToAccount);
+
+    expect(await payeeBond.getDueDate(payToAddress)).to.be.equal(maturityDate);
   });
 
   it("should return how much is owed", async function () {
-    expect(await bond.getOwedAmount(payToAddress)).to.be.equal(maturityValue);
+    const payeeBond = await bond.connect(payToAccount);
+
+    expect(await payeeBond.getOwedAmount(payToAddress)).to.be.equal(
+      maturityValue
+    );
   });
 
   it("should return bond state to be not repaid", async function () {
-    expect(await bond.isBondRepaid(payToAddress)).to.be.equal(false);
+    const payeeBond = await bond.connect(payToAccount);
+
+    expect(await payeeBond.isBondRepaid(payToAddress)).to.be.equal(false);
   });
 
   it("should pay back bond and return correct repaid state", async function () {

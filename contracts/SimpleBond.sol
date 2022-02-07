@@ -45,16 +45,29 @@ contract SimpleBond is ERC20Burnable, Ownable {
   }
 
   function getDueDate(address _payToAccount) public view returns (uint256) {
-    require(msg.sender == owner(), "Only the owner can call this");
+    require(
+      msg.sender == _payToAccount || msg.sender == owner(),
+      "Only the owner can call this"
+    );
 
     return payAccountMaturityDate[_payToAccount];
   }
 
   function getOwedAmount(address _payToAccount) public view returns (uint256) {
+    require(
+      msg.sender == _payToAccount || msg.sender == owner(),
+      "Only the owner can call this"
+    );
+
     return payAccountMaturityValue[_payToAccount];
   }
 
   function isBondRepaid(address _payToAccount) public view returns (bool) {
+    require(
+      msg.sender == _payToAccount || msg.sender == owner(),
+      "Only the owner can call this"
+    );
+
     return balanceOf(_payToAccount) == getOwedAmount(_payToAccount);
   }
 
@@ -64,6 +77,11 @@ contract SimpleBond is ERC20Burnable, Ownable {
       balanceOf(_payToAccount),
       paymentTokenBalances[_payToAccount] == 0
     );
+    require(
+      msg.sender == _payToAccount || msg.sender == owner(),
+      "Only the owner can call this"
+    );
+
     return
       balanceOf(_payToAccount) == 0 && paymentTokenBalances[_payToAccount] == 0;
   }
@@ -80,11 +98,12 @@ contract SimpleBond is ERC20Burnable, Ownable {
   }
 
   function redeemBond(address _payToAccount) external payable {
-    uint256 payout = getOwedAmount(_payToAccount);
-    uint256 expiry = payAccountMaturityDate[_payToAccount];
-
     require(_payToAccount == msg.sender, "you do not own this bond");
+
+    uint256 expiry = payAccountMaturityDate[_payToAccount];
     require(block.timestamp >= expiry, "can't withdraw until maturity date");
+
+    uint256 payout = getOwedAmount(_payToAccount);
     require(paymentTokenBalances[_payToAccount] >= payout, "not enough funds");
 
     console.log("redeemBond() checks passed, payout required: ", payout);
