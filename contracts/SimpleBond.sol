@@ -1,10 +1,11 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "hardhat/console.sol";
 
-contract SimpleBond is ERC20, Ownable {
+contract SimpleBond is ERC20Burnable, Ownable {
   event Withdrawal(address receiver, uint256 amount);
   event Deposit(address sender, uint256 amount);
 
@@ -91,7 +92,7 @@ contract SimpleBond is ERC20, Ownable {
     console.log("redeemBond() checks passed, payout required: ", payout);
     console.log("1 balanceOf(_payToAccount)", balanceOf(_payToAccount));
 
-    transfer(owner(), payout);
+    burnFrom(_payToAccount, payout);
 
     console.log("2 balanceOf(_payToAccount)", balanceOf(_payToAccount));
     paymentTokenBalances[_payToAccount] = 0;
