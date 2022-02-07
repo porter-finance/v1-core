@@ -1,11 +1,12 @@
 import { Contract } from "ethers";
 import { expect } from "chai";
-import { loadFixture, deployContract } from "ethereum-waffle";
-
-const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
 
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
+const { ethers, waffle } = require("hardhat");
+const { loadFixture, deployContract } = waffle;
+
+const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
 
 describe("SimpleBond", async () => {
   const totalSupply = 2500;
@@ -19,7 +20,9 @@ describe("SimpleBond", async () => {
   let bond: Contract;
   let initialAccount: any;
 
-  async function fixture([wallet, other]) {
+  // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
+  async function fixture() {
+    const [wallet, other] = await ethers.getSigners();
     bond = await deployContract(wallet, SimpleBond, [
       name,
       symbol,
