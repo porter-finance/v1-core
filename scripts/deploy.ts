@@ -15,7 +15,7 @@ async function main() {
   console.log("Account balance:", await ethers.utils.formatEther(weiAmount));
 
   const Token = await ethers.getContractFactory("SimpleBond");
-  // this is broken and needs fixed
+  // TODO: this is broken and needs fixed
   const token = await Token.deploy();
 
   console.log("Token address:", token.address);

@@ -16,8 +16,8 @@ describe("SimpleBond", async () => {
   );
 
   // A realistic number for this is like 2m
-  const totalBondSupply = 2500;
-  const numberOfBonds = 1;
+  const totalBondSupply = 12500;
+  const numberOfBonds = 1000;
   let payToAccount: any;
   let payToAddress: any;
 
