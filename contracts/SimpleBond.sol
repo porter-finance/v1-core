@@ -5,132 +5,68 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "hardhat/console.sol";
 
 contract SimpleBond is ERC20Burnable, Ownable {
-  event Withdrawal(address receiver, uint256 amount);
+  event Redeem(address receiver, uint256 amount);
   event Deposit(address sender, uint256 amount);
 
-  mapping(address => uint256) payAccountMaturityDate;
-  mapping(address => uint256) payAccountMaturityValue;
-  mapping(address => uint256) paymentTokenBalances;
+  /// @notice this date is when the DAO must have repaid its debt
+  /// @notice when bondholders can redeem their bonds
+  uint256 public maturityDate;
 
+  /// @notice this would go into default if maturityDate passes and the loan contract has not been paid back
+  /// @notice to be set from the auction
+  enum BondStanding {
+    GOOD,
+    DEFAULTED,
+    PAID,
+    REDEEMED
+  }
+
+  /// @notice holds address to bond standings
+  BondStanding public currentBondStanding;
+
+  /// @dev New bond contract will be deployed before each auction
+  /// @dev The Auction contract will be the owner
+  /// @param _name Name of the bond.
+  /// @param _symbol Bond ticket symbol
+  /// @param _totalBondSupply Total number of bonds being issued - this is determined by auction config
   constructor(
     string memory _name,
     string memory _symbol,
-    uint256 _totalCoins
-  ) ERC20(_name, _symbol) {
-    require(_totalCoins > 0, "zeroMintAmount");
-    _mint(msg.sender, _totalCoins);
-
-    console.log("Created token for bond with totalSupply of", _totalCoins);
-  }
-
-  function issueBond(
-    address _payToAccount,
-    uint256 _maturityValue,
+    uint256 _totalBondSupply,
     uint256 _maturityDate
-  ) public onlyOwner {
-    require(totalSupply() >= 1, "Not enough tokens minted to issue this bond");
+  ) ERC20(_name, _symbol) {
+    require(_totalBondSupply > 0, "zeroMintAmount");
+    require(_maturityDate > 1580752251, "invalid date");
 
-    payAccountMaturityDate[_payToAccount] = _maturityDate;
-    payAccountMaturityValue[_payToAccount] = _maturityValue;
+    // This mints bonds based on the config given in the auction contract and
+    // sends them to the auction contract
+    _mint(msg.sender, _totalBondSupply);
+    maturityDate = _maturityDate;
+    setBondStanding(BondStanding.GOOD);
 
-    console.log("Passed issueBond checks");
-
-    transfer(_payToAccount, 1);
-
-    console.log(
-      "Transferred token to pay account from supply",
-      1,
-      _payToAccount
-    );
+    console.log("Created tokenized bonds with totalSupply of", _totalBondSupply);
   }
 
-  function getDueDate(address _payToAccount) public view returns (uint256) {
-    require(
-      msg.sender == _payToAccount || msg.sender == owner(),
-      "Only the owner can call this"
-    );
-
-    return payAccountMaturityDate[_payToAccount];
+  /// @notice To be set after the auction ends
+  function setBondStanding(BondStanding standing) public onlyOwner {
+    currentBondStanding = standing;
   }
 
-  function getOwedAmount(address _payToAccount) public view returns (uint256) {
-    require(
-      msg.sender == _payToAccount || msg.sender == owner(),
-      "Only the owner can call this"
-    );
+  function redeemBond(uint256 numberOfBonds) public {
+    require(numberOfBonds > 0, "invalid numberOfBonds");
 
-    return payAccountMaturityValue[_payToAccount];
-  }
+    // the first check at least confirms maturityDate is a timestamp >= 2020
+    require(block.timestamp >= maturityDate, "bond still immature");
 
-  function isBondRepaid(address _payToAccount) public view returns (bool) {
-    require(
-      msg.sender == _payToAccount || msg.sender == owner(),
-      "Only the owner can call this"
-    );
+    // check that the DAO has already paid back the bond, set from auction
+    require(currentBondStanding == BondStanding.PAID, "bond not yet paid");
 
-    return balanceOf(_payToAccount) == getOwedAmount(_payToAccount);
-  }
+    burn(numberOfBonds);
 
-  function isBondRedeemed(address _payToAccount) public view returns (bool) {
-    console.log(
-      "isBondRedeemed",
-      balanceOf(_payToAccount),
-      paymentTokenBalances[_payToAccount]
-    );
+    // TODO: code needs added here that sends the investor their how much they are owed in paymentToken
+    // this might be calling the auction contract with AuctionContract.redeem(msg.sender, numberOfBonds * faceValue)
+    setBondStanding(BondStanding.REDEEMED);
 
-    require(
-      msg.sender == _payToAccount || msg.sender == owner(),
-      "Only the owner can call this"
-    );
-
-    return
-      getOwedAmount(_payToAccount) == 0 &&
-      balanceOf(_payToAccount) == 0 &&
-      paymentTokenBalances[_payToAccount] == 0;
-  }
-
-  function repayAccount(address _payToAccount) public onlyOwner {
-    uint256 balance = balanceOf(_payToAccount);
-    uint256 repayAmount = getOwedAmount(_payToAccount) - balance;
-
-    require(balance > 0, "payee must have a balance");
-    require(repayAmount > 0, "repay amount must be greater than 0");
-
-    approve(owner(), repayAmount);
-    transferFrom(owner(), _payToAccount, repayAmount);
-  }
-
-  function redeemBond(address _payToAccount) external payable {
-    require(_payToAccount == msg.sender, "you do not own this bond");
-
-    uint256 expiry = getDueDate(_payToAccount);
-    require(block.timestamp >= expiry, "can't withdraw until maturity date");
-
-    uint256 payout = getOwedAmount(_payToAccount);
-    require(paymentTokenBalances[_payToAccount] >= payout, "not enough funds");
-
-    console.log("redeemBond() checks passed, payout required: ", payout);
-    console.log("1 balanceOf(_payToAccount)", balanceOf(_payToAccount));
-
-    burnFrom(_payToAccount, payout);
-    payAccountMaturityValue[_payToAccount] = 0;
-    payAccountMaturityDate[_payToAccount] = 0;
-
-    console.log("2 balanceOf(_payToAccount)", balanceOf(_payToAccount));
-    paymentTokenBalances[_payToAccount] =
-      paymentTokenBalances[_payToAccount] -
-      payout;
-
-    address payable to = payable(_payToAccount);
-    to.transfer(payout);
-
-    emit Withdrawal(to, payout);
-  }
-
-  receive() external payable {
-    paymentTokenBalances[msg.sender] += msg.value;
-
-    console.log("Received payment from", msg.sender);
-    emit Deposit(msg.sender, msg.value);
+    emit Redeem(msg.sender, numberOfBonds);
   }
 }
