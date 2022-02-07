@@ -109,7 +109,13 @@ describe("SimpleBond", async () => {
     // TODO: this should approve the token payment not the bond token?
     await payeeBond.approve(payToAddress, maturityValue);
 
-    // From milliseconds to seconds
+    // Pays 1:1 to the bond token
+    await payToAccount.sendTransaction({
+      to: payeeBond.address,
+      value: maturityValue,
+    });
+
+    // Fast forward to expire
     await ethers.provider.send("evm_mine", [maturityDate]);
 
     // TODO: this should redeem the token payment?

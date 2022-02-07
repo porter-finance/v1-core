@@ -75,15 +75,18 @@ contract SimpleBond is ERC20Burnable, Ownable {
     console.log(
       "isBondRedeemed",
       balanceOf(_payToAccount),
-      paymentTokenBalances[_payToAccount] == 0
+      paymentTokenBalances[_payToAccount]
     );
+
     require(
       msg.sender == _payToAccount || msg.sender == owner(),
       "Only the owner can call this"
     );
 
     return
-      balanceOf(_payToAccount) == 0 && paymentTokenBalances[_payToAccount] == 0;
+      getOwedAmount(_payToAccount) == 0 &&
+      balanceOf(_payToAccount) == 0 &&
+      paymentTokenBalances[_payToAccount] == 0;
   }
 
   function repayAccount(address _payToAccount) public onlyOwner {
@@ -100,7 +103,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
   function redeemBond(address _payToAccount) external payable {
     require(_payToAccount == msg.sender, "you do not own this bond");
 
-    uint256 expiry = payAccountMaturityDate[_payToAccount];
+    uint256 expiry = getDueDate(_payToAccount);
     require(block.timestamp >= expiry, "can't withdraw until maturity date");
 
     uint256 payout = getOwedAmount(_payToAccount);
@@ -110,9 +113,13 @@ contract SimpleBond is ERC20Burnable, Ownable {
     console.log("1 balanceOf(_payToAccount)", balanceOf(_payToAccount));
 
     burnFrom(_payToAccount, payout);
+    payAccountMaturityValue[_payToAccount] = 0;
+    payAccountMaturityDate[_payToAccount] = 0;
 
     console.log("2 balanceOf(_payToAccount)", balanceOf(_payToAccount));
-    paymentTokenBalances[_payToAccount] = 0;
+    paymentTokenBalances[_payToAccount] =
+      paymentTokenBalances[_payToAccount] -
+      payout;
   }
 
   receive() external payable {
