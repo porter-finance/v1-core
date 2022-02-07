@@ -1,5 +1,5 @@
-import { Contract } from "ethers";
 import { expect } from "chai";
+import { SimpleBond as SimpleBondType } from "../typechain";
 
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
@@ -17,7 +17,7 @@ describe("SimpleBond", async () => {
 
   const name = "My Token";
   const symbol = "MTKN";
-  let bond: Contract;
+  let bond: SimpleBondType;
   let initialAccount: any;
 
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
