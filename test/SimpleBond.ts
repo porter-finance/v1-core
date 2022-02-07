@@ -5,6 +5,7 @@ import { SimpleBond as SimpleBondType } from "../typechain";
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
 const { ethers, waffle } = require("hardhat");
 const { loadFixture, deployContract } = waffle;
+const { BigNumber } = ethers;
 
 const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
 
@@ -118,8 +119,14 @@ describe("SimpleBond", async () => {
     // Fast forward to expire
     await ethers.provider.send("evm_mine", [maturityDate]);
 
-    // TODO: this should redeem the token payment?
+    const currentBal = await payToAccount.getBalance();
     await payeeBond.redeemBond(payToAddress);
+
+    // This is failing, likely because sendTransaction isn't sending value in
+    // a format it's expecting? not sure ...
+    expect(await payToAccount.getBalance()).to.be.equal(
+      currentBal.sub(maturityValue)
+    );
 
     expect(await payeeBond.isBondRedeemed(payToAddress)).to.be.equal(true);
   });
