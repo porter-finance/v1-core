@@ -17,7 +17,7 @@ describe("SimpleBond", async () => {
 
   // A realistic number for this is like 2m
   const totalBondSupply = 12500;
-  const numberOfBonds = 1000;
+  const bondShares = 1000;
   let payToAccount: any;
   let payToAddress: any;
 
@@ -44,15 +44,15 @@ describe("SimpleBond", async () => {
     payToAccount = other;
     initialAccount = await wallet.getAddress();
     payToAddress = await other.getAddress();
-    await bond.transfer(payToAddress, numberOfBonds);
+    await bond.transfer(payToAddress, bondShares);
   });
 
   it("should have total supply less bond issuance in owner account", async function () {
     expect(await bond.balanceOf(initialAccount)).to.be.equal(
-      totalBondSupply - numberOfBonds
+      totalBondSupply - bondShares
     );
 
-    expect(await bond.balanceOf(payToAddress)).to.be.equal(numberOfBonds);
+    expect(await bond.balanceOf(payToAddress)).to.be.equal(bondShares);
   });
 
   it("should be owner", async function () {
@@ -62,7 +62,7 @@ describe("SimpleBond", async () => {
   it("should return total value for an account", async function () {
     const payeeBond = await bond.connect(payToAccount);
 
-    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(numberOfBonds);
+    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(bondShares);
   });
 
   it("should return payment due date", async function () {
@@ -80,7 +80,7 @@ describe("SimpleBond", async () => {
   // failing until hooked up with auction
   it("should pay back bond and return correct repaid state", async function () {
     // quick check to make sure payTo has a bond issued
-    expect(await bond.balanceOf(payToAddress)).to.be.equal(numberOfBonds);
+    expect(await bond.balanceOf(payToAddress)).to.be.equal(bondShares);
 
     // and that it's not already paid off
     expect(await bond.currentBondStanding()).to.be.equal(0);
@@ -96,7 +96,7 @@ describe("SimpleBond", async () => {
     const payeeBond = bond.connect(payToAccount);
 
     // quick check to make sure payTo has a bond issued
-    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(numberOfBonds);
+    expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(bondShares);
 
     // and that it's not already paid off
     expect(await payeeBond.currentBondStanding()).to.be.equal(0);
@@ -105,24 +105,24 @@ describe("SimpleBond", async () => {
     expect(await payeeBond.currentBondStanding()).to.be.equal(2);
 
     // TODO: this should approve the token payment not the bond token?
-    await payeeBond.approve(payToAddress, numberOfBonds);
+    await payeeBond.approve(payToAddress, bondShares);
 
     // Pays 1:1 to the bond token
     await payToAccount.sendTransaction({
       to: payeeBond.address,
-      value: numberOfBonds,
+      value: bondShares,
     });
 
     // Fast forward to expire
     await ethers.provider.send("evm_mine", [maturityDate]);
 
     const currentBal = await payToAccount.getBalance();
-    await payeeBond.redeemBond(numberOfBonds);
+    await payeeBond.redeemBond(bondShares);
 
     // This is failing, likely because sendTransaction isn't sending value in
     // a format it's expecting? not sure
     expect(await payToAccount.getBalance()).to.be.equal(
-      currentBal.add(numberOfBonds)
+      currentBal.add(bondShares)
     );
 
     expect(await payeeBond.currentBondStanding()).to.be.equal(3);
