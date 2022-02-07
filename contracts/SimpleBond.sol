@@ -1,8 +1,9 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract SimpleBond is ERC20Burnable, Ownable {
+contract SimpleBond is ERC20Burnable, Ownable, ReentrancyGuard {
   event Redeem(address receiver, uint256 amount);
 
   /// @notice this date is when the DAO must have repaid its debt
@@ -50,7 +51,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
     currentBondStanding = standing;
   }
 
-  function redeemBond(uint256 bondShares) external {
+  function redeemBond(uint256 bondShares) external nonReentrant {
     require(bondShares > 0, "invalid amount");
     require(block.timestamp >= maturityDate, "bond still immature");
 
