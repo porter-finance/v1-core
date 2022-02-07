@@ -1,9 +1,5 @@
 {
   "name": "hardhat-project",
-  "scripts": {
-    "clean": "npx hardhat clean && npx hardhat compile",
-    "test": "TS_NODE_TRANSPILE_ONLY=1 npx hardhat test"
-  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
     "@nomiclabs/hardhat-etherscan": "^2.1.8",
