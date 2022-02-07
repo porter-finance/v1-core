@@ -12,10 +12,15 @@ contract SimpleBond is ERC20, Ownable {
   mapping(address => uint256) payAccountMaturityValue;
   mapping(address => uint256) ETHBalances;
 
-  constructor(string memory _name, string memory _symbol)
-    ERC20(_name, _symbol)
-  {
-    console.log("Created token for bond");
+  constructor(
+    string memory _name,
+    string memory _symbol,
+    address initialAccount,
+    uint256 totalCoins
+  ) ERC20(_name, _symbol) {
+    _mint(initialAccount, totalCoins);
+
+    console.log("Created token for bond with totalSupply of", totalCoins);
   }
 
   function issueBond(
@@ -24,12 +29,23 @@ contract SimpleBond is ERC20, Ownable {
     uint256 _maturityValue,
     uint256 _maturityDate
   ) public onlyOwner {
+    require(
+      totalSupply() >= _faceValue,
+      "Not enough tokens minted to issue this bond"
+    );
+
     payAccountMaturityDate[_payToAccount] = _maturityDate;
     payAccountMaturityValue[_payToAccount] = _maturityValue;
 
-    _mint(_payToAccount, _faceValue);
+    console.log("Passed issueBond checks");
 
-    console.log("Minted face value to pay account", _faceValue, _payToAccount);
+    transferFrom(msg.sender, _payToAccount, _faceValue);
+
+    console.log(
+      "Transferred face value to pay account, from supply",
+      _faceValue,
+      _payToAccount
+    );
   }
 
   function getDueDate(address _payToAccount) public view returns (uint256) {
