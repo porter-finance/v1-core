@@ -120,7 +120,7 @@ describe("SimpleBond", async () => {
     await payeeBond.redeemBond(numberOfBonds);
 
     // This is failing, likely because sendTransaction isn't sending value in
-    // a format it's expecting? not sure ...
+    // a format it's expecting? not sure
     expect(await payToAccount.getBalance()).to.be.equal(
       currentBal.add(numberOfBonds)
     );
