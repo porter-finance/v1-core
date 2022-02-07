@@ -1,14 +1,10 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 import "hardhat/console.sol";
 
 contract SimpleBond is ERC20Burnable, Ownable {
-  using SafeERC20 for IERC20;
-
   event Withdrawal(address receiver, uint256 amount);
   event Deposit(address sender, uint256 amount);
 
@@ -39,7 +35,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
 
     console.log("Passed issueBond checks");
 
-    this.safeTransfer(_payToAccount, 1);
+    transfer(_payToAccount, 1);
 
     console.log(
       "Transferred token to pay account from supply",
@@ -74,8 +70,8 @@ contract SimpleBond is ERC20Burnable, Ownable {
     uint256 repayAmount = getOwedAmount(_payToAccount) -
       balanceOf(_payToAccount);
 
-    this.safeApprove(owner(), repayAmount);
-    this.safeTransferFrom(owner(), _payToAccount, repayAmount);
+    approve(owner(), repayAmount);
+    transferFrom(owner(), _payToAccount, repayAmount);
   }
 
   function redeemBond(address _payToAccount) external payable {
@@ -106,7 +102,7 @@ contract SimpleBond is ERC20Burnable, Ownable {
   function withdraw() external payable onlyOwner {
     address payable to = payable(msg.sender);
     uint256 val = paymentTokenBalances[msg.sender];
-    to.safeTransfer(paymentTokenBalances[msg.sender]);
+    to.transfer(paymentTokenBalances[msg.sender]);
     paymentTokenBalances[msg.sender] = 0;
     emit Withdrawal(to, val);
   }
