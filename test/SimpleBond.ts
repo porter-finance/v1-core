@@ -9,6 +9,8 @@ const { loadFixture, deployContract } = waffle;
 const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
 
 describe("SimpleBond", async () => {
+  const defaultBondStanding = 0;
+
   // 3 years from now, in seconds
   const maturityDate = Math.round(
     new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
@@ -71,19 +73,45 @@ describe("SimpleBond", async () => {
     expect(await payeeBond.maturityDate()).to.be.equal(maturityDate);
   });
 
-  it("should return bond state to be not repaid", async function () {
+  it("should return bond standing to be not repaid", async function () {
     const payeeBond = await bond.connect(payToAccount);
 
-    expect(await payeeBond.currentBondStanding()).to.be.equal(0);
+    expect(await payeeBond.currentBondStanding()).to.be.equal(
+      defaultBondStanding
+    );
+  });
+
+  it("should set bond standing to be repaid", async function () {
+    expect(await bond.currentBondStanding()).to.be.equal(defaultBondStanding);
+
+    await bond.setBondStanding(2);
+
+    expect(await bond.currentBondStanding()).to.be.equal(2);
+  });
+
+  it("should emit an event on setting bond standing", async function () {
+    expect(await bond.currentBondStanding()).to.be.equal(defaultBondStanding);
+
+    expect(await bond.setBondStanding(2))
+      .to.emit(bond, "BondStandingChange")
+      .withArgs(0, 2);
+  });
+
+  it("should only be called by owner", async function () {
+    const payeeBond = await bond.connect(payToAccount);
+
+    expect(payeeBond.setBondStanding(2)).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
   });
 
   // failing until hooked up with auction
-  it("should pay back bond and return correct repaid state", async function () {
+  it("should pay back bond and return correct repaid standing", async function () {
     // quick check to make sure payTo has a bond issued
     expect(await bond.balanceOf(payToAddress)).to.be.equal(bondShares);
 
     // and that it's not already paid off
-    expect(await bond.currentBondStanding()).to.be.equal(0);
+    expect(await bond.currentBondStanding()).to.be.equal(defaultBondStanding);
 
     // This should repay using auction contract
     // await auctionContract.repay(address)...
@@ -99,7 +127,9 @@ describe("SimpleBond", async () => {
     expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(bondShares);
 
     // and that it's not already paid off
-    expect(await payeeBond.currentBondStanding()).to.be.equal(0);
+    expect(await payeeBond.currentBondStanding()).to.be.equal(
+      defaultBondStanding
+    );
     // This should repay using auction contract
     // await auctionContract.repay(address)...
     expect(await payeeBond.currentBondStanding()).to.be.equal(2);
@@ -117,7 +147,13 @@ describe("SimpleBond", async () => {
     await ethers.provider.send("evm_mine", [maturityDate]);
 
     const currentBal = await payToAccount.getBalance();
-    await payeeBond.redeemBond(bondShares);
+    expect(await payeeBond.redeemBond(bondShares))
+      .to.emit(payeeBond, "Redeem")
+      .withArgs(bondShares);
+
+    expect(await bond.setBondStanding(2))
+      .to.emit(bond, "BondStandingChange")
+      .withArgs(0, 2);
 
     // This is failing, likely because sendTransaction isn't sending value in
     // a format it's expecting? not sure
