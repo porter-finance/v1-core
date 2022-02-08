@@ -9,7 +9,13 @@ const { loadFixture, deployContract } = waffle;
 const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
 
 describe("SimpleBond", async () => {
-  const defaultBondStanding = 0;
+  // will need updating from the contract if the enum changes
+  const BondStanding = {
+    GOOD: 0,
+    DEFAULTED: 1,
+    PAID: 2,
+    REDEEMED: 3,
+  };
 
   // 3 years from now, in seconds
   const maturityDate = Math.round(
@@ -82,30 +88,30 @@ describe("SimpleBond", async () => {
       const payeeBond = await bond.connect(payToAccount);
 
       expect(await payeeBond.currentBondStanding()).to.be.equal(
-        defaultBondStanding
+        BondStanding.GOOD
       );
     });
 
     it("should allow setter from owner", async function () {
-      expect(await bond.currentBondStanding()).to.be.equal(defaultBondStanding);
+      expect(await bond.currentBondStanding()).to.be.equal(BondStanding.GOOD);
 
-      await bond.setBondStanding(2);
+      await bond.setBondStanding(BondStanding.PAID);
 
-      expect(await bond.currentBondStanding()).to.be.equal(2);
+      expect(await bond.currentBondStanding()).to.be.equal(BondStanding.PAID);
     });
 
     it("should emit an event on setting", async function () {
-      expect(await bond.currentBondStanding()).to.be.equal(defaultBondStanding);
+      expect(await bond.currentBondStanding()).to.be.equal(BondStanding.GOOD);
 
-      expect(await bond.setBondStanding(2))
+      expect(await bond.setBondStanding(BondStanding.PAID))
         .to.emit(bond, "BondStandingChange")
-        .withArgs(0, 2);
+        .withArgs(BondStanding.GOOD, BondStanding.PAID);
     });
 
     it("should only set by owner", async function () {
       const payeeBond = await bond.connect(payToAccount);
 
-      expect(payeeBond.setBondStanding(2)).to.be.revertedWith(
+      expect(payeeBond.setBondStanding(BondStanding.PAID)).to.be.revertedWith(
         "Ownable: caller is not the owner"
       );
     });
@@ -116,11 +122,11 @@ describe("SimpleBond", async () => {
       expect(await bond.balanceOf(payToAddress)).to.be.equal(bondShares);
 
       // and that it's not already paid off
-      expect(await bond.currentBondStanding()).to.be.equal(defaultBondStanding);
+      expect(await bond.currentBondStanding()).to.be.equal(BondStanding.GOOD);
 
       // TODO: This should repay using auction contract
       // await auctionContract.repay(address)...
-      expect(await bond.currentBondStanding()).to.be.equal(2);
+      expect(await bond.currentBondStanding()).to.be.equal(BondStanding.PAID);
     });
   });
 
@@ -135,11 +141,13 @@ describe("SimpleBond", async () => {
 
       // and that it's not already paid off
       expect(await payeeBond.currentBondStanding()).to.be.equal(
-        defaultBondStanding
+        BondStanding.GOOD
       );
       // This should repay using auction contract
       // await auctionContract.repay(address)...
-      expect(await payeeBond.currentBondStanding()).to.be.equal(2);
+      expect(await payeeBond.currentBondStanding()).to.be.equal(
+        BondStanding.PAID
+      );
 
       // TODO: this should approve the token payment not the bond token?
       await payeeBond.approve(payToAddress, bondShares);
@@ -158,9 +166,9 @@ describe("SimpleBond", async () => {
         .to.emit(payeeBond, "Redeem")
         .withArgs(bondShares);
 
-      expect(await bond.setBondStanding(2))
+      expect(await bond.setBondStanding(BondStanding.PAID))
         .to.emit(bond, "BondStandingChange")
-        .withArgs(0, 2);
+        .withArgs(BondStanding.GOOD, BondStanding.PAID);
 
       // This is failing, likely because sendTransaction isn't sending value in
       // a format it's expecting? not sure
