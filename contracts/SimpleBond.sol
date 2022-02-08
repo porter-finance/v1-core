@@ -4,6 +4,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract SimpleBond is ERC20Burnable, Ownable, ReentrancyGuard {
+  /// @notice this would go into default if maturityDate passes and the loan contract has not been paid back
+  /// @notice to be set from the auction
   enum BondStanding {
     GOOD,
     DEFAULTED,
@@ -11,17 +13,14 @@ contract SimpleBond is ERC20Burnable, Ownable, ReentrancyGuard {
     REDEEMED
   }
 
-  event BondStatusChange(BondStanding oldStanding, BondStanding newStanding);
+  event BondStandingChange(BondStanding oldStanding, BondStanding newStanding);
   event Redeem(address receiver, uint256 amount);
 
   /// @notice this date is when the DAO must have repaid its debt
   /// @notice when bondholders can redeem their bonds
   uint256 public immutable maturityDate;
 
-  /// @notice this would go into default if maturityDate passes and the loan contract has not been paid back
-  /// @notice to be set from the auction
-
-  /// @notice holds address to bond standings
+  /// @notice holds address to bond standing
   BondStanding public currentBondStanding;
 
   /// @dev New bond contract will be deployed before each auction
@@ -49,10 +48,10 @@ contract SimpleBond is ERC20Burnable, Ownable, ReentrancyGuard {
   }
 
   /// @notice To be set after the auction ends
-  function setBondStanding(BondStanding standing) external onlyOwner {
-    emit BondStatusChange(currentBondStanding, standing);
+  function setBondStanding(BondStanding newStanding) external onlyOwner {
+    emit BondStandingChange(currentBondStanding, newStanding);
 
-    currentBondStanding = standing;
+    currentBondStanding = newStanding;
   }
 
   function redeemBond(uint256 bondShares) external nonReentrant {
