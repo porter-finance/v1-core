@@ -49,7 +49,8 @@ contract SimpleBond is
     string memory _name,
     string memory _symbol,
     uint256 _totalBondSupply,
-    uint256 _maturityDate
+    uint256 _maturityDate,
+    address _owner
   ) public initializer {
     require(_totalBondSupply > 0, "zeroMintAmount");
 
@@ -63,14 +64,11 @@ contract SimpleBond is
     __ERC20Burnable_init();
     __Ownable_init();
 
-    _mint(msg.sender, _totalBondSupply);
+    _mint(_owner, _totalBondSupply);
 
     maturityDate = _maturityDate;
+    _transferOwnership(_owner);
     currentBondStanding = BondStanding.GOOD;
-  }
-
-  function mint(address to, uint256 amount) public onlyOwner {
-    _mint(to, amount);
   }
 
   /// @notice To be set after the auction ends

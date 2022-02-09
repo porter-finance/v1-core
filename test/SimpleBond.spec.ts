@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { BondFactoryClone as BondFactoryCloneType } from "../typechain";
 import { SimpleBond as SimpleBondType } from "../typechain";
 
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
@@ -6,9 +7,9 @@ import { SimpleBond as SimpleBondType } from "../typechain";
 const { ethers, waffle } = require("hardhat");
 const { loadFixture, deployContract } = waffle;
 
-const SimpleBond = require("../artifacts/contracts/SimpleBond.sol/SimpleBond.json");
+const BondFactoryClone = require("../artifacts/contracts/BondFactoryClone.sol/BondFactoryClone.json");
 
-describe("SimpleBond", async () => {
+describe("BondFactoryClone", async () => {
   // will need updating from the contract if the enum changes
   const BondStanding = {
     GOOD: 0,
@@ -38,12 +39,29 @@ describe("SimpleBond", async () => {
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
   async function fixture() {
     const [wallet, other] = await ethers.getSigners();
-    bond = await deployContract(wallet, SimpleBond, [
+    const factory: BondFactoryCloneType = await deployContract(
+      wallet,
+      BondFactoryClone
+    );
+
+    initialAccount = await wallet.getAddress();
+
+    const tx1 = await factory.createBond(
       name,
       symbol,
       totalBondSupply,
       maturityDate,
-    ]);
+      initialAccount
+    );
+
+    const { gasUsed: createGasUsed, events } = await tx1.wait();
+    const { address } = (Array.isArray(events) && events[1]) || {};
+    const { interface: intt } = await ethers.getContractFactory("SimpleBond");
+    const instance = new ethers.Contract(address, intt, wallet);
+    bond = instance;
+
+    console.log(`${name}.createBond: ${createGasUsed.toString()}`);
+
     return { bond, wallet, other };
   }
 
