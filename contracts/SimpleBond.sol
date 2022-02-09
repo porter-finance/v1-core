@@ -15,10 +15,16 @@ contract SimpleBond is
   /// @notice this would go into default if maturityDate passes and the loan contract has not been paid back
   /// @notice to be set from the auction
   enum BondStanding {
+    // the auction completed
     GOOD,
+    // when maturity date passes and its unpaid
     DEFAULTED,
+    // after DAO pays
     PAID,
-    REDEEMED
+    // when 100% of bondholders have redeemed their bonds
+    REDEEMED,
+    // when something goes wrong and this contract becomes nullified
+    NULL
   }
 
   event BondStandingChange(BondStanding oldStanding, BondStanding newStanding);
