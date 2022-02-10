@@ -5,9 +5,7 @@ import { SimpleBond as SimpleBondType } from "../typechain";
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
 const { ethers, waffle } = require("hardhat");
-const { loadFixture, deployContract } = waffle;
-
-const BondFactoryClone = require("../artifacts/contracts/BondFactoryClone.sol/BondFactoryClone.json");
+const { loadFixture } = waffle;
 
 describe("BondFactoryClone", async () => {
   // will need updating from the contract if the enum changes
@@ -33,18 +31,20 @@ describe("BondFactoryClone", async () => {
   const name = "My Token";
   const symbol = "MTKN";
   let bond: SimpleBondType;
-  let initialAccount: any;
+  let initialAccount: string;
 
   // no args because of gh issue:
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
   async function fixture() {
-    const [wallet, other] = await ethers.getSigners();
-    const factory: BondFactoryCloneType = await deployContract(
-      wallet,
-      BondFactoryClone
+    const BondFactoryClone = await ethers.getContractFactory(
+      "BondFactoryClone"
     );
+    const factory = (await BondFactoryClone.deploy()) as BondFactoryCloneType;
+    const [owner, other] = await ethers.getSigners();
 
-    initialAccount = await wallet.getAddress();
+    initialAccount = owner.address;
+    payToAddress = other.address;
+    payToAccount = other;
 
     const tx1 = await factory.createBond(
       name,
@@ -54,22 +54,13 @@ describe("BondFactoryClone", async () => {
       initialAccount
     );
 
-    const { gasUsed: createGasUsed, events } = await tx1.wait();
+    const { events } = await tx1.wait();
     const { address } = (Array.isArray(events) && events[1]) || {};
-    const { interface: intt } = await ethers.getContractFactory("SimpleBond");
-    const instance = new ethers.Contract(address, intt, wallet);
-    bond = instance;
-
-    console.log(`${name}.createBond: ${createGasUsed.toString()}`);
-
-    return { bond, wallet, other };
+    bond = await ethers.getContractAt("SimpleBond", address, owner);
   }
 
   beforeEach(async () => {
-    const { wallet, other } = await loadFixture(fixture);
-    payToAccount = other;
-    initialAccount = await wallet.getAddress();
-    payToAddress = await other.getAddress();
+    await loadFixture(fixture);
 
     // Handing out some shares, should be done on the Auction level
     await bond.transfer(payToAddress, bondShares);
