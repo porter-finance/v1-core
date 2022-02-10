@@ -55,8 +55,14 @@ describe("BondFactoryClone", async () => {
     );
 
     const { events } = await tx1.wait();
-    const { address } = (Array.isArray(events) && events[1]) || {};
-    bond = await ethers.getContractAt("SimpleBond", address, owner);
+    console.log(events, "geczy");
+    const { args } = Array.isArray(events)
+      ? events.filter((e) => e?.event === "BondCreated")[0]
+      : {};
+
+    if (args[0]) {
+      bond = await ethers.getContractAt("SimpleBond", args[0], owner);
+    }
   }
 
   beforeEach(async () => {
