@@ -32,7 +32,7 @@ describe("BondFactoryClone", async () => {
   const name = "My Token";
   const symbol = "MTKN";
   let bond: SimpleBondType;
-  let initialAccount: string;
+  let ownerAddress: string;
 
   // no args because of gh issue:
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
@@ -41,18 +41,14 @@ describe("BondFactoryClone", async () => {
       "BondFactoryClone"
     );
     const factory = (await BondFactoryClone.deploy()) as BondFactoryCloneType;
-    const [owner, other] = await ethers.getSigners();
-
-    initialAccount = owner.address;
-    payToAddress = other.address;
-    payToAccount = other;
+    const [fixtureOwner, other] = await ethers.getSigners();
 
     const tx1 = await factory.createBond(
       name,
       symbol,
       totalBondSupply,
       maturityDate,
-      initialAccount
+      fixtureOwner.address
     );
 
     const [newBondAddress] = await getEventArgumentsFromTransaction(
@@ -60,19 +56,29 @@ describe("BondFactoryClone", async () => {
       "BondCreated"
     );
 
-    bond = await ethers.getContractAt("SimpleBond", newBondAddress, owner);
+    const fixtureBond = await ethers.getContractAt(
+      "SimpleBond",
+      newBondAddress,
+      fixtureOwner
+    );
+
+    // Handing out some shares, should be done on the Auction level
+    await fixtureBond.transfer(other.address, bondShares);
+
+    return { fixtureBond, fixtureOwner, other };
   }
 
   beforeEach(async () => {
-    await loadFixture(fixture);
-
-    // Handing out some shares, should be done on the Auction level
-    await bond.transfer(payToAddress, bondShares);
+    const { fixtureOwner, fixtureBond, other } = await loadFixture(fixture);
+    ownerAddress = fixtureOwner.address;
+    payToAddress = other.address;
+    payToAccount = other;
+    bond = fixtureBond;
   });
 
   describe("basic contract function", async () => {
     it("should have total supply less bond issuance in owner account", async function () {
-      expect(await bond.balanceOf(initialAccount)).to.be.equal(
+      expect(await bond.balanceOf(ownerAddress)).to.be.equal(
         totalBondSupply - bondShares
       );
 
@@ -80,7 +86,7 @@ describe("BondFactoryClone", async () => {
     });
 
     it("should be owner", async function () {
-      expect(await bond.owner()).to.be.equal(initialAccount);
+      expect(await bond.owner()).to.be.equal(ownerAddress);
     });
 
     it("should return total value for an account", async function () {
