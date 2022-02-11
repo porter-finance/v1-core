@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { BondFactoryClone as BondFactoryCloneType } from "../typechain";
 import { SimpleBond as SimpleBondType } from "../typechain";
+import { getEventArgumentsFromTransaction } from "./utilities";
 
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
@@ -54,15 +55,12 @@ describe("BondFactoryClone", async () => {
       initialAccount
     );
 
-    const { events } = await tx1.wait();
-    console.log(events, "geczy");
-    const { args } = Array.isArray(events)
-      ? events.filter((e) => e?.event === "BondCreated")[0]
-      : {};
+    const [newBondAddress] = await getEventArgumentsFromTransaction(
+      tx1,
+      "BondCreated"
+    );
 
-    if (args[0]) {
-      bond = await ethers.getContractAt("SimpleBond", args[0], owner);
-    }
+    bond = await ethers.getContractAt("SimpleBond", newBondAddress, owner);
   }
 
   beforeEach(async () => {
