@@ -88,9 +88,11 @@ TODO: Is it possible for the bonds to be sent to ABG instead?
 ## Allow multiple ways of selling bonds
 * Bonds should be decoupled from gnosis auction. Gnosis auction is just a mechanism for selling the bonds. They should be designed in a way where they could be sold directly to lenders - or through other means. 
 
-
 ## Supporting multiple collateral types
 * https://github.com/porter-finance/v1-core/issues/28
+
+## Use clone factory instead of normal factory for creating new BondTokens
+* https://github.com/porter-finance/v1-core/issues/15
 
 ## Upgradability strategy
  * https://github.com/porter-finance/v1-core/issues/40
