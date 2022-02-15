@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 import "./SimpleBond.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 
