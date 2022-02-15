@@ -3,9 +3,10 @@
 # Main contracts
 
 ## [Broker](./broker.md)
-* Initiates the Bond Auction
-
-### Auction 
+* `initateBondAuction()`
+* `withdrawCollateralAndBurnBonds()`
+  
+### Bond Auction 
 Borrowers have the option to use an auction to sell their bonds. The borrower sets the parameters of the auction then a gnosis auction is created.
 
 ## BondFactory
@@ -52,9 +53,28 @@ TODO: below needs rethought
 
 Bondholder tokens are not burnt on default - instead they are set to a `defaulted` state and are used to represent the debt still owed to the lenders.
 
+# Walkthrough (Draft, Incomplete)
+A DAO named AlwaysBeGrowing (ABG) would like to borrow some amount of money and repay 10m DAI in debt in one year. They configure the terms of the bond (convertability, collateral, maturity date)
 
+They call the BondFactory.createBond contract with `borrowingToken`, `convertibility`, `collateral`, `repaymentAmount, maturityDate`
+Let's use borrowingToken = DAI, convertibility = false, collateral = 1k ETH, repaymentAmount 10m, maturityDate=1year 
 
+The new bond contract is deployed, 10m bond tokens are minted and sent to our Broker contract.
+ABG now has a few options.
 
+* `withdrawCollateralAndBurnBonds` 100% of the bonds and withdraw their collateral
+* `initateBondAuction` Initiate a Gnosis auction 
+
+## Withdrawing collateral 
+Collateral can be withdrawn at any time up to an auction is initated. Collateral can also be withdrawn if an auction fails.
+
+If they choose to withdraw the collateral - the bonds will be burned and the collateral will be returned (should we self destruct the contract as well?)
+
+If they choose to initate a gnosis auction - the `Broker` will kick off the auction by calling Gnosis auction with the auction paramaters configured by ABG and the `borrowingToken`=DAI and sellingToken=BondToken 
+
+TODO: Watch @namaskars auction videos before filling out auction results
+
+TODO: Is it possible for the bonds to be sent to ABG instead?
 
 
 # Design Decisions 
