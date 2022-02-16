@@ -78,7 +78,7 @@ contract SimpleBond is
     currentBondStanding = newStanding;
   }
 
-  function redeemBond(uint256 bondShares) external onlyOwner nonReentrant {
+  function redeem(uint256 bondShares) external onlyOwner nonReentrant {
     require(bondShares > 0, "invalid amount");
     require(block.timestamp >= maturityDate, "bond still immature");
 
@@ -96,5 +96,27 @@ contract SimpleBond is
     }
 
     emit Redeem(msg.sender, bondShares);
+  }
+
+  function depositCollateral(address collateralToken, uint256 amount)
+    external
+    returns (bool success)
+  {
+    return true;
+  }
+
+  function redeemCollateral() external returns (bool success) {
+    success = true;
+  }
+
+  function repay() external returns (bool success) {
+    success = true;
+  }
+
+  function lockCollateral(address collateralAddress, uint256 collateralAmount)
+    external
+    returns (bool success)
+  {
+    success = true;
   }
 }
