@@ -181,7 +181,7 @@ describe("BondFactoryClone", async () => {
       await ethers.provider.send("evm_mine", [maturityDate]);
 
       const currentBal = await payToAccount.getBalance();
-      expect(await payeeBond.redeemBond(bondShares))
+      expect(await payeeBond.redeem(bondShares))
         .to.emit(payeeBond, "Redeem")
         .withArgs(bondShares);
 

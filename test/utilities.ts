@@ -1,9 +1,7 @@
 import { BigNumber, Contract, ContractTransaction, Event } from "ethers";
 import { use } from "chai";
 import { ethers } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BiddingToken } from "../typechain";
 
 export interface Price {
   priceNumerator: BigNumber;
@@ -50,13 +48,12 @@ export interface AuctionData {
 
 export interface BondData {
   bondContract: string;
-  maturityDate: BigNumber;
-  maturityValue: BigNumber;
 }
 
 export interface CollateralData {
   collateralAddress: string;
   collateralAmount: BigNumber;
+  bondAddress: string;
 }
 export const addDaysToNow = (days: number = 0) => {
   return BigNumber.from(
@@ -84,8 +81,6 @@ export const createAuctionWithDefaults = async (
   };
   const bondData: BondData = {
     bondContract: ethers.constants.AddressZero,
-    maturityDate: addDaysToNow(3),
-    maturityValue: BigNumber.from(1),
   };
 
   // act
@@ -107,22 +102,13 @@ export const createAuctionWithDefaults = async (
 };
 
 export const createAuction = async (
-  auctionData: AuctionData,
   signer: SignerWithAddress,
-  biddingToken: Contract,
-  collateralData: CollateralData,
-  broker: Contract
+  broker: Contract,
+  auctionData: AuctionData,
+  bondData: BondData
 ) => {
-  const bondData: BondData = {
-    bondContract: ethers.constants.AddressZero,
-    maturityDate: addDaysToNow(3),
-    maturityValue: BigNumber.from(1),
-  };
-
   // act
-  const tx = await broker
-    .connect(signer)
-    .createAuction(auctionData, bondData, collateralData);
+  const tx = await broker.connect(signer).createAuction(auctionData, bondData);
 
   await mineBlock(); // ⛏⛏⛏ Mining... ⛏⛏⛏
 
@@ -163,7 +149,7 @@ export async function placeOrders(
 
 export const createTokensAndMintAndApprove = async (
   gnosisAuction: Contract,
-  biddingToken: BiddingToken,
+  biddingToken: Contract,
   owner: SignerWithAddress,
   bidders: SignerWithAddress[]
 ): Promise<void> => {
@@ -211,7 +197,10 @@ export async function getEventArgumentsFromTransaction(
   eventName: string
 ): Promise<any> {
   const receipt = await tx.wait();
-  return receipt?.events?.find((e: Event) => e.event === eventName)?.args;
+  const args = receipt?.events?.find((e: Event) => e.event === eventName)?.args;
+  if (args) return args;
+  console.error(`No event with name ${eventName} found in transaction`);
+  return {};
 }
 
 declare global {

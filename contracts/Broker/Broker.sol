@@ -16,16 +16,15 @@
 └──────┘       └────────────┘ └────┘    └───┘     └────┘     └────┴───────┘ └────┘    └───┘
  */
 pragma solidity 0.8.9;
-pragma experimental ABIEncoderV2;
 
 // --- Import statements ---
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./PorterBond.sol";
-import "./CollateralToken.sol";
+import "./TestERC20.sol";
+import "../SimpleBond.sol";
 import "./interfaces/IGnosisAuction.sol";
+import "./interfaces/IBondFactoryClone.sol";
 import "hardhat/console.sol";
 
 // --- Interfaces ---
@@ -40,34 +39,30 @@ contract Broker is Ownable, ReentrancyGuard {
   // --- Type Declarations ---
   struct BondData {
     address bondContract;
-    uint256 maturityDate;
   }
 
   struct CollateralData {
+    address bondAddress;
     address collateralAddress;
     uint256 collateralAmount;
   }
 
+  struct Bond {
+    address bondContract;
+    uint256 maturityDate;
+  }
   // --- State Variables ---
-  IGnosisAuction public immutable gnosisAuction;
-
-  /// TODO: need to associate the collateral to the bond. Make a bond contract
-  /// @notice A mapping of stored collateral in the contract from depositCollateral
-  /// @dev address the bond issuer storing the collateral
-  /// @dev uint256 the address of the collateral token
-  /// @dev uint256 the amount of that collateral token locked
-  mapping(address => mapping(address => uint256)) public collateralInContract;
-
-  /// @notice When an auction begins, the collateral is moved from collateralInContract into this mapping
-  /// @dev uint256 auctionId is the id of the auction
-  /// @dev address the address of the collateral
-  /// @dev uint256 the amount of collateral
-  mapping(uint256 => mapping(address => uint256)) public collateralInAuction;
+  address public immutable gnosisAuctionAddress;
+  address public immutable bondFactoryAddress;
+  address[] public bondHolders;
 
   /// @notice The bond data for a specific auction
   /// @dev uint256 auctionId is the id of the auction
   /// @dev BondData the bond data
   mapping(uint256 => BondData) public auctionToBondData;
+
+  mapping(address => Bond[]) public issuerToBonds;
+  mapping(address => address) public bondToIssuer;
 
   // --- Events ---
   /// @notice A GnosisAuction is created with auction parameters
@@ -100,6 +95,31 @@ contract Broker is Ownable, ReentrancyGuard {
     uint256 collateralAmount
   );
 
+  event RepaymentDeposited(
+    address indexed borrower,
+    address indexed principalTokenAddress,
+    uint256 principalAmount
+  );
+
+  event RepaymentInFull(
+    address indexed borrower,
+    address indexed principalTokenAddress,
+    uint256 principalAmount
+  );
+
+  event Converted(
+    address indexed porterBondAddress,
+    uint256 indexed amountOfBondsConverted,
+    uint256 indexed amountOfCollateralReceived
+  );
+
+  event Redeemed(
+    address indexed porterBondAddress,
+    uint256 indexed amountOfBondsRedeemed,
+    uint256 indexed amountOfPrincipalReceived
+  );
+
+  event BondCreated(address newBond);
   // --- Errors ---
   error InadequateCollateralBalance(
     address collateralAddress,
@@ -124,16 +144,38 @@ contract Broker is Ownable, ReentrancyGuard {
 
   error NonZeroAuctionFee();
 
+  error BondAddressNotSet();
+
+  error UnauthorizedInteractionWithBond();
+
   // --- Modifiers ---
   using SafeERC20 for IERC20;
 
   // --- Functions ---
-  constructor(address gnosisAuctionAddress) {
-    console.log(
-      "Auction constructor\n\tauction address: %s",
-      gnosisAuctionAddress
+  constructor(address gnosisAuctionAddress_, address bondFactoryAddress_) {
+    gnosisAuctionAddress = gnosisAuctionAddress_;
+    bondFactoryAddress = bondFactoryAddress_;
+  }
+
+  function createBond(
+    string memory _name,
+    string memory _symbol,
+    uint256 _totalBondSupply,
+    uint256 _maturityDate
+  ) external {
+    address bond = IBondFactoryClone(bondFactoryAddress).createBond(
+      _name,
+      _symbol,
+      _totalBondSupply,
+      _maturityDate,
+      address(this)
     );
-    gnosisAuction = IGnosisAuction(gnosisAuctionAddress);
+    issuerToBonds[msg.sender].push(Bond(bond, _maturityDate));
+    bondToIssuer[bond] = msg.sender;
+    if (issuerToBonds[msg.sender].length == 0) {
+      bondHolders.push(msg.sender);
+    }
+    emit BondCreated(bond);
   }
 
   /// @notice Transfer collateral from the caller to the auction. The collateral is stored in the auction.
@@ -141,28 +183,20 @@ contract Broker is Ownable, ReentrancyGuard {
   /// @dev Required msg.sender to have adequate balance, and the transfer to be successful (returns true).
   /// @param collateralData is a struct containing the address of the collateral and the value of the collateral
   function depositCollateral(CollateralData memory collateralData) external {
-    IERC20 collateralToken = CollateralToken(collateralData.collateralAddress);
-    if (
-      collateralToken.balanceOf(msg.sender) < collateralData.collateralAmount
-    ) {
-      revert InadequateCollateralBalance(
-        collateralData.collateralAddress,
-        collateralData.collateralAmount
-      );
+    // After a successul transfer, set collateral in bond contract
+    if (collateralData.bondAddress == address(0)) {
+      revert BondAddressNotSet();
     }
-    collateralToken.safeTransferFrom(
-      msg.sender,
-      address(this),
+    if (bondToIssuer[collateralData.bondAddress] != msg.sender) {
+      revert UnauthorizedInteractionWithBond();
+    }
+    SimpleBond(collateralData.bondAddress).depositCollateral(
+      collateralData.collateralAddress,
       collateralData.collateralAmount
     );
-    // After a successul transfer, set the mapping of the sender of the collateral
-    collateralInContract[msg.sender][
-      collateralData.collateralAddress
-    ] += collateralData.collateralAmount;
-
     emit CollateralDeposited(
       msg.sender,
-      address(collateralToken),
+      collateralData.collateralAddress,
       collateralData.collateralAmount
     );
   }
@@ -170,34 +204,34 @@ contract Broker is Ownable, ReentrancyGuard {
   /// @notice After a bond has matured AND the issuer has returned the auctioningToken, the issuer can redeem the collateral.
   /// @dev Required timestamp to be later than bond maturity timestamp.
   /// @dev Required bond to have been repaid.
-  /// @param auctionId the ID of the auction containing the collateral
-  /// @param collateralAddress the address of the collateral
-  function redeemCollateralFromAuction(
-    uint256 auctionId,
-    address collateralAddress
-  ) external {
-    IERC20 collateralToken = CollateralToken(collateralAddress);
+  /// @param bondAddress todo
+  function redeemCollateral(address bondAddress) external {
+    SimpleBond bond = SimpleBond(bondAddress);
 
-    uint256 collateralAmount = collateralInAuction[auctionId][
-      collateralAddress
-    ];
+    bond.redeemCollateral();
 
-    BondData memory bondData = auctionToBondData[auctionId];
+    emit CollateralRedeemed(msg.sender, address(bondAddress), 0);
+  }
 
-    if (block.timestamp < bondData.maturityDate) {
-      revert MaturityDateNotReached(block.timestamp, bondData.maturityDate);
+  function repayBond(address bondAddress, uint256 principalAmount) external {
+    SimpleBond bond = SimpleBond(bondAddress);
+    bond.repay();
+    if (
+      false /*bond.isRepaid()*/
+    ) {
+      emit RepaymentInFull(msg.sender, address(bond), principalAmount);
+    } else {
+      emit RepaymentDeposited(msg.sender, address(0), principalAmount);
     }
+  }
 
-    // Set collateral to zero here to prevent double redemption
-    collateralInAuction[auctionId][collateralAddress] = 0;
-    if (!collateralToken.transfer(msg.sender, collateralAmount)) {
-      revert TransferCollateralFailed();
-    }
-
-    emit CollateralRedeemed(
-      msg.sender,
-      address(collateralToken),
-      collateralAmount
+  function redeem(address bondAddress, uint256 bondsToBeRedeemed) external {
+    SimpleBond bond = SimpleBond(bondAddress);
+    bond.redeem(bondsToBeRedeemed);
+    emit Redeemed(
+      bondAddress,
+      bondsToBeRedeemed,
+      0 /* principalAmountReceived*/
     );
   }
 
@@ -208,54 +242,30 @@ contract Broker is Ownable, ReentrancyGuard {
   /// @notice collateral must be deposited before the auction is created
   /// @param auctionData the auction data
   /// @param bondData the bond data
-  /// @param collateralData the collateral data
   /// @return auctionId the id of the auction
   function createAuction(
     AuctionType.AuctionData memory auctionData,
-    BondData memory bondData,
-    CollateralData memory collateralData
+    BondData memory bondData
   ) external returns (uint256 auctionId) {
-    // only create auction if there is no fee (will need to redeploy contract in this case)
-    // NOTE: To be more flexible, a possibly non-zero argument can be passed and checked against the auction fee
-    if (gnosisAuction.feeNumerator() > 0) {
+    // only create auction if there is no fee: gnosis says it won't add one https://github.com/gnosis/ido-contracts/issues/143
+    if (IGnosisAuction(gnosisAuctionAddress).feeNumerator() > 0) {
       revert NonZeroAuctionFee();
     }
+    SimpleBond auctioningToken = SimpleBond(bondData.bondContract);
     if (
-      collateralInContract[msg.sender][collateralData.collateralAddress] <
-      collateralData.collateralAmount
-    ) {
-      revert InsufficientCollateralInContract(
-        collateralData.collateralAddress,
-        collateralData.collateralAmount
-      );
-    }
-    if (
-      bondData.maturityDate < block.timestamp ||
-      bondData.maturityDate < auctionData.auctionEndDate
+      auctioningToken.maturityDate() < block.timestamp ||
+      auctioningToken.maturityDate() < auctionData.auctionEndDate
     ) {
       revert InvalidMaturityDate(
-        bondData.maturityDate,
+        auctioningToken.maturityDate(),
         auctionData.auctionEndDate
       );
     }
 
-    // Remove collateral from contract mapping before creating the auction
-    collateralInContract[msg.sender][
-      collateralData.collateralAddress
-    ] -= collateralData.collateralAmount;
-
-    // TODO: use the passed in bondContract to create this?
-    // IERC20 auctioningToken = IERC20(bondContract);
-    IERC20 auctioningToken = new PorterBond(
-      "Porter Bond",
-      "PorterBond",
-      auctionData._auctionedSellAmount
-    );
-
     // Approve the auction to transfer all the tokens
     if (
       !auctioningToken.approve(
-        address(gnosisAuction),
+        gnosisAuctionAddress,
         auctionData._auctionedSellAmount
       )
     ) {
@@ -270,11 +280,6 @@ contract Broker is Ownable, ReentrancyGuard {
     // set the bond data
     auctionToBondData[auctionId] = bondData;
 
-    // Add collateral to the auction
-    collateralInAuction[auctionId][
-      collateralData.collateralAddress
-    ] += collateralData.collateralAmount;
-
     emit AuctionCreated(msg.sender, auctionId, address(auctioningToken));
   }
 
@@ -284,12 +289,12 @@ contract Broker is Ownable, ReentrancyGuard {
   /// @param auctionData the auction data
   function initiateAuction(
     AuctionType.AuctionData memory auctionData,
-    IERC20 auctioningToken
+    SimpleBond auctioningToken
   ) internal returns (uint256 auctionId) {
     console.log("Broker/initiateAuction");
     // Create a new GnosisAuction
-    auctionId = gnosisAuction.initiateAuction(
-      auctioningToken,
+    auctionId = IGnosisAuction(gnosisAuctionAddress).initiateAuction(
+      IERC20(address(auctioningToken)),
       auctionData._biddingToken,
       auctionData.orderCancellationEndDate,
       auctionData.auctionEndDate,
