@@ -28,6 +28,33 @@ contract SimpleBond is
   }
 
   event BondStandingChange(BondStanding oldStanding, BondStanding newStanding);
+
+  /// @notice emitted when a collateral is deposited for a bond
+  /// @param collateralDepositor the address of the caller of the deposit
+  /// @param amount the number of the tokens being deposited
+  event CollateralDeposited(
+    address indexed collateralDepositor,
+    uint256 amount
+  );
+
+  /// @notice emitted when a bond's issuer withdraws collateral
+  /// @param amount the number of the tokens withdrawn
+  event CollateralWithdrawn(uint256 amount);
+
+  /// @notice emitted when a portion of the bond's principal is paid back
+  event RepaymentDeposited(address indexed repaymentDepositor, uint256 amount);
+
+  /// @notice emitted when all of the bond's principal is paid back
+  event RepaymentInFull(address indexed repaymentDepositor, uint256 amount);
+
+  /// @notice emitted when bond tokens are converted by a borrower
+  event Converted(
+    address indexed convertorAddress,
+    uint256 amountOfBondsConverted,
+    uint256 amountOfCollateralReceived
+  );
+
+  /// @notice 
   event Redeem(address receiver, uint256 amount);
 
   /// @notice this date is when the DAO must have repaid its debt
@@ -78,6 +105,39 @@ contract SimpleBond is
     currentBondStanding = newStanding;
   }
 
+  /// @notice Deposit collateral into bond contract
+  /// @param amount the amount of collateral to deposit
+  function collateralize(uint256 amount) external {
+    // After a successul transfer, set collateral in bond contract
+    emit CollateralDeposited(msg.sender, amount);
+  }
+
+  /// @notice Withdraw collateral from bond contract
+  /// @notice After a bond has matured AND the issuer has returned the principal, the issuer can redeem the collateral.
+  /// @notice The amount of collateral available to be withdrawn depends on the collateralization ratio
+  /// @param amount the amount of collateral to withdraw
+  function uncollateralize(uint256 amount) external {
+    // After a successul transfer, set collateral in bond contract
+    emit CollateralWithdrawn(amount);
+  }
+
+  /// @notice Bond holder can convert their bond to underlying collateral
+  /// @notice The bond must be convertible and not repaid
+  function convert(uint256 amount) external {
+    emit Converted(msg.sender, amount, amount);
+  }
+
+  /// @notice Issuer can deposit repayment into the bond contract to repay the principal
+  function repay(uint256 amount) external {
+    if (
+      false /*bond.isRepaid()*/
+    ) {
+      emit RepaymentInFull(msg.sender, amount);
+    } else {
+      emit RepaymentDeposited(msg.sender, amount);
+    }
+  }
+
   function redeem(uint256 bondShares) external onlyOwner nonReentrant {
     require(bondShares > 0, "invalid amount");
     require(block.timestamp >= maturityDate, "bond still immature");
@@ -98,25 +158,6 @@ contract SimpleBond is
     emit Redeem(msg.sender, bondShares);
   }
 
-  function depositCollateral(address collateralToken, uint256 amount)
-    external
-    returns (bool success)
-  {
-    return true;
-  }
-
-  function redeemCollateral() external returns (bool success) {
-    success = true;
-  }
-
-  function repay() external returns (bool success) {
-    success = true;
-  }
-
-  function lockCollateral(address collateralAddress, uint256 collateralAmount)
-    external
-    returns (bool success)
-  {
-    success = true;
-  }
+  // TODO: on auction fail or ending, burn remaining tokens feeAmount.mul(fillVolumeOfAuctioneerOrder).div(
+  // TODO: on return of principle, check that principle == total supply of bond token
 }

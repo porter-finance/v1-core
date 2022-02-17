@@ -198,4 +198,28 @@ describe("BondFactoryClone", async () => {
       expect(await payeeBond.currentBondStanding()).to.be.equal(3);
     });
   });
+  describe("collateralization", async () => {
+    it("deposits collateral", async () => {
+      const { collateralAmount } = await getEventArgumentsFromTransaction(
+        await bond.collateralize(100),
+        "CollateralDeposited"
+      );
+      expect(collateralAmount).to.equal(100);
+    });
+    it("bars unauthorized access", async () => {
+      // check revert from non-bond signer
+      await expect(bond.connect(payToAccount).collateralize(100)).to.be
+        .reverted;
+
+      // check revert with specific error name
+      await expect(
+        bond.connect(payToAccount).collateralize(100)
+      ).to.be.revertedWith("UnauthorizedInteractionWithBond");
+
+      // check revert with specific arguments
+      await expect(
+        bond.connect(payToAccount).collateralize(100)
+      ).to.be.revertedWithArgs("UnauthorizedInteractionWithBond");
+    });
+  });
 });

@@ -121,42 +121,11 @@ describe("Broker", async () => {
       accessManagerContractData: ethers.utils.arrayify("0x00"),
     };
 
-    const bondData: BondData = {
-      bondContract: newBond,
-    };
     const currentAuction = parseInt(await gnosisAuction.auctionCounter());
-    const { auctionId } = await createAuction(
-      brokerSigner,
-      broker,
-      auctionData,
-      bondData
-    );
+    const { auctionId } = await createAuction(broker, auctionData, newBond);
     expect(auctionId).to.be.equal(currentAuction + 1);
   });
   it("creates a bond through the deployed clone factory", async () => {
     expect(newBond).to.not.be.eq(null);
-  });
-  it("deposits collateral", async () => {
-    collateralData.bondAddress = newBond;
-    const { collateralAmount } = await getEventArgumentsFromTransaction(
-      await broker.depositCollateral(collateralData),
-      "CollateralDeposited"
-    );
-    expect(collateralAmount).to.equal(collateralData.collateralAmount);
-  });
-  it("bars unauthorized access", async () => {
-    // check revert from non-broker signer
-    await expect(broker.connect(issuerSigner).depositCollateral(collateralData))
-      .to.be.reverted;
-
-    // check revert with specific error name
-    await expect(
-      broker.connect(issuerSigner).depositCollateral(collateralData)
-    ).to.be.revertedWith("UnauthorizedInteractionWithBond");
-
-    // check revert with specific arguments
-    await expect(
-      broker.connect(issuerSigner).depositCollateral(collateralData)
-    ).to.be.revertedWithArgs("UnauthorizedInteractionWithBond");
   });
 });
