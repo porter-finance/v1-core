@@ -103,11 +103,14 @@ export const createAuctionWithDefaults = async (
 
 export const createAuction = async (
   broker: Contract,
+  auctioneer: SignerWithAddress,
   auctionData: AuctionData,
   bondAddress: string
 ) => {
   // act
-  const tx = await broker.createAuction(auctionData, bondAddress);
+  const tx = await broker
+    .connect(auctioneer)
+    .createAuction(auctionData, bondAddress);
 
   await mineBlock(); // ⛏⛏⛏ Mining... ⛏⛏⛏
 

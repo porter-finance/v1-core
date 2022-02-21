@@ -25,6 +25,7 @@ describe("Broker", async () => {
   let brokerSigner: SignerWithAddress;
   // address of the example DAO which configures and runs the auction
   let issuerSigner: SignerWithAddress;
+  let eveSigner: SignerWithAddress;
   let broker: Broker;
   let gnosisAuction: Contract;
   let collateralToken: TestERC20;
@@ -57,7 +58,7 @@ describe("Broker", async () => {
       collateralAmount: ethers.utils.parseEther("100"),
       bondAddress: ethers.constants.AddressZero,
     };
-    [brokerSigner, issuerSigner] = await ethers.getSigners();
+    [brokerSigner, issuerSigner, eveSigner] = await ethers.getSigners();
 
     // Mint 100 ether of tokens of collateral for issuerSigner
     const CollateralToken = await ethers.getContractFactory("TestERC20");
@@ -130,8 +131,31 @@ describe("Broker", async () => {
     };
 
     const currentAuction = parseInt(await gnosisAuction.auctionCounter());
-    const { auctionId } = await createAuction(broker, auctionData, newBond);
+    const { auctionId } = await createAuction(
+      broker,
+      issuerSigner,
+      auctionData,
+      newBond
+    );
     expect(auctionId).to.be.equal(currentAuction + 1);
+  });
+  it("bars unauthorized auctioneer", async () => {
+    const auctionData: AuctionData = {
+      _biddingToken: newBond,
+      orderCancellationEndDate: addDaysToNow(1),
+      auctionEndDate: addDaysToNow(2),
+      _auctionedSellAmount: BigNumber.from(totalBondSupply),
+      _minBuyAmount: ethers.utils.parseEther("1"),
+      minimumBiddingAmountPerOrder: ethers.utils.parseEther(".01"),
+      minFundingThreshold: ethers.utils.parseEther("30"),
+      isAtomicClosureAllowed: false,
+      accessManagerContract: ethers.constants.AddressZero,
+      accessManagerContractData: ethers.utils.arrayify("0x00"),
+    };
+
+    await expect(
+      createAuction(broker, eveSigner, auctionData, newBond)
+    ).to.be.revertedWith("UnauthorizedInteractionWithBond");
   });
   it("creates a bond through the deployed clone factory", async () => {
     expect(newBond).to.not.be.eq(null);

@@ -78,6 +78,13 @@ contract Broker is Ownable, ReentrancyGuard {
 
   using SafeERC20 for IERC20;
 
+  modifier isIssuer(address bond) {
+    if (bondToIssuer[bond] != msg.sender) {
+      revert UnauthorizedInteractionWithBond();
+    }
+    _;
+  }
+
   constructor(address gnosisAuctionAddress_, address bondFactoryAddress_) {
     gnosisAuctionAddress = gnosisAuctionAddress_;
     bondFactoryAddress = bondFactoryAddress_;
@@ -94,7 +101,6 @@ contract Broker is Ownable, ReentrancyGuard {
     bool _isConvertible,
     address _borrowingAddress,
     uint256 _repaymentAmount
-
   ) external {
     address bond = IBondFactoryClone(bondFactoryAddress).createBond(
       _name,
@@ -130,7 +136,7 @@ contract Broker is Ownable, ReentrancyGuard {
   function createAuction(
     AuctionType.AuctionData memory auctionData,
     address bondAddress
-  ) external returns (uint256 auctionId) {
+  ) external isIssuer(bondAddress) returns (uint256 auctionId) {
     // only create auction if there is no fee: gnosis says it won't add one https://github.com/gnosis/ido-contracts/issues/143
     if (IGnosisAuction(gnosisAuctionAddress).feeNumerator() > 0) {
       revert NonZeroAuctionFee();
