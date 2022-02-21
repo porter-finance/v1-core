@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers";
 import { expect } from "chai";
 import { BondFactoryClone as BondFactoryCloneType } from "../typechain";
 import { SimpleBond as SimpleBondType } from "../typechain";
@@ -48,7 +49,12 @@ describe("BondFactoryClone", async () => {
       symbol,
       totalBondSupply,
       maturityDate,
-      fixtureOwner.address
+      fixtureOwner.address,
+      ethers.constants.AddressZero,
+      BigNumber.from(150),
+      false,
+      ethers.constants.AddressZero,
+      BigNumber.from(1250)
     );
 
     const [newBondAddress] = await getEventArgumentsFromTransaction(

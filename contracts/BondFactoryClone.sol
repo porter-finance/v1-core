@@ -16,7 +16,12 @@ contract BondFactoryClone {
     string memory _symbol,
     uint256 _totalBondSupply,
     uint256 _maturityDate,
-    address _owner
+    address _owner,
+    address _collateralAddress,
+    uint256 _collateralizationRatio,
+    bool _isConvertible,
+    address _borrowingAddress,
+    uint256 _repaymentAmount
   ) external returns (address) {
     address clone = Clones.clone(tokenImplementation);
     SimpleBond(clone).initialize(
@@ -24,7 +29,12 @@ contract BondFactoryClone {
       _symbol,
       _totalBondSupply,
       _maturityDate,
-      _owner
+      _owner,
+      _collateralAddress,
+      _collateralizationRatio,
+      _isConvertible,
+      _borrowingAddress,
+      _repaymentAmount
     );
     emit BondCreated(clone);
     return clone;

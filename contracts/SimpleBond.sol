@@ -54,12 +54,17 @@ contract SimpleBond is
     uint256 amountOfCollateralReceived
   );
 
-  /// @notice 
+  /// @notice
   event Redeem(address receiver, uint256 amount);
 
   /// @notice this date is when the DAO must have repaid its debt
   /// @notice when bondholders can redeem their bonds
   uint256 public maturityDate;
+  address public collateralAddress;
+  uint256 public collateralizationRatio;
+  bool public isConvertible;
+  address public borrowingAddress;
+  uint256 public repaymentAmount;
 
   /// @notice holds address to bond standing
   BondStanding public currentBondStanding;
@@ -77,7 +82,12 @@ contract SimpleBond is
     string memory _symbol,
     uint256 _totalBondSupply,
     uint256 _maturityDate,
-    address _owner
+    address _owner,
+    address _collateralAddress,
+    uint256 _collateralizationRatio,
+    bool _isConvertible,
+    address _borrowingAddress,
+    uint256 _repaymentAmount
   ) public initializer {
     require(_totalBondSupply > 0, "zeroMintAmount");
 
@@ -94,6 +104,12 @@ contract SimpleBond is
     _mint(_owner, _totalBondSupply);
 
     maturityDate = _maturityDate;
+    collateralAddress = _collateralAddress;
+    collateralizationRatio = _collateralizationRatio;
+    isConvertible = _isConvertible;
+    borrowingAddress = _borrowingAddress;
+    repaymentAmount = _repaymentAmount;
+
     _transferOwnership(_owner);
     currentBondStanding = BondStanding.GOOD;
   }

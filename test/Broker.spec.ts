@@ -93,7 +93,12 @@ describe("Broker", async () => {
           symbol,
           totalBondSupply,
           maturityDate,
-          issuerSigner.address
+          issuerSigner.address,
+          collateralData.collateralAddress,
+          BigNumber.from(150),
+          false,
+          collateralData.collateralAddress, // TODO: make borrowing token
+          collateralData.collateralAmount // TODO: make borrowing amount
         ),
         "BondCreated"
       );
