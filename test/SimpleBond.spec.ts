@@ -1,9 +1,10 @@
 import { BigNumber } from "ethers";
 import { expect } from "chai";
-import { BondFactoryClone as BondFactoryCloneType } from "../typechain";
-import { SimpleBond as SimpleBondType } from "../typechain";
-import { getEventArgumentsFromTransaction } from "./utilities";
+import { TestERC20 } from "../typechain";
+import { SimpleBond } from "../typechain";
+import { CollateralData, getEventArgumentsFromTransaction } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { bondFactoryFixture, collateralTokenFixture } from "./shared/fixtures";
 
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
@@ -28,34 +29,33 @@ describe("BondFactoryClone", async () => {
   // A realistic number for this is like 2m
   const totalBondSupply = 12500;
   const bondShares = 1000;
-  let payToAccount: any;
-  let payToAddress: any;
 
   const name = "My Token";
   const symbol = "MTKN";
-  let bond: SimpleBondType;
-  let factoryOwner: SignerWithAddress;
+  let bond: SimpleBond;
+  let owner: SignerWithAddress;
   let issuer: SignerWithAddress;
   let payee: SignerWithAddress;
   let eve: SignerWithAddress;
+  let collateralData: CollateralData;
+  let collateralToken: TestERC20;
 
   // no args because of gh issue:
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
   async function fixture() {
-    const BondFactoryClone = await ethers.getContractFactory(
-      "BondFactoryClone"
-    );
-    const factory = (await BondFactoryClone.deploy()) as BondFactoryCloneType;
-    const [factoryOwner, issuer, payee, eve] = await ethers.getSigners();
+    const { factory } = await bondFactoryFixture();
+    ({ collateralData, collateralToken } = await collateralTokenFixture());
+
+    const [owner, issuer] = await ethers.getSigners();
 
     const tx1 = await factory.createBond(
       name,
       symbol,
       totalBondSupply,
       maturityDate,
-      factoryOwner.address,
+      owner.address,
       issuer.address,
-      ethers.constants.AddressZero,
+      collateralData.collateralAddress,
       BigNumber.from(150),
       false,
       ethers.constants.AddressZero,
@@ -70,52 +70,50 @@ describe("BondFactoryClone", async () => {
     const bond = await ethers.getContractAt(
       "SimpleBond",
       newBondAddress,
-      factoryOwner
+      owner
     );
 
     // Handing out some shares, should be done on the Auction level
     await bond.transfer(issuer.address, bondShares);
 
-    return { bond, factoryOwner, issuer, payee, eve };
+    return { bond };
   }
 
   beforeEach(async () => {
-    ({ factoryOwner, bond, issuer, payee, eve } = await loadFixture(fixture));
-    payToAddress = issuer.address;
-    payToAccount = payee.address;
+    [owner, issuer, payee, eve] = await ethers.getSigners();
+    ({ bond } = await loadFixture(fixture));
   });
 
   describe("basic contract function", async () => {
     it("should have total supply less bond issuance in owner account", async function () {
-      expect(await bond.balanceOf(factoryOwner.address)).to.be.equal(
+      expect(await bond.balanceOf(owner.address)).to.be.equal(
         totalBondSupply - bondShares
       );
-
-      expect(await bond.balanceOf(payToAddress)).to.be.equal(bondShares);
+    });
+    it("should have bond issuance in issuer address", async function () {
+      expect(await bond.balanceOf(issuer.address)).to.be.equal(bondShares);
     });
 
     it("should be owner", async function () {
-      expect(await bond.owner()).to.be.equal(factoryOwner.address);
+      expect(await bond.owner()).to.be.equal(owner.address);
     });
 
     it("should return total value for an account", async function () {
-      const payeeBond = await bond.connect(payToAccount);
-
-      expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(bondShares);
+      expect(await bond.connect(payee).balanceOf(issuer.address)).to.be.equal(
+        bondShares
+      );
     });
 
     it("should return payment due date", async function () {
-      const payeeBond = await bond.connect(payToAccount);
-
-      expect(await payeeBond.maturityDate()).to.be.equal(maturityDate);
+      expect(await bond.connect(payee).maturityDate()).to.be.equal(
+        maturityDate
+      );
     });
   });
 
   describe("bond standing", async () => {
     it("should be default to GOOD", async function () {
-      const payeeBond = await bond.connect(payToAccount);
-
-      expect(await payeeBond.currentBondStanding()).to.be.equal(
+      expect(await bond.connect(payee).currentBondStanding()).to.be.equal(
         BondStanding.GOOD
       );
     });
@@ -147,7 +145,7 @@ describe("BondFactoryClone", async () => {
     // failing until hooked up with auction
     it("should repay and return REPAID", async function () {
       // quick check to make sure payTo has a bond issued
-      expect(await bond.balanceOf(payToAddress)).to.be.equal(bondShares);
+      expect(await bond.balanceOf(issuer.address)).to.be.equal(bondShares);
 
       // and that it's not already paid off
       expect(await bond.currentBondStanding()).to.be.equal(BondStanding.GOOD);
@@ -162,10 +160,10 @@ describe("BondFactoryClone", async () => {
     // failing until hooked up with auction
     it("should redeem bond at maturity", async function () {
       // Connect the pay account to this contract
-      const payeeBond = bond.connect(payToAccount);
+      const payeeBond = bond.connect(payee);
 
       // quick check to make sure payTo has a bond issued
-      expect(await payeeBond.balanceOf(payToAddress)).to.be.equal(bondShares);
+      expect(await payeeBond.balanceOf(issuer.address)).to.be.equal(bondShares);
 
       // and that it's not already paid off
       expect(await payeeBond.currentBondStanding()).to.be.equal(
@@ -178,10 +176,10 @@ describe("BondFactoryClone", async () => {
       );
 
       // TODO: this should approve the token payment not the bond token?
-      await payeeBond.approve(payToAddress, bondShares);
+      await payeeBond.approve(issuer.address, bondShares);
 
       // Pays 1:1 to the bond token
-      await payToAccount.sendTransaction({
+      await payee.sendTransaction({
         to: payeeBond.address,
         value: bondShares,
       });
@@ -189,7 +187,7 @@ describe("BondFactoryClone", async () => {
       // Fast forward to expire
       await ethers.provider.send("evm_mine", [maturityDate]);
 
-      const currentBal = await payToAccount.getBalance();
+      const currentBal = await payee.getBalance();
       expect(await payeeBond.redeem(bondShares))
         .to.emit(payeeBond, "Redeem")
         .withArgs(bondShares);
@@ -200,13 +198,26 @@ describe("BondFactoryClone", async () => {
 
       // This is failing, likely because sendTransaction isn't sending value in
       // a format it's expecting? not sure
-      expect(await payToAccount.getBalance()).to.be.equal(
-        currentBal.add(bondShares)
-      );
+      expect(await payee.getBalance()).to.be.equal(currentBal.add(bondShares));
 
       expect(await payeeBond.currentBondStanding()).to.be.equal(3);
     });
   });
+
+  describe("collateralize", async () => {
+    it("deposits collateral", async () => {
+      const amountToDeposit = 1000;
+      await collateralToken
+        .connect(issuer)
+        .approve(bond.address, amountToDeposit);
+      const { amount } = await getEventArgumentsFromTransaction(
+        await bond.connect(issuer).collateralize(amountToDeposit),
+        "CollateralDeposited"
+      );
+      expect(amount).to.be.equal(amountToDeposit);
+    });
+  });
+
   describe("repayment", async () => {
     it("deposits repayment", async () => {
       const { amount } = await getEventArgumentsFromTransaction(

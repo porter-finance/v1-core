@@ -4,6 +4,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20Burnable
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract SimpleBond is
   Initializable,
@@ -59,7 +60,7 @@ contract SimpleBond is
   /// @notice
   event Redeem(address receiver, uint256 amount);
 
-  modifier onlyIssuer {
+  modifier onlyIssuer() {
     if (issuer != msg.sender) {
       revert OnlyIssuerOfBondMayCallThisFunction();
     }
@@ -137,6 +138,7 @@ contract SimpleBond is
   /// @param amount the amount of collateral to deposit
   function collateralize(uint256 amount) external {
     // After a successul transfer, set collateral in bond contract
+    IERC20(collateralAddress).transferFrom(msg.sender, address(this), amount);
     emit CollateralDeposited(msg.sender, amount);
   }
 
@@ -152,6 +154,7 @@ contract SimpleBond is
   /// @notice Bond holder can convert their bond to underlying collateral
   /// @notice The bond must be convertible and not repaid
   function convert(uint256 amount) external {
+    // todo: separate collateral for conversion and for principal
     emit Converted(msg.sender, amount, amount);
   }
 

@@ -10,15 +10,10 @@ import {
   getEventArgumentsFromTransaction,
   useCustomErrorMatcher,
 } from "./utilities";
-import type { BondFactoryClone, Broker } from "../typechain";
-import { TestERC20 } from "../typechain/TestERC20";
+import type { Broker } from "../typechain";
+import { brokerFixture } from "./shared/fixtures";
 const { loadFixture } = waffle;
 
-const EasyAuctionJSON = require("../contracts/external/EasyAuction.json");
-
-const GNOSIS_AUCTION_ADDRESS = {
-  mainnet: "0x0b7ffc1f4ad541a4ed16b40d8c37f0929158d101",
-};
 useCustomErrorMatcher();
 describe("Broker", async () => {
   // default deployer address of contracts
@@ -28,65 +23,20 @@ describe("Broker", async () => {
   let eveSigner: SignerWithAddress;
   let broker: Broker;
   let gnosisAuction: Contract;
-  let collateralToken: TestERC20;
   let collateralData: CollateralData;
   const totalBondSupply = 12500;
 
   const name = "My Token";
   const symbol = "MTKN";
   let newBond: string;
-
-  let factory: BondFactoryClone;
   // 3 years from now, in seconds
   const maturityDate = Math.round(
     new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
       1000
   );
 
-  // TODO: allow reuse across test files by importing these fixtures from a fixture file.
-  async function bondFactoryFixture() {
-    const BondFactoryClone = await ethers.getContractFactory(
-      "BondFactoryClone"
-    );
-    const factory = (await BondFactoryClone.deploy()) as BondFactoryClone;
-
-    return { factory };
-  }
-  async function collateralTokenFixture() {
-    collateralData = {
-      collateralAddress: ethers.constants.AddressZero,
-      collateralAmount: ethers.utils.parseEther("100"),
-      bondAddress: ethers.constants.AddressZero,
-    };
-    [brokerSigner, issuerSigner, eveSigner] = await ethers.getSigners();
-
-    // Mint 100 ether of tokens of collateral for issuerSigner
-    const CollateralToken = await ethers.getContractFactory("TestERC20");
-    collateralToken = (await CollateralToken.connect(issuerSigner).deploy(
-      "Collateral Token",
-      "CT",
-      collateralData.collateralAmount
-    )) as TestERC20;
-    // set collateral address
-    collateralData.collateralAddress = collateralToken.address;
-    return { collateralData, collateralToken };
-  }
-  async function auctionFixture() {
-    const gnosisAuction = await ethers.getContractAt(
-      EasyAuctionJSON.abi,
-      GNOSIS_AUCTION_ADDRESS.mainnet
-    );
-    return { gnosisAuction };
-  }
-  async function brokerFixture(
-    gnosisAuction: Contract,
-    factory: BondFactoryClone
-  ) {
-    const Broker = await ethers.getContractFactory("Broker");
-    const broker = (await Broker.deploy(
-      gnosisAuction.address,
-      factory.address
-    )) as Broker;
+  async function fixture() {
+    const { broker, collateralData, gnosisAuction } = await brokerFixture();
     const { newBond }: { newBond: string } =
       await getEventArgumentsFromTransaction(
         await broker.createBond(
@@ -103,16 +53,12 @@ describe("Broker", async () => {
         ),
         "BondCreated"
       );
-    return { broker, newBond };
+    return { newBond, broker, collateralData, gnosisAuction };
   }
   beforeEach(async () => {
-    ({ factory } = await loadFixture(bondFactoryFixture));
-    ({ collateralData, collateralToken } = await loadFixture(
-      collateralTokenFixture
-    ));
-    ({ gnosisAuction } = await loadFixture(auctionFixture));
-    ({ broker, newBond } = await loadFixture(
-      brokerFixture.bind(null, gnosisAuction, factory)
+    [brokerSigner, issuerSigner, eveSigner] = await ethers.getSigners();
+    ({ newBond, broker, collateralData, gnosisAuction } = await loadFixture(
+      fixture
     ));
     collateralData.bondAddress = newBond;
   });
