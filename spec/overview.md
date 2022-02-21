@@ -2,7 +2,7 @@
 
 # Main contracts
 
-## [Broker](./broker.md)
+## Broker
 * `initateBondAuction()`
 * `withdrawCollateralAndBurnBonds()`
   
@@ -13,7 +13,7 @@ Borrowers have the option to use an auction to sell their bonds. The borrower se
 This uses [CloneFactory](https://github.com/porter-finance/v1-core/issues/15) for significant gas savings. 
 * Creates the `bondTokens` (collateral address, amount, convertibility, convertibility ratio) all parameters.
 
-## [BondTokens](./bondToken.md)
+## [BondTokens]
 
 `BondTokens` represent [zero coupon bonds](https://docs.porter.finance/portal/intro-to-bonds/zero-coupon-bonds) that can be purchased by [lenders](https://docs.porter.finance/portal/protocol/lenders). They implement the standard EIP-20/ERC20 token methods as well as Porter specific methods including:
 * `depositCollateral()`
