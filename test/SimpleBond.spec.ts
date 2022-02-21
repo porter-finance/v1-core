@@ -200,11 +200,11 @@ describe("BondFactoryClone", async () => {
   });
   describe("collateralization", async () => {
     it("deposits collateral", async () => {
-      const { collateralAmount } = await getEventArgumentsFromTransaction(
+      const { amount } = await getEventArgumentsFromTransaction(
         await bond.collateralize(100),
         "CollateralDeposited"
       );
-      expect(collateralAmount).to.equal(100);
+      expect(amount).to.equal(100);
     });
     it("bars unauthorized access", async () => {
       // check revert from non-bond signer

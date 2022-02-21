@@ -40,7 +40,7 @@ contract Broker is Ownable, ReentrancyGuard {
   address[] public bondHolders;
 
   /// @dev mapping of issuer addresses to the bonds they have issued
-  mapping(address => Bond[]) public issuerToBonds;
+  mapping(address => address[]) public issuerToBonds;
   /// @dev mapping of issued bond address to the issuer address
   mapping(address => address) public bondToIssuer;
 
@@ -87,7 +87,8 @@ contract Broker is Ownable, ReentrancyGuard {
     string memory _name,
     string memory _symbol,
     uint256 _totalBondSupply,
-    uint256 _maturityDate
+    uint256 _maturityDate,
+    address _bondIssuer
   ) external {
     address bond = IBondFactoryClone(bondFactoryAddress).createBond(
       _name,
@@ -99,10 +100,10 @@ contract Broker is Ownable, ReentrancyGuard {
 
     // TODO: mint an NFT token associated with the bond
 
-    issuerToBonds[msg.sender].push(Bond(bond, _maturityDate));
-    bondToIssuer[bond] = msg.sender;
-    if (issuerToBonds[msg.sender].length == 1) {
-      bondHolders.push(msg.sender);
+    issuerToBonds[_bondIssuer].push(bond);
+    bondToIssuer[bond] = _bondIssuer;
+    if (issuerToBonds[_bondIssuer].length == 1) {
+      bondHolders.push(_bondIssuer);
     }
     emit BondCreated(bond);
   }

@@ -1,12 +1,10 @@
-import { Contract, BigNumber } from "ethers";
-
+import { type Contract, BigNumber } from "ethers";
 import { ethers, waffle } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import {
   addDaysToNow,
   AuctionData,
-  BondData,
   CollateralData,
   createAuction,
   getEventArgumentsFromTransaction,
@@ -31,7 +29,6 @@ describe("Broker", async () => {
   let gnosisAuction: Contract;
   let collateralToken: TestERC20;
   let collateralData: CollateralData;
-
   const totalBondSupply = 12500;
 
   const name = "My Token";
@@ -91,7 +88,13 @@ describe("Broker", async () => {
     )) as Broker;
     const { newBond }: { newBond: string } =
       await getEventArgumentsFromTransaction(
-        await broker.createBond(name, symbol, totalBondSupply, maturityDate),
+        await broker.createBond(
+          name,
+          symbol,
+          totalBondSupply,
+          maturityDate,
+          issuerSigner.address
+        ),
         "BondCreated"
       );
     return { broker, newBond };
