@@ -54,8 +54,17 @@ contract SimpleBond is
     uint256 amountOfCollateralReceived
   );
 
+  error OnlyIssuerOfBondMayCallThisFunction();
+
   /// @notice
   event Redeem(address receiver, uint256 amount);
+
+  modifier onlyIssuer {
+    if (issuer != msg.sender) {
+      revert OnlyIssuerOfBondMayCallThisFunction();
+    }
+    _;
+  }
 
   /// @notice this date is when the DAO must have repaid its debt
   /// @notice when bondholders can redeem their bonds
@@ -65,6 +74,7 @@ contract SimpleBond is
   bool public isConvertible;
   address public borrowingAddress;
   uint256 public repaymentAmount;
+  address public issuer;
 
   /// @notice holds address to bond standing
   BondStanding public currentBondStanding;
@@ -83,6 +93,7 @@ contract SimpleBond is
     uint256 _totalBondSupply,
     uint256 _maturityDate,
     address _owner,
+    address _issuer,
     address _collateralAddress,
     uint256 _collateralizationRatio,
     bool _isConvertible,
@@ -109,6 +120,7 @@ contract SimpleBond is
     isConvertible = _isConvertible;
     borrowingAddress = _borrowingAddress;
     repaymentAmount = _repaymentAmount;
+    issuer = _issuer;
 
     _transferOwnership(_owner);
     currentBondStanding = BondStanding.GOOD;
@@ -144,7 +156,7 @@ contract SimpleBond is
   }
 
   /// @notice Issuer can deposit repayment into the bond contract to repay the principal
-  function repay(uint256 amount) external {
+  function repay(uint256 amount) external onlyIssuer {
     if (
       false /*bond.isRepaid()*/
     ) {

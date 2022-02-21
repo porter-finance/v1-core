@@ -10,6 +10,7 @@ interface IBondFactoryClone {
     uint256 _totalBondSupply,
     uint256 _maturityDate,
     address _owner,
+    address _issuer,
     address _collateralAddress,
     uint256 _collateralizationRatio,
     bool _isConvertible,

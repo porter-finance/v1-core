@@ -108,6 +108,7 @@ contract Broker is Ownable, ReentrancyGuard {
       _totalBondSupply,
       _maturityDate,
       address(this),
+      _bondIssuer,
       _collateralAddress,
       _collateralizationRatio,
       _isConvertible,

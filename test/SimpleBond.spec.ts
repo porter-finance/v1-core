@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { BondFactoryClone as BondFactoryCloneType } from "../typechain";
 import { SimpleBond as SimpleBondType } from "../typechain";
 import { getEventArgumentsFromTransaction } from "./utilities";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
@@ -33,7 +34,10 @@ describe("BondFactoryClone", async () => {
   const name = "My Token";
   const symbol = "MTKN";
   let bond: SimpleBondType;
-  let ownerAddress: string;
+  let factoryOwner: SignerWithAddress;
+  let issuer: SignerWithAddress;
+  let payee: SignerWithAddress;
+  let eve: SignerWithAddress;
 
   // no args because of gh issue:
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
@@ -42,14 +46,15 @@ describe("BondFactoryClone", async () => {
       "BondFactoryClone"
     );
     const factory = (await BondFactoryClone.deploy()) as BondFactoryCloneType;
-    const [fixtureOwner, other] = await ethers.getSigners();
+    const [factoryOwner, issuer, payee, eve] = await ethers.getSigners();
 
     const tx1 = await factory.createBond(
       name,
       symbol,
       totalBondSupply,
       maturityDate,
-      fixtureOwner.address,
+      factoryOwner.address,
+      issuer.address,
       ethers.constants.AddressZero,
       BigNumber.from(150),
       false,
@@ -62,29 +67,27 @@ describe("BondFactoryClone", async () => {
       "BondCreated"
     );
 
-    const fixtureBond = await ethers.getContractAt(
+    const bond = await ethers.getContractAt(
       "SimpleBond",
       newBondAddress,
-      fixtureOwner
+      factoryOwner
     );
 
     // Handing out some shares, should be done on the Auction level
-    await fixtureBond.transfer(other.address, bondShares);
+    await bond.transfer(issuer.address, bondShares);
 
-    return { fixtureBond, fixtureOwner, other };
+    return { bond, factoryOwner, issuer, payee, eve };
   }
 
   beforeEach(async () => {
-    const { fixtureOwner, fixtureBond, other } = await loadFixture(fixture);
-    ownerAddress = fixtureOwner.address;
-    payToAddress = other.address;
-    payToAccount = other;
-    bond = fixtureBond;
+    ({ factoryOwner, bond, issuer, payee, eve } = await loadFixture(fixture));
+    payToAddress = issuer.address;
+    payToAccount = payee.address;
   });
 
   describe("basic contract function", async () => {
     it("should have total supply less bond issuance in owner account", async function () {
-      expect(await bond.balanceOf(ownerAddress)).to.be.equal(
+      expect(await bond.balanceOf(factoryOwner.address)).to.be.equal(
         totalBondSupply - bondShares
       );
 
@@ -92,7 +95,7 @@ describe("BondFactoryClone", async () => {
     });
 
     it("should be owner", async function () {
-      expect(await bond.owner()).to.be.equal(ownerAddress);
+      expect(await bond.owner()).to.be.equal(factoryOwner.address);
     });
 
     it("should return total value for an account", async function () {
@@ -134,7 +137,7 @@ describe("BondFactoryClone", async () => {
     });
 
     it("should only set by owner", async function () {
-      const payeeBond = await bond.connect(payToAccount);
+      const payeeBond = await bond.connect(payee);
 
       expect(payeeBond.setBondStanding(BondStanding.PAID)).to.be.revertedWith(
         "Ownable: caller is not the owner"
@@ -204,28 +207,22 @@ describe("BondFactoryClone", async () => {
       expect(await payeeBond.currentBondStanding()).to.be.equal(3);
     });
   });
-  describe("collateralization", async () => {
-    it("deposits collateral", async () => {
+  describe("repayment", async () => {
+    it("deposits repayment", async () => {
       const { amount } = await getEventArgumentsFromTransaction(
-        await bond.collateralize(100),
-        "CollateralDeposited"
+        await bond.connect(issuer).repay(100),
+        "RepaymentDeposited"
       );
       expect(amount).to.equal(100);
     });
     it("bars unauthorized access", async () => {
       // check revert from non-bond signer
-      await expect(bond.connect(payToAccount).collateralize(100)).to.be
-        .reverted;
+      await expect(bond.connect(eve).repay(100)).to.be.reverted;
 
       // check revert with specific error name
-      await expect(
-        bond.connect(payToAccount).collateralize(100)
-      ).to.be.revertedWith("UnauthorizedInteractionWithBond");
-
-      // check revert with specific arguments
-      await expect(
-        bond.connect(payToAccount).collateralize(100)
-      ).to.be.revertedWithArgs("UnauthorizedInteractionWithBond");
+      await expect(bond.connect(eve).repay(100)).to.be.revertedWith(
+        "OnlyIssuerOfBondMayCallThisFunction"
+      );
     });
   });
 });
