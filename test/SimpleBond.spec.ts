@@ -73,9 +73,6 @@ describe("BondFactoryClone", async () => {
       owner
     );
 
-    // Handing out some shares, should be done on the Auction level
-    await bond.transfer(issuer.address, bondShares);
-
     return { bond };
   }
 
@@ -85,13 +82,8 @@ describe("BondFactoryClone", async () => {
   });
 
   describe("basic contract function", async () => {
-    it("should have total supply less bond issuance in owner account", async function () {
-      expect(await bond.balanceOf(owner.address)).to.be.equal(
-        totalBondSupply - bondShares
-      );
-    });
-    it("should have bond issuance in issuer address", async function () {
-      expect(await bond.balanceOf(issuer.address)).to.be.equal(bondShares);
+    it("should have no minted coins", async function () {
+      expect(await bond.balanceOf(owner.address)).to.be.equal(0);
     });
 
     it("should be owner", async function () {
@@ -100,7 +92,7 @@ describe("BondFactoryClone", async () => {
 
     it("should return total value for an account", async function () {
       expect(await bond.connect(payee).balanceOf(issuer.address)).to.be.equal(
-        bondShares
+        0
       );
     });
 
@@ -111,6 +103,8 @@ describe("BondFactoryClone", async () => {
     });
   });
 
+  // todo: we might want to mock these states and check the standing of the bond
+  // instead of trying to manipulate the state via deposits/redemptions, etc.
   describe("bond standing", async () => {
     it("should be default to GOOD", async function () {
       expect(await bond.connect(payee).currentBondStanding()).to.be.equal(
@@ -233,6 +227,47 @@ describe("BondFactoryClone", async () => {
       // check revert with specific error name
       await expect(bond.connect(eve).repay(100)).to.be.revertedWith(
         "OnlyIssuerOfBondMayCallThisFunction"
+      );
+    });
+  });
+
+  describe("minting", async () => {
+    it("mints up to collateral depositted", async () => {
+      const amountToDeposit = 1000;
+      await collateralToken
+        .connect(issuer)
+        .approve(bond.address, amountToDeposit);
+      const { amount } = await getEventArgumentsFromTransaction(
+        await bond.connect(issuer).collateralize(amountToDeposit),
+        "CollateralDeposited"
+      );
+      await expect(bond.connect(issuer).mint(amount)).to.not.be.reverted;
+    });
+    it("fails to mint more than deposited", async () => {
+      const amountToDeposit = 1000;
+      await collateralToken
+        .connect(issuer)
+        .approve(bond.address, amountToDeposit);
+      const { amount } = await getEventArgumentsFromTransaction(
+        await bond.connect(issuer).collateralize(amountToDeposit),
+        "CollateralDeposited"
+      );
+      await expect(bond.connect(issuer).mint(amount * 2)).to.be.revertedWith(
+        "NotEnoughCollateral"
+      );
+    });
+
+    it("fails to mint more than max supply", async () => {
+      const amountToDeposit = totalBondSupply + 1;
+      await collateralToken
+        .connect(issuer)
+        .approve(bond.address, amountToDeposit);
+      const { amount } = await getEventArgumentsFromTransaction(
+        await bond.connect(issuer).collateralize(amountToDeposit),
+        "CollateralDeposited"
+      );
+      await expect(bond.connect(issuer).mint(amount)).to.be.revertedWith(
+        "BondSupplyExceeded"
       );
     });
   });

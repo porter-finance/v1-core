@@ -1,7 +1,7 @@
 import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { BondFactoryClone, Broker, TestERC20 } from "../../typechain";
-import { CollateralData, getEventArgumentsFromTransaction } from "../utilities";
+import { CollateralData } from "../utilities";
 
 const EasyAuctionJSON = require("../../contracts/external/EasyAuction.json");
 const GNOSIS_AUCTION_ADDRESS = {
@@ -17,7 +17,7 @@ export async function auctionFixture() {
 }
 export async function brokerFixture() {
   const { factory } = await bondFactoryFixture();
-  const { collateralData } = await collateralTokenFixture();
+  const { collateralData, collateralToken } = await collateralTokenFixture();
   const { gnosisAuction } = await auctionFixture();
   const Broker = await ethers.getContractFactory("Broker");
   const broker = (await Broker.deploy(
@@ -25,8 +25,9 @@ export async function brokerFixture() {
     factory.address
   )) as Broker;
 
-  return { factory, broker, collateralData, gnosisAuction };
+  return { factory, broker, collateralData, collateralToken, gnosisAuction };
 }
+
 export async function bondFactoryFixture() {
   const BondFactoryClone = await ethers.getContractFactory("BondFactoryClone");
   const factory = (await BondFactoryClone.deploy()) as BondFactoryClone;
@@ -38,7 +39,7 @@ export async function collateralTokenFixture() {
 
   const collateralData: CollateralData = {
     collateralAddress: ethers.constants.AddressZero,
-    collateralAmount: BigNumber.from(4000),
+    collateralAmount: ethers.utils.parseEther("1"),
     bondAddress: ethers.constants.AddressZero,
   };
 

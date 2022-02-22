@@ -10,8 +10,9 @@ import {
   getEventArgumentsFromTransaction,
   useCustomErrorMatcher,
 } from "./utilities";
-import type { Broker } from "../typechain";
+import type { Broker, SimpleBond } from "../typechain";
 import { brokerFixture } from "./shared/fixtures";
+import { CollateralToken } from "../typechain/CollateralToken";
 const { loadFixture } = waffle;
 
 useCustomErrorMatcher();
@@ -24,6 +25,9 @@ describe("Broker", async () => {
   let broker: Broker;
   let gnosisAuction: Contract;
   let collateralData: CollateralData;
+  let collateralToken: CollateralToken;
+  let bond: SimpleBond;
+
   const totalBondSupply = 12500;
 
   const name = "My Token";
@@ -36,7 +40,8 @@ describe("Broker", async () => {
   );
 
   async function fixture() {
-    const { broker, collateralData, gnosisAuction } = await brokerFixture();
+    const { broker, collateralData, gnosisAuction, collateralToken } =
+      await brokerFixture();
     const { newBond }: { newBond: string } =
       await getEventArgumentsFromTransaction(
         await broker.createBond(
@@ -53,18 +58,32 @@ describe("Broker", async () => {
         ),
         "BondCreated"
       );
-    return { newBond, broker, collateralData, gnosisAuction };
+
+    return { newBond, broker, collateralData, collateralToken, gnosisAuction };
   }
   beforeEach(async () => {
     [brokerSigner, issuerSigner, eveSigner] = await ethers.getSigners();
-    ({ newBond, broker, collateralData, gnosisAuction } = await loadFixture(
-      fixture
-    ));
+    ({ newBond, broker, collateralData, collateralToken, gnosisAuction } =
+      await loadFixture(fixture));
     collateralData.bondAddress = newBond;
+    bond = await ethers.getContractAt("SimpleBond", newBond, brokerSigner);
+    // todo: this flow is weird
+    // first we approve the bond to transfer collateral from the issuer
+    await collateralToken
+      .connect(issuerSigner)
+      .approve(bond.address, collateralData.collateralAmount);
+    // then we transfer the collateral into the bond
+    await bond
+      .connect(issuerSigner)
+      .collateralize(collateralData.collateralAmount);
+    // after the collateral is in the bond, we can mint tokens to the issuer
+    await bond.connect(issuerSigner).mint(totalBondSupply);
+    // then we approve the broker to transfer tokens to the auction...
+    await bond.connect(issuerSigner).transfer(broker.address, totalBondSupply);
   });
   it("starts an auction", async () => {
     const auctionData: AuctionData = {
-      _biddingToken: newBond,
+      _biddingToken: bond.address,
       orderCancellationEndDate: addDaysToNow(1),
       auctionEndDate: addDaysToNow(2),
       _auctionedSellAmount: BigNumber.from(totalBondSupply),
@@ -81,7 +100,7 @@ describe("Broker", async () => {
       broker,
       issuerSigner,
       auctionData,
-      newBond
+      bond.address
     );
     expect(auctionId).to.be.equal(currentAuction + 1);
   });

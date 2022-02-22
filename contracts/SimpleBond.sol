@@ -56,6 +56,9 @@ contract SimpleBond is
   );
 
   error OnlyIssuerOfBondMayCallThisFunction();
+  error InvalidMaturityDate();
+  error NotEnoughCollateral();
+  error BondSupplyExceeded();
 
   /// @notice
   event Redeem(address receiver, uint256 amount);
@@ -76,6 +79,7 @@ contract SimpleBond is
   address public borrowingAddress;
   uint256 public repaymentAmount;
   address public issuer;
+  uint256 public maxBondSupply;
 
   /// @notice holds address to bond standing
   BondStanding public currentBondStanding;
@@ -101,19 +105,17 @@ contract SimpleBond is
     address _borrowingAddress,
     uint256 _repaymentAmount
   ) public initializer {
-    require(_totalBondSupply > 0, "zeroMintAmount");
-
     // this timestamp is a date in 2020, which basically is here to confirm
     // the date provided is greater than 0 and a valid timestamp
-    require(_maturityDate > 1580752251, "invalid date");
+    if (_maturityDate < 1580752251) {
+      revert InvalidMaturityDate();
+    }
 
     // This mints bonds based on the config given in the auction contract and
     // sends them to the auction contract
     __ERC20_init(_name, _symbol);
     __ERC20Burnable_init();
     __Ownable_init();
-
-    _mint(_owner, _totalBondSupply);
 
     maturityDate = _maturityDate;
     collateralAddress = _collateralAddress;
@@ -122,6 +124,7 @@ contract SimpleBond is
     borrowingAddress = _borrowingAddress;
     repaymentAmount = _repaymentAmount;
     issuer = _issuer;
+    maxBondSupply = _totalBondSupply;
 
     _transferOwnership(_owner);
     currentBondStanding = BondStanding.GOOD;
@@ -149,6 +152,19 @@ contract SimpleBond is
   function uncollateralize(uint256 amount) external {
     // After a successul transfer, set collateral in bond contract
     emit CollateralWithdrawn(amount);
+  }
+
+  function mint(uint256 amount) external onlyIssuer {
+    if (
+      IERC20(collateralAddress).balanceOf(address(this)) <
+      totalSupply() + amount
+    ) {
+      revert NotEnoughCollateral();
+    }
+    if (totalSupply() + amount > maxBondSupply) {
+      revert BondSupplyExceeded();
+    }
+    _mint(msg.sender, amount);
   }
 
   /// @notice Bond holder can convert their bond to underlying collateral
