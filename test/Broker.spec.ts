@@ -59,12 +59,6 @@ describe("Broker", async () => {
         "BondCreated"
       );
 
-    return { newBond, broker, collateralData, collateralToken, gnosisAuction };
-  }
-  beforeEach(async () => {
-    [brokerSigner, issuerSigner, eveSigner] = await ethers.getSigners();
-    ({ newBond, broker, collateralData, collateralToken, gnosisAuction } =
-      await loadFixture(fixture));
     collateralData.bondAddress = newBond;
     bond = await ethers.getContractAt("SimpleBond", newBond, brokerSigner);
     // todo: this flow is weird
@@ -80,6 +74,13 @@ describe("Broker", async () => {
     await bond.connect(issuerSigner).mint(totalBondSupply);
     // then we approve the broker to transfer tokens to the auction...
     await bond.connect(issuerSigner).transfer(broker.address, totalBondSupply);
+
+    return { newBond, broker, collateralData, collateralToken, gnosisAuction };
+  }
+  beforeEach(async () => {
+    [brokerSigner, issuerSigner, eveSigner] = await ethers.getSigners();
+    ({ newBond, broker, collateralData, collateralToken, gnosisAuction } =
+      await loadFixture(fixture));
   });
   it("starts an auction", async () => {
     const auctionData: AuctionData = {
