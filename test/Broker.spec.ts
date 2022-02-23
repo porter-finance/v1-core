@@ -45,14 +45,13 @@ describe("Broker", async () => {
     const { newBond }: { newBond: string } =
       await getEventArgumentsFromTransaction(
         await broker.createBond(
-          name,
-          symbol,
           totalBondSupply,
           maturityDate,
           issuerSigner.address,
           collateralData.collateralAddress,
           BigNumber.from(150),
           false,
+          BigNumber.from(50),
           collateralData.collateralAddress, // TODO: make borrowing token
           collateralData.collateralAmount // TODO: make borrowing amount
         ),

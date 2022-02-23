@@ -91,20 +91,17 @@ contract Broker is Ownable, ReentrancyGuard {
   }
 
   function createBond(
-    string memory _name,
-    string memory _symbol,
     uint256 _totalBondSupply,
     uint256 _maturityDate,
     address _bondIssuer,
     address _collateralAddress,
     uint256 _collateralizationRatio,
     bool _isConvertible,
+    uint256 _convertibilityRatio,
     address _borrowingAddress,
     uint256 _repaymentAmount
   ) external {
     address bond = IBondFactoryClone(bondFactoryAddress).createBond(
-      _name,
-      _symbol,
       _totalBondSupply,
       _maturityDate,
       address(this),
@@ -112,6 +109,7 @@ contract Broker is Ownable, ReentrancyGuard {
       _collateralAddress,
       _collateralizationRatio,
       _isConvertible,
+      _convertibilityRatio,
       _borrowingAddress,
       _repaymentAmount
     );
