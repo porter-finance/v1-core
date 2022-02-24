@@ -79,7 +79,7 @@ The `Broker` will call the `BondFactory` to create a `Bond`.
 
 1. The new bond contract is deployed.
 2. 30,000,000 LEARN tokens are deposited into the bond contract.
-3. 10,000,000 BOND tokens are minted and sent to the DAO.
+3. 10,000,000 BOND tokens are minted and sent to ABG.
 
 ABG now has a few options.
 
