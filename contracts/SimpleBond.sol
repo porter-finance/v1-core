@@ -28,9 +28,6 @@ contract SimpleBond is
     // when something goes wrong and this contract becomes nullified
     NULL
   }
-
-  event BondStandingChange(BondStanding oldStanding, BondStanding newStanding);
-
   /// @notice emitted when a collateral is deposited for a bond
   /// @param collateralDepositor the address of the caller of the deposit
   /// @param amount the number of the tokens being deposited
@@ -59,7 +56,17 @@ contract SimpleBond is
     uint256 amountOfCollateralReceived
   );
 
+  /// @notice
+  event Redeem(address receiver, uint256 amount);
+
+  // modifiers
   error OnlyIssuerOfBondMayCallThisFunction();
+  error BondPastMaturity();
+  error BondNotYetMatured();
+  error BondNotYetRepaid();
+  error BondNotYetRedeemed();
+
+  // Creation
   error InvalidMaturityDate();
 
   // Minting
@@ -71,13 +78,51 @@ contract SimpleBond is
   error CollateralTransferFailure();
   error ZeroCollateralizationAmount();
 
+  // Uncollateralization
+  error ZeroUncollateralizationAmount();
+  error CollateralInContractInsufficientToCoverWithdraw();
+  error InsufficientCollateralReservedForConvertibility();
+
+  // Conversion
   error NotConvertible();
-  /// @notice
-  event Redeem(address receiver, uint256 amount);
+
+  // Repayment
+  error RepaymentMet();
+
+  // Redemption
+  error ZeroRedemptionAmount();
 
   modifier onlyIssuer() {
     if (issuer != msg.sender) {
       revert OnlyIssuerOfBondMayCallThisFunction();
+    }
+    _;
+  }
+
+  modifier pastMaturity() {
+    if (block.timestamp < maturityDate) {
+      revert BondNotYetMatured();
+    }
+    _;
+  }
+
+  modifier notPastMaturity() {
+    if (block.timestamp >= maturityDate) {
+      revert BondPastMaturity();
+    }
+    _;
+  }
+
+  modifier repaid() {
+    if (!_isRepaid) {
+      revert BondNotYetRepaid();
+    }
+    _;
+  }
+
+  modifier redeemed() {
+    if (totalSupply() > 0) {
+      revert BondNotYetRedeemed();
     }
     _;
   }
@@ -93,9 +138,7 @@ contract SimpleBond is
   uint256 public repaymentAmount;
   address public issuer;
   uint256 public maxBondSupply;
-
-  /// @notice holds address to bond standing
-  BondStanding public currentBondStanding;
+  bool private _isRepaid;
 
   using Strings for uint256;
 
@@ -125,20 +168,7 @@ contract SimpleBond is
 
     // This mints bonds based on the config given in the auction contract and
     // sends them to the auction contract,
-    __ERC20_init(
-      string(
-        abi.encodePacked(
-          _maturityDate.toString(),
-          _issuer,
-          _collateralAddress,
-          _collateralizationRatio,
-          _isConvertible,
-          _convertibilityRatio,
-          _collateralAddress
-        )
-      ),
-      "LUG"
-    );
+    __ERC20_init("SimpleBond", "LUG");
     __ERC20Burnable_init();
     __Ownable_init();
 
@@ -185,19 +215,34 @@ contract SimpleBond is
     uint256 amountOfCollateralToWithdraw,
     uint256 amountOfBondsToBurn
   ) external onlyIssuer nonReentrant {
-    // After a successul transfer, set collateral in bond contract
     if (amountOfCollateralToWithdraw == 0) {
-      revert ZeroCollateralizationAmount();
+      revert ZeroUncollateralizationAmount();
     }
+    uint256 availableBonds = balanceOf(address(this));
     burn(amountOfBondsToBurn);
     // amount of outstanding tokens * collateralization ratio = amount of collateral available to be withdrawn
-    if (
-      totalSupply() * collateralizationRatio <
-      IERC20(collateralAddress).balanceOf(address(this)) -
-        amountOfCollateralToWithdraw
-    ) {
+    uint256 requiredCollateral = totalSupply() * collateralizationRatio;
+    uint256 currentCollateral = IERC20(collateralAddress).balanceOf(
+      address(this)
+    );
+    if (currentCollateral < amountOfCollateralToWithdraw) {
+      revert CollateralInContractInsufficientToCoverWithdraw();
+    }
+    uint256 resultantCollateral = currentCollateral -
+      amountOfCollateralToWithdraw;
+    // todo: untested
+    if (isConvertible && (totalSupply() - availableBonds) != 0) {
+      uint256 minimumCollateralReserve = ((totalSupply() - availableBonds) *
+        convertibilityRatio) / 100;
+      if (resultantCollateral < minimumCollateralReserve) {
+        revert InsufficientCollateralReservedForConvertibility();
+      }
+    }
+
+    if (requiredCollateral > resultantCollateral) {
       revert InusfficientCollateralToCoverTokenSupply();
     }
+
     if (
       !IERC20(collateralAddress).transfer(
         msg.sender,
@@ -255,37 +300,33 @@ contract SimpleBond is
     );
   }
 
-  /// @notice Issuer can deposit repayment into the bond contract to repay the principal
-  function repay(uint256 amount) external onlyIssuer {
-    if (
-      false /*bond.isRepaid()*/
-    ) {
+  function repay(uint256 amount) external {
+    if (_isRepaid) {
+      revert RepaymentMet();
+    }
+    IERC20(borrowingAddress).transferFrom(msg.sender, address(this), amount);
+    if (IERC20(borrowingAddress).balanceOf(address(this)) >= repaymentAmount) {
+      _isRepaid = true;
       emit RepaymentInFull(msg.sender, amount);
     } else {
       emit RepaymentDeposited(msg.sender, amount);
     }
   }
 
-  function redeem(uint256 bondShares) external onlyOwner nonReentrant {
-    require(bondShares > 0, "invalid amount");
-    require(block.timestamp >= maturityDate, "bond still immature");
-
-    // check that the DAO has already paid back the bond, set from auction
-    require(currentBondStanding == BondStanding.PAID, "bond not yet paid");
+  function redeem(uint256 bondShares)
+    external
+    nonReentrant
+    pastMaturity
+    repaid
+  {
+    if (bondShares == 0) {
+      revert ZeroRedemptionAmount();
+    }
 
     burn(bondShares);
 
-    // TODO: code needs added here that sends the investor their how much they are owed in paymentToken
-    // this might be calling the auction contract with AuctionContract.redeem(msg.sender, bondShares * faceValue)
-
-    // once all bonds are burned, then this can be set to redeemed
-    if (totalSupply() == 0) {
-      currentBondStanding = BondStanding.REDEEMED;
-    }
+    IERC20(borrowingAddress).transfer(msg.sender, bondShares);
 
     emit Redeem(msg.sender, bondShares);
   }
-
-  // TODO: on auction fail or ending, burn remaining tokens feeAmount.mul(fillVolumeOfAuctioneerOrder).div(
-  // TODO: on return of principle, check that principle == total supply of bond token
 }

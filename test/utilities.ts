@@ -136,7 +136,6 @@ export async function placeOrders(
 ): Promise<void> {
   for (let i = 0; i < sellOrders.length; i++) {
     const sellOrder = sellOrders[i];
-    console.log("e2e/placeOrders", sellOrder);
     await gnosisAuction
       .connect(bidders[0])
       .placeSellOrders(
