@@ -40,7 +40,7 @@ A new `Bond` contract is created for each [borrower](https://docs.porter.finance
 * Allowing bond redemption for the bond holders via `redeem()`
 
 ### Collateral 
-Borrowers specify the ERC20 token they would like to use as collateral when creating the bond. Only a single collateral type is supported per bond. The ratio fo collateral backing each token is also specified by the borrower at bond creation. This "collateralization ratio" prerequisites the minting of new bonds. 
+Borrowers specify the ERC20 token they would like to use as collateral when creating the bond. Only a single collateral type is supported per bond. The ratio for collateral backing each token is also specified by the borrower at bond creation. This "collateralization ratio" prerequisites the minting of new bonds. 
 
 ### Convertibility 
 If convertability in enabled for the bond, 
