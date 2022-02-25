@@ -166,8 +166,6 @@ describe("BondFactoryClone", async () => {
   });
 
   describe("uncollateralize", async () => {
-    let collateralToWithdraw = 0;
-    let tokensToBurn = 0;
     beforeEach(async () => {
       const collateralToDeposit = 1000;
       const tokensToMint =
@@ -178,46 +176,16 @@ describe("BondFactoryClone", async () => {
         .approve(bond.address, collateralToDeposit);
       await bond.connect(issuer).collateralize(collateralToDeposit);
       await bond.connect(issuer).mint(tokensToMint);
-      collateralToWithdraw = collateralToDeposit;
-      tokensToBurn = tokensToMint;
     });
     it("withdraws collateral", async () => {
-      await expect(
-        bond.connect(issuer).uncollateralize(collateralToWithdraw, tokensToBurn)
-      ).to.emit(bond, "CollateralWithdrawn");
+      await expect(bond.connect(issuer).uncollateralize()).to.be.revertedWith(
+        "CollateralInContractInsufficientToCoverWithdraw"
+      );
     });
     it("reverts when called by non-issuer", async () => {
-      await expect(
-        bond
-          .connect(attacker)
-          .uncollateralize(collateralToWithdraw, tokensToBurn)
-      ).to.be.revertedWith("OnlyIssuerOfBondMayCallThisFunction");
-    });
-    it("reverts on zero amount", async () => {
-      await expect(
-        bond.connect(issuer).uncollateralize(0, 0)
-      ).to.be.revertedWith("ZeroUncollateralizationAmount");
-    });
-    it("fails when withdrawing too much collateral", async () => {
-      await expect(
-        bond
-          .connect(issuer)
-          .uncollateralize(collateralToWithdraw + 1, tokensToBurn)
-      ).to.be.revertedWith("CollateralInContractInsufficientToCoverWithdraw");
-    });
-    it("fails when withdrawing the wrong ratio of collateral to burnt tokens", async () => {
-      await expect(
-        bond
-          .connect(issuer)
-          .uncollateralize(collateralToWithdraw, tokensToBurn - 1)
-      ).to.be.revertedWith("InusfficientCollateralToCoverTokenSupply");
-    });
-    it("fails when burning exceeds available tokens", async () => {
-      await expect(
-        bond
-          .connect(issuer)
-          .uncollateralize(collateralToWithdraw, tokensToBurn + 1)
-      ).to.be.revertedWith("ERC20: burn amount exceeds balance");
+      await expect(bond.connect(attacker).uncollateralize()).to.be.revertedWith(
+        "OnlyIssuerOfBondMayCallThisFunction"
+      );
     });
   });
 
@@ -326,6 +294,34 @@ describe("BondFactoryClone", async () => {
       await expect(
         bond.connect(issuer).mint(tokensToMint / 2)
       ).to.be.revertedWith("NoMintAfterIssuance");
+    });
+  });
+  describe("refinance", async () => {
+    it("refinances with outside capital", async () => {
+      const collateralToDeposit =
+        (BondConfig.totalBondSupply * BondConfig.collateralizationRatio) / 100;
+      await collateralToken
+        .connect(issuer)
+        .approve(bond.address, collateralToDeposit);
+      await bond.connect(issuer).collateralize(collateralToDeposit);
+      await bond.connect(issuer).mint(BondConfig.totalBondSupply);
+      await borrowingToken
+        .connect(issuer)
+        .approve(bond.address, BondConfig.totalBondSupply);
+      await borrowingToken
+        .connect(issuer)
+        .approve(bond.address, BondConfig.totalBondSupply);
+      const collateralBalanceBefore = await collateralToken.balanceOf(
+        issuer.address
+      );
+      await bond.connect(issuer).refinance();
+      const collateralBalanceAfter = await collateralToken.balanceOf(
+        issuer.address
+      );
+      expect(collateralBalanceAfter.sub(collateralBalanceBefore)).to.eq(
+        collateralToDeposit
+      );
+      expect(await bond.state()).to.eq(BondStanding.REDEEMED);
     });
   });
   describe("conversion", async () => {
