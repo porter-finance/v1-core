@@ -68,8 +68,7 @@ describe("BondFactoryClone", async () => {
         BigNumber.from(BondConfig.collateralizationRatio),
         false,
         BigNumber.from(BondConfig.convertibilityRatio),
-        borrowingToken.address,
-        BigNumber.from(BondConfig.totalBondSupply)
+        borrowingToken.address
       )
     );
 
@@ -190,6 +189,16 @@ describe("BondFactoryClone", async () => {
   });
 
   describe("repayment", async () => {
+    beforeEach(async () => {
+      const tokensToMint = BondConfig.totalBondSupply;
+      const collateralToDeposit =
+        (BondConfig.totalBondSupply * BondConfig.collateralizationRatio) / 100;
+      await collateralToken
+        .connect(issuer)
+        .approve(bond.address, collateralToDeposit);
+      await bond.connect(issuer).collateralize(collateralToDeposit);
+      await expect(bond.connect(issuer).mint(tokensToMint)).to.not.be.reverted;
+    });
     it("accepts partial repayment", async () => {
       await borrowingToken
         .connect(issuer)
@@ -344,8 +353,7 @@ describe("BondFactoryClone", async () => {
             BigNumber.from(BondConfig.collateralizationRatio),
             true,
             BigNumber.from(BondConfig.convertibilityRatio),
-            ethers.constants.AddressZero,
-            BigNumber.from(BondConfig.totalBondSupply)
+            borrowingToken.address
           )
         );
 
@@ -410,8 +418,7 @@ describe("BondFactoryClone", async () => {
             BigNumber.from(BondConfig.collateralizationRatio),
             false,
             BigNumber.from(BondConfig.convertibilityRatio),
-            ethers.constants.AddressZero,
-            BigNumber.from(BondConfig.totalBondSupply)
+            borrowingToken.address
           )
         );
 

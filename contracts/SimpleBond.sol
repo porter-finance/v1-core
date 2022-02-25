@@ -140,7 +140,6 @@ contract SimpleBond is
   bool public isConvertible;
   uint256 public convertibilityRatio;
   address public borrowingAddress;
-  uint256 public repaymentAmount;
   address public issuer;
   uint256 public maxBondSupply;
   bool private _isRepaid;
@@ -194,8 +193,7 @@ contract SimpleBond is
     uint256 _collateralizationRatio,
     bool _isConvertible,
     uint256 _convertibilityRatio,
-    address _borrowingAddress,
-    uint256 _repaymentAmount
+    address _borrowingAddress
   ) public initializer {
     // this timestamp is a date in 2020, which basically is here to confirm
     // the date provided is greater than 0 and a valid timestamp
@@ -215,7 +213,6 @@ contract SimpleBond is
     isConvertible = _isConvertible;
     convertibilityRatio = _convertibilityRatio;
     borrowingAddress = _borrowingAddress;
-    repaymentAmount = _repaymentAmount;
     issuer = _issuer;
     maxBondSupply = _totalBondSupply;
 
@@ -318,7 +315,7 @@ contract SimpleBond is
       revert RepaymentMet();
     }
     IERC20(borrowingAddress).transferFrom(msg.sender, address(this), amount);
-    if (IERC20(borrowingAddress).balanceOf(address(this)) >= repaymentAmount) {
+    if (IERC20(borrowingAddress).balanceOf(address(this)) >= totalSupply()) {
       _isRepaid = true;
       emit RepaymentInFull(msg.sender, amount);
     } else {

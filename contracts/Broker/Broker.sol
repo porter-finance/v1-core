@@ -98,8 +98,7 @@ contract Broker is Ownable, ReentrancyGuard {
     uint256 _collateralizationRatio,
     bool _isConvertible,
     uint256 _convertibilityRatio,
-    address _borrowingAddress,
-    uint256 _repaymentAmount
+    address _borrowingAddress
   ) external {
     address bond = IBondFactoryClone(bondFactoryAddress).createBond(
       _totalBondSupply,
@@ -110,8 +109,7 @@ contract Broker is Ownable, ReentrancyGuard {
       _collateralizationRatio,
       _isConvertible,
       _convertibilityRatio,
-      _borrowingAddress,
-      _repaymentAmount
+      _borrowingAddress
     );
 
     // TODO: mint an NFT token associated with the bond

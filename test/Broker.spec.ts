@@ -11,7 +11,7 @@ import {
   useCustomErrorMatcher,
 } from "./utilities";
 import type { Broker, SimpleBond } from "../typechain";
-import { brokerFixture } from "./shared/fixtures";
+import { borrowingTokenFixture, brokerFixture } from "./shared/fixtures";
 import { CollateralToken } from "../typechain/CollateralToken";
 const { loadFixture } = waffle;
 
@@ -42,6 +42,7 @@ describe("Broker", async () => {
   async function fixture() {
     const { broker, collateralData, gnosisAuction, collateralToken } =
       await brokerFixture();
+    const { borrowingToken } = await borrowingTokenFixture();
     const { newBond }: { newBond: string } =
       await getEventArgumentsFromTransaction(
         await broker.createBond(
@@ -52,8 +53,7 @@ describe("Broker", async () => {
           BigNumber.from(150),
           false,
           BigNumber.from(50),
-          collateralData.collateralAddress, // TODO: make borrowing token
-          collateralData.collateralAmount // TODO: make borrowing amount
+          borrowingToken.address
         ),
         "BondCreated"
       );
