@@ -1,4 +1,3 @@
-import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { BondFactoryClone, Broker, TestERC20 } from "../../typechain";
 import { CollateralData } from "../utilities";
@@ -60,9 +59,21 @@ export async function borrowingTokenFixture() {
 
   const BorrowingToken = await ethers.getContractFactory("TestERC20");
   const borrowingToken = (await BorrowingToken.connect(issuer).deploy(
-    "Native Token",
-    "NT",
+    "Borrowing Token",
+    "BT",
     ethers.utils.parseEther("2")
   )) as TestERC20;
   return { borrowingToken };
+}
+
+export async function attackingTokenFixture() {
+  const [, , , attacker] = await ethers.getSigners();
+
+  const AttackingToken = await ethers.getContractFactory("TestERC20");
+  const attackingToken = (await AttackingToken.connect(attacker).deploy(
+    "Attack Token",
+    "AT",
+    ethers.utils.parseEther("2")
+  )) as TestERC20;
+  return { attackingToken };
 }

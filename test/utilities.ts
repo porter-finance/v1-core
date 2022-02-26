@@ -204,6 +204,16 @@ export async function getEventArgumentsFromTransaction(
   return {};
 }
 
+export const getBondContract = async (tx: Promise<any>) => {
+  const [owner] = await ethers.getSigners();
+  const [newBondAddress] = await getEventArgumentsFromTransaction(
+    await tx,
+    "BondCreated"
+  );
+
+  return await ethers.getContractAt("SimpleBond", newBondAddress, owner);
+};
+
 declare global {
   export namespace Chai {
     // eslint-disable-next-line no-unused-vars

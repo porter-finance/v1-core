@@ -5,33 +5,25 @@ import { expect } from "chai";
 import {
   addDaysToNow,
   AuctionData,
-  CollateralData,
   createAuction,
-  getEventArgumentsFromTransaction,
+  getBondContract,
   useCustomErrorMatcher,
 } from "./utilities";
 import type { Broker, SimpleBond } from "../typechain";
 import { borrowingTokenFixture, brokerFixture } from "./shared/fixtures";
-import { CollateralToken } from "../typechain/CollateralToken";
 const { loadFixture } = waffle;
 
 useCustomErrorMatcher();
 describe("Broker", async () => {
-  // default deployer address of contracts
-  let brokerSigner: SignerWithAddress;
   // address of the example DAO which configures and runs the auction
   let issuerSigner: SignerWithAddress;
   let eveSigner: SignerWithAddress;
   let broker: Broker;
   let gnosisAuction: Contract;
-  let collateralData: CollateralData;
-  let collateralToken: CollateralToken;
   let bond: SimpleBond;
 
-  const totalBondSupply = 12500;
+  const maxBondSupply = 12500;
 
-  const name = "My Token";
-  const symbol = "MTKN";
   let newBond: string;
   // 3 years from now, in seconds
   const maturityDate = Math.round(
@@ -43,23 +35,19 @@ describe("Broker", async () => {
     const { broker, collateralData, gnosisAuction, collateralToken } =
       await brokerFixture();
     const { borrowingToken } = await borrowingTokenFixture();
-    const { newBond }: { newBond: string } =
-      await getEventArgumentsFromTransaction(
-        await broker.createBond(
-          totalBondSupply,
-          maturityDate,
-          issuerSigner.address,
-          collateralData.collateralAddress,
-          BigNumber.from(150),
-          false,
-          BigNumber.from(50),
-          borrowingToken.address
-        ),
-        "BondCreated"
-      );
+    const bond = await getBondContract(
+      broker.createBond(
+        issuerSigner.address,
+        maturityDate,
+        maxBondSupply,
+        collateralData.collateralAddress,
+        BigNumber.from(150),
+        borrowingToken.address,
+        false,
+        BigNumber.from(50)
+      )
+    );
 
-    collateralData.bondAddress = newBond;
-    bond = await ethers.getContractAt("SimpleBond", newBond, brokerSigner);
     // todo: this flow is weird
     // first we approve the bond to transfer collateral from the issuer
     await collateralToken
@@ -70,23 +58,24 @@ describe("Broker", async () => {
       .connect(issuerSigner)
       .collateralize(collateralData.collateralAmount);
     // after the collateral is in the bond, we can mint tokens to the issuer
-    await bond.connect(issuerSigner).mint(totalBondSupply);
+    await bond.connect(issuerSigner).mint(maxBondSupply);
     // then we approve the broker to transfer tokens to the auction...
-    await bond.connect(issuerSigner).transfer(broker.address, totalBondSupply);
+    await bond.connect(issuerSigner).transfer(broker.address, maxBondSupply);
 
-    return { newBond, broker, collateralData, collateralToken, gnosisAuction };
+    return { bond, broker, collateralData, collateralToken, gnosisAuction };
   }
+
   beforeEach(async () => {
-    [brokerSigner, issuerSigner, eveSigner] = await ethers.getSigners();
-    ({ newBond, broker, collateralData, collateralToken, gnosisAuction } =
-      await loadFixture(fixture));
+    [, issuerSigner, eveSigner] = await ethers.getSigners();
+    ({ bond, broker, gnosisAuction } = await loadFixture(fixture));
   });
+
   it("starts an auction", async () => {
     const auctionData: AuctionData = {
       _biddingToken: bond.address,
       orderCancellationEndDate: addDaysToNow(1),
       auctionEndDate: addDaysToNow(2),
-      _auctionedSellAmount: BigNumber.from(totalBondSupply),
+      _auctionedSellAmount: BigNumber.from(maxBondSupply),
       _minBuyAmount: ethers.utils.parseEther("1"),
       minimumBiddingAmountPerOrder: ethers.utils.parseEther(".01"),
       minFundingThreshold: ethers.utils.parseEther("30"),
@@ -104,12 +93,13 @@ describe("Broker", async () => {
     );
     expect(auctionId).to.be.equal(currentAuction + 1);
   });
+
   it("bars unauthorized auctioneer", async () => {
     const auctionData: AuctionData = {
-      _biddingToken: newBond,
+      _biddingToken: bond.address,
       orderCancellationEndDate: addDaysToNow(1),
       auctionEndDate: addDaysToNow(2),
-      _auctionedSellAmount: BigNumber.from(totalBondSupply),
+      _auctionedSellAmount: BigNumber.from(maxBondSupply),
       _minBuyAmount: ethers.utils.parseEther("1"),
       minimumBiddingAmountPerOrder: ethers.utils.parseEther(".01"),
       minFundingThreshold: ethers.utils.parseEther("30"),
@@ -119,10 +109,11 @@ describe("Broker", async () => {
     };
 
     await expect(
-      createAuction(broker, eveSigner, auctionData, newBond)
+      createAuction(broker, eveSigner, auctionData, bond.address)
     ).to.be.revertedWith("UnauthorizedInteractionWithBond");
   });
+
   it("creates a bond through the deployed clone factory", async () => {
-    expect(newBond).to.not.be.eq(null);
+    expect(bond.address).to.not.be.eq(null);
   });
 });

@@ -4,7 +4,7 @@ import "./SimpleBond.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract BondFactoryClone {
-  address immutable public tokenImplementation;
+  address public immutable tokenImplementation;
   event BondCreated(address newBond);
 
   constructor() {
@@ -12,27 +12,27 @@ contract BondFactoryClone {
   }
 
   function createBond(
-    uint256 _totalBondSupply,
-    uint256 _maturityDate,
     address _owner,
     address _issuer,
+    uint256 _maturityDate,
+    uint256 _maxBondSupply,
     address _collateralAddress,
     uint256 _collateralizationRatio,
+    address _borrowingAddress,
     bool _isConvertible,
-    uint256 _convertibilityRatio,
-    address _borrowingAddress
+    uint256 _convertibilityRatio
   ) external returns (address) {
     address clone = Clones.clone(tokenImplementation);
     SimpleBond(clone).initialize(
-      _totalBondSupply,
-      _maturityDate,
       _owner,
       _issuer,
+      _maturityDate,
+      _maxBondSupply,
       _collateralAddress,
       _collateralizationRatio,
+      _borrowingAddress,
       _isConvertible,
-      _convertibilityRatio,
-      _borrowingAddress
+      _convertibilityRatio
     );
     emit BondCreated(clone);
     return clone;

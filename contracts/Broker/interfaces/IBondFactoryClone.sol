@@ -5,14 +5,14 @@ interface IBondFactoryClone {
   event BondCreated(address newBond);
 
   function createBond(
-    uint256 _totalBondSupply,
-    uint256 _maturityDate,
     address _owner,
     address _issuer,
+    uint256 _maturityDate,
+    uint256 _maxBondSupply,
     address _collateralAddress,
     uint256 _collateralizationRatio,
+    address _borrowingAddress,
     bool _isConvertible,
-    uint256 _convertibilityRatio,
-    address _borrowingAddress
+    uint256 _convertibilityRatio
   ) external returns (address);
 }

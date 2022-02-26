@@ -31,6 +31,7 @@ contract SimpleBond is
     // when something goes wrong and this contract becomes nullified
     NULL
   }
+
   /// @notice emitted when a collateral is deposited for a bond
   /// @param collateralDepositor the address of the caller of the deposit
   /// @param amount the number of the tokens being deposited
@@ -97,6 +98,9 @@ contract SimpleBond is
   // Redemption
   error ZeroRedemptionAmount();
 
+  // Sweep
+  error SweepDisallowedForToken();
+
   modifier onlyIssuer() {
     if (issuer != msg.sender) {
       revert OnlyIssuerOfBondMayCallThisFunction();
@@ -134,14 +138,15 @@ contract SimpleBond is
 
   /// @notice this date is when the DAO must have repaid its debt
   /// @notice when bondholders can redeem their bonds
+  address public issuer;
   uint256 public maturityDate;
+  uint256 public maxBondSupply;
   address public collateralAddress;
   uint256 public collateralizationRatio;
+  address public borrowingAddress;
   bool public isConvertible;
   uint256 public convertibilityRatio;
-  address public borrowingAddress;
-  address public issuer;
-  uint256 public maxBondSupply;
+
   bool private _isRepaid;
 
   using Strings for uint256;
@@ -156,7 +161,7 @@ contract SimpleBond is
     if (isDefaulted()) {
       return BondStanding.DEFAULTED;
     }
-    if (isPaid()) {
+    if (_isRepaid) {
       return BondStanding.PAID;
     }
     if (isRedeemed()) {
@@ -166,15 +171,11 @@ contract SimpleBond is
   }
 
   function isGood() private view returns (bool) {
-    return !isDefaulted() && !isPaid() && !isRedeemed();
+    return !isDefaulted() && !_isRepaid && !isRedeemed();
   }
 
   function isDefaulted() private view returns (bool) {
-    return block.timestamp >= maturityDate && !isPaid() && !isRedeemed();
-  }
-
-  function isPaid() private view returns (bool) {
-    return _isRepaid;
+    return block.timestamp >= maturityDate && !_isRepaid && !isRedeemed();
   }
 
   function isRedeemed() private view returns (bool) {
@@ -183,17 +184,17 @@ contract SimpleBond is
 
   /// @dev New bond contract will be deployed before each auction
   /// @dev The Auction contract will be the owner
-  /// @param _totalBondSupply Total number of bonds being issued - this is determined by auction config
+  /// @param _maxBondSupply Total number of bonds being issued - this is determined by auction config
   function initialize(
-    uint256 _totalBondSupply,
-    uint256 _maturityDate,
     address _owner,
     address _issuer,
+    uint256 _maturityDate,
+    uint256 _maxBondSupply,
     address _collateralAddress,
     uint256 _collateralizationRatio,
+    address _borrowingAddress,
     bool _isConvertible,
-    uint256 _convertibilityRatio,
-    address _borrowingAddress
+    uint256 _convertibilityRatio
   ) public initializer {
     // this timestamp is a date in 2020, which basically is here to confirm
     // the date provided is greater than 0 and a valid timestamp
@@ -214,7 +215,7 @@ contract SimpleBond is
     convertibilityRatio = _convertibilityRatio;
     borrowingAddress = _borrowingAddress;
     issuer = _issuer;
-    maxBondSupply = _totalBondSupply;
+    maxBondSupply = _maxBondSupply;
 
     _transferOwnership(_owner);
   }
@@ -237,10 +238,14 @@ contract SimpleBond is
     emit CollateralDeposited(msg.sender, amount);
   }
 
+  function uncollateralize() external onlyIssuer nonReentrant {
+    _uncollateralize();
+  }
+
   /// @notice Withdraw collateral from bond contract
   /// @notice After a bond has matured AND the issuer has returned the principal, the issuer can redeem the collateral.
   /// @notice The amount of collateral available to be withdrawn depends on the collateralization ratio
-  function uncollateralize() public onlyIssuer nonReentrant {
+  function _uncollateralize() private onlyIssuer {
     // start with max collateral required to cover the amount of bonds
     uint256 totalRequiredCollateral = totalSupply() * collateralizationRatio;
     if (_isRepaid && isConvertible) {
@@ -293,7 +298,11 @@ contract SimpleBond is
 
   /// @notice Bond holder can convert their bond to underlying collateral
   /// @notice The bond must be convertible and not repaid
-  function convert(uint256 amountOfBondsToConvert) external notPastMaturity {
+  function convert(uint256 amountOfBondsToConvert)
+    external
+    notPastMaturity
+    nonReentrant
+  {
     if (!isConvertible) {
       revert NotConvertible();
     }
@@ -310,7 +319,11 @@ contract SimpleBond is
     );
   }
 
-  function repay(uint256 amount) public notPastMaturity {
+  function repay(uint256 amount) external notPastMaturity nonReentrant {
+    _repay(amount);
+  }
+
+  function _repay(uint256 amount) private notPastMaturity {
     if (_isRepaid) {
       revert RepaymentMet();
     }
@@ -341,14 +354,25 @@ contract SimpleBond is
   }
 
   /// @notice atomic operation repaying and redeeming
-  function refinance() external onlyIssuer {
+  function refinance() external onlyIssuer nonReentrant {
     burn(balanceOf(msg.sender));
     uint256 coveredBonds = IERC20(borrowingAddress).balanceOf(address(this));
     if (coveredBonds < totalSupply()) {
-      repay(totalSupply() - coveredBonds);
+      _repay(totalSupply() - coveredBonds);
     }
-    uncollateralize();
+    _uncollateralize();
 
     emit Refinance(msg.sender, totalSupply());
+  }
+
+  function sweep(IERC20 token) external nonReentrant {
+    if (
+      address(token) == collateralAddress ||
+      address(token) == borrowingAddress ||
+      address(token) == address(this)
+    ) {
+      revert SweepDisallowedForToken();
+    }
+    token.transfer(owner(), token.balanceOf(address(this)));
   }
 }

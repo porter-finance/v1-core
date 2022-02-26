@@ -91,33 +91,33 @@ contract Broker is Ownable, ReentrancyGuard {
   }
 
   function createBond(
-    uint256 _totalBondSupply,
+    address _issuer,
     uint256 _maturityDate,
-    address _bondIssuer,
+    uint256 _maxBondSupply,
     address _collateralAddress,
     uint256 _collateralizationRatio,
+    address _borrowingAddress,
     bool _isConvertible,
-    uint256 _convertibilityRatio,
-    address _borrowingAddress
+    uint256 _convertibilityRatio
   ) external {
     address bond = IBondFactoryClone(bondFactoryAddress).createBond(
-      _totalBondSupply,
-      _maturityDate,
       address(this),
-      _bondIssuer,
+      _issuer,
+      _maturityDate,
+      _maxBondSupply,
       _collateralAddress,
       _collateralizationRatio,
+      _borrowingAddress,
       _isConvertible,
-      _convertibilityRatio,
-      _borrowingAddress
+      _convertibilityRatio
     );
 
-    // TODO: mint an NFT token associated with the bond
+    // TODO: mint an NFT associated with the bond
 
-    issuerToBonds[_bondIssuer].push(bond);
-    bondToIssuer[bond] = _bondIssuer;
-    if (issuerToBonds[_bondIssuer].length == 1) {
-      bondHolders.push(_bondIssuer);
+    issuerToBonds[_issuer].push(bond);
+    bondToIssuer[bond] = _issuer;
+    if (issuerToBonds[_issuer].length == 1) {
+      bondHolders.push(_issuer);
     }
     emit BondCreated(bond);
   }
