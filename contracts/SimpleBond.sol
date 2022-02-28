@@ -147,9 +147,9 @@ contract SimpleBond is
     _;
   }
 
+  address public issuer;
   /// @notice this date is when the DAO must have repaid its debt
   /// @notice when bondholders can redeem their bonds
-  address public issuer;
   uint256 public maturityDate;
   uint256 public maxBondSupply;
   address public collateralAddress;
@@ -186,7 +186,7 @@ contract SimpleBond is
   }
 
   function isGood() private view returns (bool) {
-    return !isDefaulted() && !isRedeemed();
+    return !isDefaulted() && !_isRepaid && !isRedeemed();
   }
 
   function isRepaid() private view returns (bool) {

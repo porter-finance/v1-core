@@ -37,7 +37,7 @@ contract Broker is Ownable, ReentrancyGuard {
 
   address public immutable gnosisAuctionAddress;
   address public immutable bondFactoryAddress;
-  address[] public bondHolders;
+  address[] public bondIssuers;
 
   /// @dev mapping of issuer addresses to the bonds they have issued
   mapping(address => address[]) public issuerToBonds;
@@ -117,7 +117,7 @@ contract Broker is Ownable, ReentrancyGuard {
     issuerToBonds[_issuer].push(bond);
     bondToIssuer[bond] = _issuer;
     if (issuerToBonds[_issuer].length == 1) {
-      bondHolders.push(_issuer);
+      bondIssuers.push(_issuer);
     }
     emit BondCreated(bond);
   }
