@@ -2,7 +2,6 @@ import * as dotenv from "dotenv";
 
 import { HardhatUserConfig, task } from "hardhat/config";
 import "@typechain/hardhat";
-import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
@@ -25,12 +24,6 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
-      {
-        version: "0.5.5",
-      },
-      {
-        version: "0.6.12",
-      },
       {
         version: "0.8.9",
       },

@@ -66,12 +66,16 @@ contract SimpleBond is
   /// @notice emitted when a bond is refinanced by a lender
   event Refinance(address refinancer, uint256 totalShares);
 
+  /// @notice emitted when a bond changes state
+  event BondStandingChange(BondStanding oldStanding, BondStanding newStanding);
+
   // modifiers
   error OnlyIssuerOfBondMayCallThisFunction();
   error BondPastMaturity();
   error BondNotYetMatured();
   error BondNotYetRepaid();
   error BondNotYetRedeemed();
+  error BondNotDefaulted();
 
   // Creation
   error InvalidMaturityDate();
@@ -136,6 +140,13 @@ contract SimpleBond is
     _;
   }
 
+  modifier defaulted() {
+    if (_isRepaid || block.timestamp < maturityDate) {
+      revert BondNotDefaulted();
+    }
+    _;
+  }
+
   /// @notice this date is when the DAO must have repaid its debt
   /// @notice when bondholders can redeem their bonds
   address public issuer;
@@ -146,6 +157,8 @@ contract SimpleBond is
   address public borrowingAddress;
   bool public isConvertible;
   uint256 public convertibilityRatio;
+  uint256 public totalAssets;
+  BondStanding public currentBondStanding;
 
   bool private _isRepaid;
 
@@ -154,20 +167,22 @@ contract SimpleBond is
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() initializer {}
 
-  function state() public view returns (BondStanding) {
+  function updateBondState() public returns (BondStanding newStanding) {
     if (isGood()) {
-      return BondStanding.GOOD;
+      newStanding = BondStanding.GOOD;
+    } else if (isDefaulted()) {
+      newStanding = BondStanding.DEFAULTED;
+    } else if (_isRepaid) {
+      newStanding = BondStanding.PAID;
+    } else if (isRedeemed()) {
+      newStanding = BondStanding.REDEEMED;
+    } else {
+      newStanding = BondStanding.NULL;
     }
-    if (isDefaulted()) {
-      return BondStanding.DEFAULTED;
+    if (newStanding != currentBondStanding) {
+      emit BondStandingChange(currentBondStanding, newStanding);
+      currentBondStanding = newStanding;
     }
-    if (_isRepaid) {
-      return BondStanding.PAID;
-    }
-    if (isRedeemed()) {
-      return BondStanding.REDEEMED;
-    }
-    return BondStanding.NULL;
   }
 
   function isGood() private view returns (bool) {
@@ -175,7 +190,7 @@ contract SimpleBond is
   }
 
   function isDefaulted() private view returns (bool) {
-    return block.timestamp >= maturityDate && !_isRepaid && !isRedeemed();
+    return block.timestamp >= maturityDate && !_isRepaid;
   }
 
   function isRedeemed() private view returns (bool) {
@@ -235,6 +250,7 @@ contract SimpleBond is
       revert ZeroCollateralizationAmount();
     }
     !IERC20(collateralAddress).transferFrom(msg.sender, address(this), amount);
+    totalAssets += amount;
     emit CollateralDeposited(msg.sender, amount);
   }
 
@@ -259,14 +275,11 @@ contract SimpleBond is
     if (totalRequiredCollateral >= currentCollateral) {
       revert CollateralInContractInsufficientToCoverWithdraw();
     }
-    IERC20(collateralAddress).transfer(
-      msg.sender,
-      currentCollateral - totalRequiredCollateral
-    );
-    emit CollateralWithdrawn(
-      msg.sender,
-      currentCollateral - totalRequiredCollateral
-    );
+    uint256 withdrawableCollateral = currentCollateral -
+      totalRequiredCollateral;
+    totalAssets -= withdrawableCollateral;
+    IERC20(collateralAddress).transfer(msg.sender, withdrawableCollateral);
+    emit CollateralWithdrawn(msg.sender, withdrawableCollateral);
   }
 
   /// @dev nonReentrant needed as double minting would be possible otherwise
@@ -311,6 +324,7 @@ contract SimpleBond is
       convertibilityRatio) / 100;
     burn(amountOfBondsToConvert);
 
+    totalAssets -= amountOfCollateralReceived;
     IERC20(collateralAddress).transfer(msg.sender, amountOfCollateralReceived);
     emit Converted(
       msg.sender,
@@ -330,6 +344,7 @@ contract SimpleBond is
     IERC20(borrowingAddress).transferFrom(msg.sender, address(this), amount);
     if (IERC20(borrowingAddress).balanceOf(address(this)) >= totalSupply()) {
       _isRepaid = true;
+      updateBondState();
       emit RepaymentInFull(msg.sender, amount);
     } else {
       emit RepaymentDeposited(msg.sender, amount);
@@ -353,7 +368,25 @@ contract SimpleBond is
     emit Redeem(msg.sender, bondShares);
   }
 
-  /// @notice atomic operation repaying and redeeming
+  function redeemDefaulted(uint256 bondShares)
+    external
+    nonReentrant
+    pastMaturity
+    defaulted
+  {
+    if (bondShares == 0) {
+      revert ZeroRedemptionAmount();
+    }
+
+    uint256 collateralToWithdraw = (bondShares * totalAssets) / totalSupply();
+    burn(bondShares);
+    totalAssets -= collateralToWithdraw;
+    IERC20(collateralAddress).transfer(msg.sender, collateralToWithdraw);
+
+    emit Redeem(msg.sender, bondShares);
+  }
+
+  /// @notice atomic operation repaying and removing collateral
   function refinance() external onlyIssuer nonReentrant {
     burn(balanceOf(msg.sender));
     uint256 coveredBonds = IERC20(borrowingAddress).balanceOf(address(this));

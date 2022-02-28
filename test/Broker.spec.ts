@@ -24,7 +24,6 @@ describe("Broker", async () => {
 
   const maxBondSupply = 12500;
 
-  let newBond: string;
   // 3 years from now, in seconds
   const maturityDate = Math.round(
     new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /

@@ -293,10 +293,7 @@ describe("SimpleBond", async () => {
       await bond.connect(issuer).mint(BondConfig.maxBondSupply);
       await borrowingToken
         .connect(issuer)
-        .approve(bond.address, BondConfig.maxBondSupply);
-      await borrowingToken
-        .connect(issuer)
-        .approve(bond.address, BondConfig.maxBondSupply);
+        .approve(bond.address, BondConfig.maxBondSupply * 2);
       const collateralBalanceBefore = await collateralToken.balanceOf(
         issuer.address
       );
@@ -307,15 +304,14 @@ describe("SimpleBond", async () => {
       expect(collateralBalanceAfter.sub(collateralBalanceBefore)).to.eq(
         collateralToDeposit
       );
-      expect(await bond.state()).to.eq(BondStanding.REDEEMED);
     });
   });
 
   describe("redemption", async () => {
-    it("should redeem bond at maturity", async function () {
-      const collateralToDeposit =
-        (BondConfig.maxBondSupply * BondConfig.collateralizationRatio) / 100;
-      const sharesToSellToBondHolder = 100;
+    const collateralToDeposit =
+      (BondConfig.maxBondSupply * BondConfig.collateralizationRatio) / 100;
+    const sharesToSellToBondHolder = 1000;
+    beforeEach(async () => {
       await collateralToken
         .connect(issuer)
         .approve(bond.address, collateralToDeposit);
@@ -327,9 +323,13 @@ describe("SimpleBond", async () => {
       await borrowingToken
         .connect(issuer)
         .approve(bond.address, BondConfig.maxBondSupply);
+    });
+    it("should redeem bond at maturity for borrowing token", async function () {
       await bond.connect(issuer).repay(BondConfig.maxBondSupply);
       // Fast forward to expire
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
+      await bond.updateBondState();
+      expect(await bond.currentBondStanding()).to.eq(BondStanding.PAID);
       await bond
         .connect(bondHolder)
         .approve(bond.address, sharesToSellToBondHolder);
@@ -341,6 +341,17 @@ describe("SimpleBond", async () => {
       expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
       expect(await borrowingToken.balanceOf(bondHolder.address)).to.be.equal(
         sharesToSellToBondHolder
+      );
+    });
+    it("should redeem bond at default for collateral token", async function () {
+      await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
+      await bond.connect(bondHolder).redeemDefaulted(sharesToSellToBondHolder);
+      console.log(await bond.totalAssets());
+      console.log(await bond.totalSupply());
+      expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
+      expect(await borrowingToken.balanceOf(bondHolder.address)).to.be.equal(0);
+      expect(await collateralToken.balanceOf(bondHolder.address)).to.be.equal(
+        (sharesToSellToBondHolder * BondConfig.collateralizationRatio) / 100
       );
     });
   });
