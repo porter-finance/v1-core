@@ -113,35 +113,35 @@ contract SimpleBond is
   }
 
   modifier pastMaturity() {
-    if (block.timestamp < maturityDate) {
+    if (!isPastMaturity()) {
       revert BondNotYetMatured();
     }
     _;
   }
 
   modifier notPastMaturity() {
-    if (block.timestamp >= maturityDate) {
+    if (isPastMaturity()) {
       revert BondPastMaturity();
     }
     _;
   }
 
   modifier repaid() {
-    if (!_isRepaid) {
+    if (!isRepaid()) {
       revert BondNotYetRepaid();
     }
     _;
   }
 
   modifier redeemed() {
-    if (totalSupply() > 0) {
+    if (!isRedeemed()) {
       revert BondNotYetRedeemed();
     }
     _;
   }
 
   modifier defaulted() {
-    if (_isRepaid || block.timestamp < maturityDate) {
+    if (!isDefaulted()) {
       revert BondNotDefaulted();
     }
     _;
@@ -172,7 +172,7 @@ contract SimpleBond is
       newStanding = BondStanding.GOOD;
     } else if (isDefaulted()) {
       newStanding = BondStanding.DEFAULTED;
-    } else if (_isRepaid) {
+    } else if (isRepaid()) {
       newStanding = BondStanding.PAID;
     } else if (isRedeemed()) {
       newStanding = BondStanding.REDEEMED;
@@ -186,15 +186,23 @@ contract SimpleBond is
   }
 
   function isGood() private view returns (bool) {
-    return !isDefaulted() && !_isRepaid && !isRedeemed();
+    return !isDefaulted() && !isRedeemed();
+  }
+
+  function isRepaid() private view returns (bool) {
+    return _isRepaid;
   }
 
   function isDefaulted() private view returns (bool) {
-    return block.timestamp >= maturityDate && !_isRepaid;
+    return isPastMaturity() && !isRepaid();
   }
 
   function isRedeemed() private view returns (bool) {
     return totalSupply() == 0;
+  }
+
+  function isPastMaturity() private view returns (bool) {
+    return block.timestamp >= maturityDate;
   }
 
   /// @dev New bond contract will be deployed before each auction
