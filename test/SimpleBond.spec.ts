@@ -282,30 +282,6 @@ describe("SimpleBond", async () => {
       ).to.be.revertedWith("NoMintAfterIssuance");
     });
   });
-  describe("refinance", async () => {
-    it("refinances with outside capital", async () => {
-      const collateralToDeposit =
-        (BondConfig.maxBondSupply * BondConfig.collateralizationRatio) / 100;
-      await collateralToken
-        .connect(issuer)
-        .approve(bond.address, collateralToDeposit);
-      await bond.connect(issuer).collateralize(collateralToDeposit);
-      await bond.connect(issuer).mint(BondConfig.maxBondSupply);
-      await borrowingToken
-        .connect(issuer)
-        .approve(bond.address, BondConfig.maxBondSupply * 2);
-      const collateralBalanceBefore = await collateralToken.balanceOf(
-        issuer.address
-      );
-      await bond.connect(issuer).refinance();
-      const collateralBalanceAfter = await collateralToken.balanceOf(
-        issuer.address
-      );
-      expect(collateralBalanceAfter.sub(collateralBalanceBefore)).to.eq(
-        collateralToDeposit
-      );
-    });
-  });
 
   describe("redemption", async () => {
     const collateralToDeposit =

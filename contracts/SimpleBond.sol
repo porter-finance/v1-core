@@ -165,7 +165,9 @@ contract SimpleBond is
   using Strings for uint256;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
-  constructor() initializer {}
+  constructor() initializer {
+    // todo: delete this?
+  }
 
   function updateBondState() public returns (BondStanding newStanding) {
     if (isGood()) {
@@ -233,9 +235,9 @@ contract SimpleBond is
 
     maturityDate = _maturityDate;
     collateralAddress = _collateralAddress;
-    collateralizationRatio = _collateralizationRatio;
+    collateralizationRatio = _collateralizationRatio; // 325
     isConvertible = _isConvertible;
-    convertibilityRatio = _convertibilityRatio;
+    convertibilityRatio = _convertibilityRatio; // 12 12% .12
     borrowingAddress = _borrowingAddress;
     issuer = _issuer;
     maxBondSupply = _maxBondSupply;
@@ -262,14 +264,10 @@ contract SimpleBond is
     emit CollateralDeposited(msg.sender, amount);
   }
 
-  function uncollateralize() external onlyIssuer nonReentrant {
-    _uncollateralize();
-  }
-
   /// @notice Withdraw collateral from bond contract
   /// @notice After a bond has matured AND the issuer has returned the principal, the issuer can redeem the collateral.
   /// @notice The amount of collateral available to be withdrawn depends on the collateralization ratio
-  function _uncollateralize() private onlyIssuer {
+  function uncollateralize() public nonReentrant onlyIssuer {
     // start with max collateral required to cover the amount of bonds
     uint256 totalRequiredCollateral = totalSupply() * collateralizationRatio;
     if (_isRepaid && isConvertible) {
@@ -341,11 +339,7 @@ contract SimpleBond is
     );
   }
 
-  function repay(uint256 amount) external notPastMaturity nonReentrant {
-    _repay(amount);
-  }
-
-  function _repay(uint256 amount) private notPastMaturity {
+  function repay(uint256 amount) public nonReentrant notPastMaturity {
     if (_isRepaid) {
       revert RepaymentMet();
     }
@@ -399,9 +393,9 @@ contract SimpleBond is
     burn(balanceOf(msg.sender));
     uint256 coveredBonds = IERC20(borrowingAddress).balanceOf(address(this));
     if (coveredBonds < totalSupply()) {
-      _repay(totalSupply() - coveredBonds);
+      repay(totalSupply() - coveredBonds);
     }
-    _uncollateralize();
+    uncollateralize();
 
     emit Refinance(msg.sender, totalSupply());
   }
