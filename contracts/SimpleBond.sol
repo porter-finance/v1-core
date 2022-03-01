@@ -5,7 +5,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title SimpleBond
 /// @notice A custom ERC20 token that can be used to issue bonds.
@@ -26,8 +25,6 @@ contract SimpleBond is
     DEFAULTED,
     // after DAO pays
     PAID,
-    // when 100% of bondholders have redeemed their bonds
-    REDEEMED,
     // when something goes wrong and this contract becomes nullified
     NULL
   }
@@ -86,12 +83,10 @@ contract SimpleBond is
   error NoMintAfterIssuance();
 
   // Collateralization
-  error CollateralTransferFailure();
   error ZeroCollateralizationAmount();
 
   // Uncollateralization
   error CollateralInContractInsufficientToCoverWithdraw();
-  error InsufficientCollateralReservedForConvertibility();
 
   // Conversion
   error NotConvertible();
@@ -113,35 +108,35 @@ contract SimpleBond is
   }
 
   modifier pastMaturity() {
-    if (!isPastMaturity()) {
+    if (block.timestamp < maturityDate) {
       revert BondNotYetMatured();
     }
     _;
   }
 
   modifier notPastMaturity() {
-    if (isPastMaturity()) {
+    if (block.timestamp >= maturityDate) {
       revert BondPastMaturity();
     }
     _;
   }
 
   modifier repaid() {
-    if (!isRepaid()) {
+    if (!_isRepaid) {
       revert BondNotYetRepaid();
     }
     _;
   }
 
   modifier redeemed() {
-    if (!isRedeemed()) {
+    if (totalSupply() > 0) {
       revert BondNotYetRedeemed();
     }
     _;
   }
 
   modifier defaulted() {
-    if (!isDefaulted()) {
+    if (block.timestamp < maturityDate) {
       revert BondNotDefaulted();
     }
     _;
@@ -157,54 +152,21 @@ contract SimpleBond is
   address public borrowingAddress;
   bool public isConvertible;
   uint256 public convertibilityRatio;
-  uint256 public totalAssets;
+  uint256 public totalCollateral;
   BondStanding public currentBondStanding;
 
   bool private _isRepaid;
 
-  using Strings for uint256;
-
-  /// @custom:oz-upgrades-unsafe-allow constructor
-  constructor() initializer {
-    // todo: delete this?
-  }
-
-  function updateBondState() public returns (BondStanding newStanding) {
-    if (isGood()) {
+  function state() public view returns (BondStanding newStanding) {
+    if (block.timestamp >= maturityDate && !_isRepaid && totalSupply() > 0) {
       newStanding = BondStanding.GOOD;
-    } else if (isDefaulted()) {
+    } else if (block.timestamp >= maturityDate && !_isRepaid) {
       newStanding = BondStanding.DEFAULTED;
-    } else if (isRepaid()) {
+    } else if (_isRepaid) {
       newStanding = BondStanding.PAID;
-    } else if (isRedeemed()) {
-      newStanding = BondStanding.REDEEMED;
     } else {
       newStanding = BondStanding.NULL;
     }
-    if (newStanding != currentBondStanding) {
-      emit BondStandingChange(currentBondStanding, newStanding);
-      currentBondStanding = newStanding;
-    }
-  }
-
-  function isGood() private view returns (bool) {
-    return !isDefaulted() && !_isRepaid && !isRedeemed();
-  }
-
-  function isRepaid() private view returns (bool) {
-    return _isRepaid;
-  }
-
-  function isDefaulted() private view returns (bool) {
-    return isPastMaturity() && !isRepaid();
-  }
-
-  function isRedeemed() private view returns (bool) {
-    return totalSupply() == 0;
-  }
-
-  function isPastMaturity() private view returns (bool) {
-    return block.timestamp >= maturityDate;
   }
 
   /// @dev New bond contract will be deployed before each auction
@@ -235,9 +197,9 @@ contract SimpleBond is
 
     maturityDate = _maturityDate;
     collateralAddress = _collateralAddress;
-    collateralizationRatio = _collateralizationRatio; // 325
+    collateralizationRatio = _collateralizationRatio;
     isConvertible = _isConvertible;
-    convertibilityRatio = _convertibilityRatio; // 12 12% .12
+    convertibilityRatio = _convertibilityRatio;
     borrowingAddress = _borrowingAddress;
     issuer = _issuer;
     maxBondSupply = _maxBondSupply;
@@ -260,7 +222,7 @@ contract SimpleBond is
       revert ZeroCollateralizationAmount();
     }
     !IERC20(collateralAddress).transferFrom(msg.sender, address(this), amount);
-    totalAssets += amount;
+    totalCollateral += amount;
     emit CollateralDeposited(msg.sender, amount);
   }
 
@@ -283,7 +245,7 @@ contract SimpleBond is
     }
     uint256 withdrawableCollateral = currentCollateral -
       totalRequiredCollateral;
-    totalAssets -= withdrawableCollateral;
+    totalCollateral -= withdrawableCollateral;
     IERC20(collateralAddress).transfer(msg.sender, withdrawableCollateral);
     emit CollateralWithdrawn(msg.sender, withdrawableCollateral);
   }
@@ -330,7 +292,7 @@ contract SimpleBond is
       convertibilityRatio) / 100;
     burn(amountOfBondsToConvert);
 
-    totalAssets -= amountOfCollateralReceived;
+    totalCollateral -= amountOfCollateralReceived;
     IERC20(collateralAddress).transfer(msg.sender, amountOfCollateralReceived);
     emit Converted(
       msg.sender,
@@ -346,7 +308,6 @@ contract SimpleBond is
     IERC20(borrowingAddress).transferFrom(msg.sender, address(this), amount);
     if (IERC20(borrowingAddress).balanceOf(address(this)) >= totalSupply()) {
       _isRepaid = true;
-      updateBondState();
       emit RepaymentInFull(msg.sender, amount);
     } else {
       emit RepaymentDeposited(msg.sender, amount);
@@ -380,24 +341,13 @@ contract SimpleBond is
       revert ZeroRedemptionAmount();
     }
 
-    uint256 collateralToWithdraw = (bondShares * totalAssets) / totalSupply();
+    uint256 collateralToWithdraw = (bondShares * totalCollateral) /
+      totalSupply();
     burn(bondShares);
-    totalAssets -= collateralToWithdraw;
+    totalCollateral -= collateralToWithdraw;
     IERC20(collateralAddress).transfer(msg.sender, collateralToWithdraw);
 
     emit Redeem(msg.sender, bondShares);
-  }
-
-  /// @notice atomic operation repaying and removing collateral
-  function refinance() external onlyIssuer nonReentrant {
-    burn(balanceOf(msg.sender));
-    uint256 coveredBonds = IERC20(borrowingAddress).balanceOf(address(this));
-    if (coveredBonds < totalSupply()) {
-      repay(totalSupply() - coveredBonds);
-    }
-    uncollateralize();
-
-    emit Refinance(msg.sender, totalSupply());
   }
 
   function sweep(IERC20 token) external nonReentrant {

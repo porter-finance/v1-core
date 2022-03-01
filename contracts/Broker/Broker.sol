@@ -41,8 +41,6 @@ contract Broker is Ownable, ReentrancyGuard {
 
   /// @dev mapping of issuer addresses to the bonds they have issued
   mapping(address => address[]) public issuerToBonds;
-  /// @dev mapping of issued bond address to the issuer address
-  mapping(address => address) public bondToIssuer;
 
   // --- Events ---
   /// @notice A GnosisAuction is created with auction parameters
@@ -52,38 +50,14 @@ contract Broker is Ownable, ReentrancyGuard {
   event AuctionCreated(uint256 auctionId, address bondAddress);
 
   event BondCreated(address newBond);
-  error InadequateCollateralBalance(
-    address collateralAddress,
-    uint256 collateralAmount
-  );
-
-  error MaturityDateNotReached(uint256 blockTimestamp, uint256 maturityDate);
-
-  error TransferCollateralFailed();
-
-  error InsufficientCollateralInContract(
-    address collateralAddress,
-    uint256 collateralAmount
-  );
 
   error InvalidMaturityDate(uint256 maturityDate, uint256 auctionEndDate);
 
-  error BondTransferFail(address bondAddress, uint256 auctionedSellAmount);
-
   error NonZeroAuctionFee();
-
-  error BondAddressNotSet();
 
   error UnauthorizedInteractionWithBond();
 
   using SafeERC20 for IERC20;
-
-  modifier isIssuer(address bond) {
-    if (bondToIssuer[bond] != msg.sender) {
-      revert UnauthorizedInteractionWithBond();
-    }
-    _;
-  }
 
   constructor(address gnosisAuctionAddress_, address bondFactoryAddress_) {
     gnosisAuctionAddress = gnosisAuctionAddress_;
@@ -115,7 +89,6 @@ contract Broker is Ownable, ReentrancyGuard {
     // TODO: mint an NFT associated with the bond
 
     issuerToBonds[_issuer].push(bond);
-    bondToIssuer[bond] = _issuer;
     if (issuerToBonds[_issuer].length == 1) {
       bondIssuers.push(_issuer);
     }
@@ -133,12 +106,17 @@ contract Broker is Ownable, ReentrancyGuard {
   function createAuction(
     AuctionType.AuctionData memory auctionData,
     address bondAddress
-  ) external isIssuer(bondAddress) returns (uint256 auctionId) {
+  ) external returns (uint256 auctionId) {
     // only create auction if there is no fee: gnosis says it won't add one https://github.com/gnosis/ido-contracts/issues/143
     if (IGnosisAuction(gnosisAuctionAddress).feeNumerator() > 0) {
       revert NonZeroAuctionFee();
     }
     SimpleBond bond = SimpleBond(bondAddress);
+
+    if (bond.issuer() != msg.sender) {
+      revert UnauthorizedInteractionWithBond();
+    }
+
     if (
       bond.maturityDate() < block.timestamp ||
       bond.maturityDate() < auctionData.auctionEndDate
@@ -150,9 +128,7 @@ contract Broker is Ownable, ReentrancyGuard {
     }
 
     // Approve the auction to transfer all the tokens
-    if (!bond.approve(gnosisAuctionAddress, auctionData._auctionedSellAmount)) {
-      revert BondTransferFail(bondAddress, auctionData._auctionedSellAmount);
-    }
+    bond.approve(gnosisAuctionAddress, auctionData._auctionedSellAmount);
 
     auctionId = initiateAuction(auctionData, bondAddress);
 
@@ -167,7 +143,6 @@ contract Broker is Ownable, ReentrancyGuard {
     AuctionType.AuctionData memory auctionData,
     address bondAddress
   ) internal returns (uint256 auctionId) {
-    // Create a new GnosisAuction
     auctionId = IGnosisAuction(gnosisAuctionAddress).initiateAuction(
       IERC20(bondAddress),
       auctionData._biddingToken,

@@ -21,8 +21,8 @@ contract BondFactoryClone {
     address _borrowingAddress,
     bool _isConvertible,
     uint256 _convertibilityRatio
-  ) external returns (address) {
-    address clone = Clones.clone(tokenImplementation);
+  ) external returns (address clone) {
+    clone = Clones.clone(tokenImplementation);
     SimpleBond(clone).initialize(
       _owner,
       _issuer,
@@ -35,6 +35,5 @@ contract BondFactoryClone {
       _convertibilityRatio
     );
     emit BondCreated(clone);
-    return clone;
   }
 }

@@ -304,8 +304,7 @@ describe("SimpleBond", async () => {
       await bond.connect(issuer).repay(BondConfig.maxBondSupply);
       // Fast forward to expire
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
-      await bond.updateBondState();
-      expect(await bond.currentBondStanding()).to.eq(BondStanding.PAID);
+      expect(await bond.state()).to.eq(BondStanding.PAID);
       await bond
         .connect(bondHolder)
         .approve(bond.address, sharesToSellToBondHolder);
@@ -322,8 +321,6 @@ describe("SimpleBond", async () => {
     it("should redeem bond at default for collateral token", async function () {
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
       await bond.connect(bondHolder).redeemDefaulted(sharesToSellToBondHolder);
-      console.log(await bond.totalAssets());
-      console.log(await bond.totalSupply());
       expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
       expect(await borrowingToken.balanceOf(bondHolder.address)).to.be.equal(0);
       expect(await collateralToken.balanceOf(bondHolder.address)).to.be.equal(
