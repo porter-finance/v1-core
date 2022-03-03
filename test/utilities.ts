@@ -205,7 +205,9 @@ export async function getEventArgumentsFromTransaction(
   return {};
 }
 
-export const getBondContract = async (tx: Promise<any>) => {
+export const getBondContract = async (
+  tx: Promise<any>
+): Promise<SimpleBond> => {
   const [owner] = await ethers.getSigners();
   const [newBondAddress] = await getEventArgumentsFromTransaction(
     await tx,

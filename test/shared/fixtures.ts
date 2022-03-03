@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { BondFactoryClone, Broker, TestERC20 } from "../../typechain";
+import { BondFactoryClone, Broker, ERC20, TestERC20 } from "../../typechain";
 import { CollateralData } from "../utilities";
 
 const EasyAuctionJSON = require("../../contracts/external/EasyAuction.json");
@@ -77,4 +77,9 @@ export async function attackingTokenFixture() {
     ethers.utils.parseEther("2")
   )) as TestERC20;
   return { attackingToken };
+}
+
+export async function convertToCurrencyDecimals(token: ERC20, amount: string) {
+  const decimals = await token.decimals();
+  return ethers.utils.parseUnits(amount, decimals);
 }
