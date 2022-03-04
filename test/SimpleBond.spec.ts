@@ -46,7 +46,7 @@ describe("SimpleBond", async () => {
   // no args because of gh issue:
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
   async function fixture() {
-    const [, owner] = await ethers.getSigners();
+    const [owner] = await ethers.getSigners();
 
     const { factory } = await bondFactoryFixture();
     const { collateralToken } = await collateralTokenFixture();
@@ -93,7 +93,7 @@ describe("SimpleBond", async () => {
   }
 
   beforeEach(async () => {
-    [, owner, bondHolder, attacker] = await ethers.getSigners();
+    [owner, bondHolder, attacker] = await ethers.getSigners();
     ({
       bond,
       convertibleBond,
@@ -276,7 +276,7 @@ describe("SimpleBond", async () => {
     it("fails to mint if not all tokens owned by owner", async () => {
       await expect(bond.connect(owner).mint(tokensToMint / 2)).to.not.be
         .reverted;
-      await bond.connect(owner).transfer(attacker.address, 1);
+      await bond.connect(owner).transfer(bondHolder.address, 1);
       await expect(
         bond.connect(owner).mint(tokensToMint / 2)
       ).to.be.revertedWith("NoMintAfterIssuance");
