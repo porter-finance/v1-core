@@ -149,10 +149,10 @@ describe("SimpleBond", async () => {
 
     it("deposits collateral", async () => {
       await collateralToken
-        .connect(owner)
+
         .approve(bond.address, amountToDeposit);
       const { amount } = await getEventArgumentsFromTransaction(
-        await bond.connect(owner).collateralize(amountToDeposit),
+        await bond.collateralize(amountToDeposit),
         "CollateralDeposited"
       );
       expect(amount).to.be.equal(amountToDeposit);
@@ -165,7 +165,7 @@ describe("SimpleBond", async () => {
     });
 
     it("reverts on zero amount", async () => {
-      await expect(bond.connect(owner).collateralize(0)).to.be.revertedWith(
+      await expect(bond.collateralize(0)).to.be.revertedWith(
         "ZeroCollateralizationAmount"
       );
     });
@@ -177,14 +177,14 @@ describe("SimpleBond", async () => {
       collateralToDeposit / Math.floor(BondConfig.collateralizationRatio / 100);
     beforeEach(async () => {
       await collateralToken
-        .connect(owner)
+
         .approve(bond.address, collateralToDeposit);
-      await bond.connect(owner).collateralize(collateralToDeposit);
-      await bond.connect(owner).mint(tokensToMint);
+      await bond.collateralize(collateralToDeposit);
+      await bond.mint(tokensToMint);
     });
 
     it("withdraws collateral", async () => {
-      await expect(bond.connect(owner).uncollateralize()).to.be.revertedWith(
+      await expect(bond.uncollateralize()).to.be.revertedWith(
         "CollateralInContractInsufficientToCoverWithdraw"
       );
     });
@@ -202,34 +202,34 @@ describe("SimpleBond", async () => {
       const collateralToDeposit =
         (BondConfig.maxBondSupply * BondConfig.collateralizationRatio) / 100;
       await collateralToken
-        .connect(owner)
+
         .approve(bond.address, collateralToDeposit);
-      await bond.connect(owner).collateralize(collateralToDeposit);
-      await expect(bond.connect(owner).mint(tokensToMint)).to.not.be.reverted;
+      await bond.collateralize(collateralToDeposit);
+      await expect(bond.mint(tokensToMint)).to.not.be.reverted;
       await borrowingToken
-        .connect(owner)
+
         .approve(bond.address, BondConfig.maxBondSupply);
     });
 
     it("accepts partial repayment", async () => {
       await expect(
-        bond.connect(owner).repay(BondConfig.maxBondSupply / 2)
+        bond.repay(BondConfig.maxBondSupply / 2)
       ).to.emit(bond, "RepaymentDeposited");
       await expect(
-        bond.connect(owner).repay(BondConfig.maxBondSupply / 2)
+        bond.repay(BondConfig.maxBondSupply / 2)
       ).to.emit(bond, "RepaymentInFull");
     });
 
     it("accepts repayment", async () => {
       await expect(
-        bond.connect(owner).repay(BondConfig.maxBondSupply)
+        bond.repay(BondConfig.maxBondSupply)
       ).to.emit(bond, "RepaymentInFull");
     });
 
     it("fails if already repaid", async () => {
-      await bond.connect(owner).repay(BondConfig.maxBondSupply);
+      await bond.repay(BondConfig.maxBondSupply);
       await expect(
-        bond.connect(owner).repay(BondConfig.maxBondSupply)
+        bond.repay(BondConfig.maxBondSupply)
       ).to.be.revertedWith("RepaymentMet");
     });
   });
@@ -240,45 +240,45 @@ describe("SimpleBond", async () => {
       (tokensToMint * BondConfig.collateralizationRatio) / 100;
     beforeEach(async () => {
       await collateralToken
-        .connect(owner)
+
         .approve(bond.address, collateralToDeposit);
-      await bond.connect(owner).collateralize(collateralToDeposit);
+      await bond.collateralize(collateralToDeposit);
     });
 
     it("mints up to collateral depositted", async () => {
-      await expect(bond.connect(owner).mint(tokensToMint)).to.not.be.reverted;
+      await expect(bond.mint(tokensToMint)).to.not.be.reverted;
     });
 
     it("mints tokens while collateral covers mint amount", async () => {
-      await expect(bond.connect(owner).mint(tokensToMint / 2)).to.not.be
+      await expect(bond.mint(tokensToMint / 2)).to.not.be
         .reverted;
-      await expect(bond.connect(owner).mint(tokensToMint / 2)).to.not.be
+      await expect(bond.mint(tokensToMint / 2)).to.not.be
         .reverted;
     });
 
     it("fails to mint tokens not covered by collateral", async () => {
-      await expect(bond.connect(owner).mint(tokensToMint)).to.not.be.reverted;
-      await expect(bond.connect(owner).mint(tokensToMint)).to.be.revertedWith(
+      await expect(bond.mint(tokensToMint)).to.not.be.reverted;
+      await expect(bond.mint(tokensToMint)).to.be.revertedWith(
         "InusfficientCollateralToCoverTokenSupply"
       );
     });
 
     it("fails to mint more than max supply", async () => {
       await collateralToken
-        .connect(owner)
+
         .approve(bond.address, collateralToDeposit);
-      await bond.connect(owner).collateralize(collateralToDeposit);
+      await bond.collateralize(collateralToDeposit);
       await expect(
-        bond.connect(owner).mint(tokensToMint * 2)
+        bond.mint(tokensToMint * 2)
       ).to.be.revertedWith("BondSupplyExceeded");
     });
 
     it("fails to mint if not all tokens owned by owner", async () => {
-      await expect(bond.connect(owner).mint(tokensToMint / 2)).to.not.be
+      await expect(bond.mint(tokensToMint / 2)).to.not.be
         .reverted;
-      await bond.connect(owner).transfer(bondHolder.address, 1);
+      await bond.transfer(bondHolder.address, 1);
       await expect(
-        bond.connect(owner).mint(tokensToMint / 2)
+        bond.mint(tokensToMint / 2)
       ).to.be.revertedWith("NoMintAfterIssuance");
     });
   });
@@ -289,19 +289,19 @@ describe("SimpleBond", async () => {
     const sharesToSellToBondHolder = 1000;
     beforeEach(async () => {
       await collateralToken
-        .connect(owner)
+
         .approve(bond.address, collateralToDeposit);
-      await bond.connect(owner).collateralize(collateralToDeposit);
-      await bond.connect(owner).mint(BondConfig.maxBondSupply);
+      await bond.collateralize(collateralToDeposit);
+      await bond.mint(BondConfig.maxBondSupply);
       await bond
-        .connect(owner)
+
         .transfer(bondHolder.address, sharesToSellToBondHolder);
       await borrowingToken
-        .connect(owner)
+
         .approve(bond.address, BondConfig.maxBondSupply);
     });
     it("should redeem bond at maturity for borrowing token", async function () {
-      await bond.connect(owner).repay(BondConfig.maxBondSupply);
+      await bond.repay(BondConfig.maxBondSupply);
       // Fast forward to expire
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
       expect(await bond.state()).to.eq(BondStanding.PAID);
@@ -339,15 +339,15 @@ describe("SimpleBond", async () => {
     describe("convertible bonds", async () => {
       beforeEach(async () => {
         await collateralToken
-          .connect(owner)
+
           .approve(convertibleBond.address, collateralToDeposit);
         await convertibleBond
-          .connect(owner)
+
           .collateralize(collateralToDeposit);
-        await expect(convertibleBond.connect(owner).mint(tokensToConvert)).to
+        await expect(convertibleBond.mint(tokensToConvert)).to
           .not.be.reverted;
         await convertibleBond
-          .connect(owner)
+
           .transfer(bondHolder.address, tokensToConvert);
       });
 
@@ -368,7 +368,7 @@ describe("SimpleBond", async () => {
     describe("non-convertible bonds", async () => {
       it("fails to convert if bond is not convertible", async () => {
         await expect(
-          bond.connect(owner).convert(tokensToConvert)
+          bond.convert(tokensToConvert)
         ).to.be.revertedWith("NotConvertible");
       });
     });
