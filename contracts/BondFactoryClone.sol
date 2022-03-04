@@ -9,14 +9,12 @@ contract BondFactoryClone is AccessControl {
     bool public isAllowListEnabled = true;
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
 
-    error onlyApprovedIssuersCanCallThis();
-
     event BondCreated(address newBond);
 
-    constructor() {
-        tokenImplementation = address(new SimpleBond());
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
+    /// @notice emitted when a allow list is toggled
+    event AllowListEnabled(bool isAllowListEnabled);
+
+    error onlyApprovedIssuersCanCallThis();
 
     modifier onlyIssuer() {
         if (isAllowListEnabled && !hasRole(ISSUER_ROLE, msg.sender)) {
@@ -25,11 +23,17 @@ contract BondFactoryClone is AccessControl {
         _;
     }
 
+    constructor() {
+        tokenImplementation = address(new SimpleBond());
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
     function setIsAllowListEnabled(bool _isAllowListEnabled)
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         isAllowListEnabled = _isAllowListEnabled;
+        emit AllowListEnabled(isAllowListEnabled);
     }
 
     function setupIssuers(address[] memory issuers)
