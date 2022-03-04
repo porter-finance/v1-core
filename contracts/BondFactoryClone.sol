@@ -53,6 +53,8 @@ contract BondFactoryClone is AccessControl {
     }
 
     function createBond(
+        string memory _name,
+        string memory _symbol,
         address _owner,
         address _issuer,
         uint256 _maturityDate,
@@ -65,6 +67,8 @@ contract BondFactoryClone is AccessControl {
     ) external onlyIssuer returns (address clone) {
         clone = Clones.clone(tokenImplementation);
         SimpleBond(clone).initialize(
+            _name, 
+            _symbol,
             _owner,
             _issuer,
             _maturityDate,
