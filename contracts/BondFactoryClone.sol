@@ -12,25 +12,25 @@ contract BondFactoryClone {
     }
 
     function createBond(
-        address _owner,
+        string memory _name,
+        string memory _symbol,
         address _issuer,
         uint256 _maturityDate,
-        uint256 _maxBondSupply,
-        address _collateralAddress,
-        uint256 _collateralizationRatio,
         address _borrowingAddress,
-        uint256 _convertibilityRatio
+        address[] memory _collateralAddresses,
+        uint256[] memory _collateralizationRatios,
+        uint256[] memory _convertibilityRatios
     ) external returns (address clone) {
         clone = Clones.clone(tokenImplementation);
         SimpleBond(clone).initialize(
-            _owner,
+            _name,
+            _symbol,
             _issuer,
             _maturityDate,
-            _maxBondSupply,
-            _collateralAddress,
-            _collateralizationRatio,
             _borrowingAddress,
-            _convertibilityRatio
+            _collateralAddresses,
+            _collateralizationRatios,
+            _convertibilityRatios
         );
         emit BondCreated(clone);
     }

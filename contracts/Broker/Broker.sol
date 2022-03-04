@@ -48,8 +48,6 @@ contract Broker is Ownable, ReentrancyGuard {
     /// @param bondAddress the address of the bond being sold
     event AuctionCreated(uint256 auctionId, address bondAddress);
 
-    event BondCreated(address newBond);
-
     error InvalidMaturityDate(uint256 maturityDate, uint256 auctionEndDate);
 
     error NonZeroAuctionFee();
@@ -61,35 +59,6 @@ contract Broker is Ownable, ReentrancyGuard {
     constructor(address gnosisAuctionAddress_, address bondFactoryAddress_) {
         gnosisAuctionAddress = gnosisAuctionAddress_;
         bondFactoryAddress = bondFactoryAddress_;
-    }
-
-    function createBond(
-        address _issuer,
-        uint256 _maturityDate,
-        uint256 _maxBondSupply,
-        address _collateralAddress,
-        uint256 _collateralizationRatio,
-        address _borrowingAddress,
-        uint256 _convertibilityRatio
-    ) external {
-        address bond = IBondFactoryClone(bondFactoryAddress).createBond(
-            address(this),
-            _issuer,
-            _maturityDate,
-            _maxBondSupply,
-            _collateralAddress,
-            _collateralizationRatio,
-            _borrowingAddress,
-            _convertibilityRatio
-        );
-
-        // TODO: mint an NFT associated with the bond
-
-        issuerToBonds[_issuer].push(bond);
-        if (issuerToBonds[_issuer].length == 1) {
-            bondIssuers.push(_issuer);
-        }
-        emit BondCreated(bond);
     }
 
     /// @notice This entry needs a bond address + auction config

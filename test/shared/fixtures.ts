@@ -1,6 +1,5 @@
 import { ethers } from "hardhat";
-import { BondFactoryClone, Broker, ERC20, TestERC20 } from "../../typechain";
-import { CollateralData } from "../utilities";
+import { BondFactoryClone, ERC20, TestERC20 } from "../../typechain";
 
 const EasyAuctionJSON = require("../../contracts/external/EasyAuction.json");
 const GNOSIS_AUCTION_ADDRESS = {
@@ -15,18 +14,6 @@ export async function auctionFixture() {
   );
   return { gnosisAuction };
 }
-export async function brokerFixture() {
-  const { factory } = await bondFactoryFixture();
-  const { collateralData, collateralToken } = await collateralTokenFixture();
-  const { gnosisAuction } = await auctionFixture();
-  const Broker = await ethers.getContractFactory("Broker");
-  const broker = (await Broker.deploy(
-    gnosisAuction.address,
-    factory.address
-  )) as Broker;
-
-  return { factory, broker, collateralData, collateralToken, gnosisAuction };
-}
 
 export async function bondFactoryFixture() {
   const BondFactoryClone = await ethers.getContractFactory("BondFactoryClone");
@@ -34,49 +21,44 @@ export async function bondFactoryFixture() {
   return { factory };
 }
 
-export async function collateralTokenFixture() {
-  const [, issuer] = await ethers.getSigners();
-
-  const collateralData: CollateralData = {
-    collateralAddress: ethers.constants.AddressZero,
-    collateralAmount: ethers.utils.parseEther("1"),
-    bondAddress: ethers.constants.AddressZero,
-  };
-
-  const CollateralToken = await ethers.getContractFactory("TestERC20");
-  const collateralToken = (await CollateralToken.connect(issuer).deploy(
-    "Collateral Token",
-    "CT",
-    collateralData.collateralAmount
-  )) as TestERC20;
-
-  collateralData.collateralAddress = collateralToken.address;
-
-  return { collateralData, collateralToken };
-}
-
-export async function borrowingTokenFixture() {
+export async function tokenFixture() {
   const [, issuer] = await ethers.getSigners();
 
   const BorrowingToken = await ethers.getContractFactory("TestERC20");
   const borrowingToken = (await BorrowingToken.connect(issuer).deploy(
     "Borrowing Token",
     "BT",
-    ethers.utils.parseEther("2")
+    ethers.utils.parseEther("2"),
+    18
   )) as TestERC20;
-  return { borrowingToken };
-}
 
-export async function attackingTokenFixture() {
   const [, , , attacker] = await ethers.getSigners();
 
   const AttackingToken = await ethers.getContractFactory("TestERC20");
   const attackingToken = (await AttackingToken.connect(attacker).deploy(
     "Attack Token",
     "AT",
-    ethers.utils.parseEther("2")
+    ethers.utils.parseEther("2"),
+    20
   )) as TestERC20;
-  return { attackingToken };
+
+  const NativeToken = await ethers.getContractFactory("TestERC20");
+  const nativeToken = (await NativeToken.connect(issuer).deploy(
+    "Native Token",
+    "NT",
+    ethers.utils.parseEther("2"),
+    18
+  )) as TestERC20;
+
+  const MockUSDCToken = await ethers.getContractFactory("TestERC20");
+  const mockUSDCToken = (await MockUSDCToken.connect(issuer).deploy(
+    "USDC",
+    "USDC",
+    ethers.utils.parseEther("2"),
+    6
+  )) as TestERC20;
+
+  return { borrowingToken, attackingToken, nativeToken, mockUSDCToken };
 }
 
 export async function convertToCurrencyDecimals(token: ERC20, amount: string) {
