@@ -56,7 +56,6 @@ contract BondFactoryClone is AccessControl {
         string memory _name,
         string memory _symbol,
         address _owner,
-        address _issuer,
         uint256 _maturityDate,
         uint256 _maxBondSupply,
         address _collateralAddress,
@@ -67,10 +66,9 @@ contract BondFactoryClone is AccessControl {
     ) external onlyIssuer returns (address clone) {
         clone = Clones.clone(tokenImplementation);
         SimpleBond(clone).initialize(
-            _name, 
+            _name,
             _symbol,
             _owner,
-            _issuer,
             _maturityDate,
             _maxBondSupply,
             _collateralAddress,
