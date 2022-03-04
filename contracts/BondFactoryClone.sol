@@ -14,11 +14,9 @@ contract BondFactoryClone is AccessControl {
     /// @notice emitted when a allow list is toggled
     event AllowListEnabled(bool isAllowListEnabled);
 
-    error onlyApprovedIssuersCanCallThis();
-
     modifier onlyIssuer() {
-        if (isAllowListEnabled && !hasRole(ISSUER_ROLE, msg.sender)) {
-            revert onlyApprovedIssuersCanCallThis();
+        if (isAllowListEnabled) {
+            _checkRole(ISSUER_ROLE, msg.sender);
         }
         _;
     }
@@ -36,12 +34,12 @@ contract BondFactoryClone is AccessControl {
         emit AllowListEnabled(isAllowListEnabled);
     }
 
-    function setupIssuers(address[] memory issuers)
+    function grantIssuers(address[] memory issuers)
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         for (uint256 i = 0; i < issuers.length; i++) {
-            _setupRole(ISSUER_ROLE, issuers[i]);
+            _grantRole(ISSUER_ROLE, issuers[i]);
         }
     }
 
