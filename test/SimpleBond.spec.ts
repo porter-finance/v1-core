@@ -52,7 +52,7 @@ describe("SimpleBond", async () => {
     const { collateralToken } = await collateralTokenFixture();
     const { borrowingToken } = await borrowingTokenFixture();
     const { attackingToken } = await attackingTokenFixture();
-
+    await factory.grantIssuers([owner.address])
     const bond = await getBondContract(
       factory.createBond(
         "SimpleBond",
