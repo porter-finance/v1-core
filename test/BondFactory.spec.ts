@@ -90,24 +90,7 @@ describe("BondFactory", async () => {
       await expect(grantRole).to.emit(factory, "RoleGranted")
     })
 
-    it('updates issuers', async () => {
-      await factory.grantRole(ISSUER_ROLE, owner.address)
-      const create = await factory.createBond(
-        "SimpleBond",
-        "LUG",
-        owner.address,
-        BondConfig.maturityDate,
-        BondConfig.maxBondSupply,
-        TEST_ADDRESSES[0],
-        BigNumber.from(BondConfig.collateralizationRatio),
-        TEST_ADDRESSES[1],
-        false,
-        BigNumber.from(BondConfig.convertibilityRatio)
-      )
-      await expect(create).to.emit(factory, "BondCreated")
 
-
-    })
 
 
   })
