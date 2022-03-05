@@ -8,10 +8,8 @@ export async function bondFactoryFixture() {
 }
 
 export async function tokenFixture() {
-  const [, issuer] = await ethers.getSigners();
-
   const BorrowingToken = await ethers.getContractFactory("TestERC20");
-  const borrowingToken = (await BorrowingToken.connect(issuer).deploy(
+  const borrowingToken = (await BorrowingToken.deploy(
     "Borrowing Token",
     "BT",
     ethers.utils.parseEther("200000000"),
@@ -29,7 +27,7 @@ export async function tokenFixture() {
   )) as TestERC20;
 
   const NativeToken = await ethers.getContractFactory("TestERC20");
-  const nativeToken = (await NativeToken.connect(issuer).deploy(
+  const nativeToken = (await NativeToken.deploy(
     "Native Token",
     "NT",
     ethers.utils.parseEther("2000000000"),
@@ -37,7 +35,7 @@ export async function tokenFixture() {
   )) as TestERC20;
 
   const MockUSDCToken = await ethers.getContractFactory("TestERC20");
-  const mockUSDCToken = (await MockUSDCToken.connect(issuer).deploy(
+  const mockUSDCToken = (await MockUSDCToken.deploy(
     "USDC",
     "USDC",
     ethers.utils.parseEther("2000000000"),
