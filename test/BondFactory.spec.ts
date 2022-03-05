@@ -31,7 +31,7 @@ const TEST_ADDRESSES: [string, string] = [
   '0x2000000000000000000000000000000000000000',
 ]
 
-
+const ISSUER_ROLE = utils.id("ISSUER_ROLE")
 describe("BondFactory", async () => {
 
   let factory: BondFactoryClone;
@@ -67,7 +67,7 @@ describe("BondFactory", async () => {
       BigNumber.from(BondConfig.convertibilityRatio)
     )).to.be.revertedWith("AccessControl: account 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 is missing role 0x114e74f6ea3bd819998f78687bfcb11b140da08e9b7d222fa9c1f1ba1f2aa122")
 
-    await factory.grantIssuers([owner.address])
+    await factory.grantRole(ISSUER_ROLE, owner.address)
     const create = factory.createBond(
       "SimpleBond",
       "LUG",
@@ -83,16 +83,28 @@ describe("BondFactory", async () => {
     await expect(create).to.emit(factory, "BondCreated")
   });
 
-  describe.only('#grantIssuers', async () => {
-    it('fails if caller is not owner', async () => {
-      await expect(factory.connect(user0).grantIssuers([owner.address])).to.be.reverted
+  describe('#setIsAllowListEnabled', async () => {
+    it('only owner is allowed to grant role', async () => {
+      await expect(factory.connect(user0).grantRole(ISSUER_ROLE, owner.address)).to.be.reverted
+      const grantRole = factory.grantRole(ISSUER_ROLE, owner.address)
+      await expect(grantRole).to.emit(factory, "RoleGranted")
     })
 
     it('updates issuers', async () => {
-      await factory.grantIssuers([owner.address])
-      await factory.grantRole(utils.formatBytes32String("test"), owner.address)
-      console.log(await factory.hasRole(utils.formatBytes32String("test"), owner.address))
-      console.log(await factory.hasRole(utils.formatBytes32String("test2"), owner.address))
+      await factory.grantRole(ISSUER_ROLE, owner.address)
+      const create = await factory.createBond(
+        "SimpleBond",
+        "LUG",
+        owner.address,
+        BondConfig.maturityDate,
+        BondConfig.maxBondSupply,
+        TEST_ADDRESSES[0],
+        BigNumber.from(BondConfig.collateralizationRatio),
+        TEST_ADDRESSES[1],
+        false,
+        BigNumber.from(BondConfig.convertibilityRatio)
+      )
+      await expect(create).to.emit(factory, "BondCreated")
 
 
     })
