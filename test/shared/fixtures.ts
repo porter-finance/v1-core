@@ -1,20 +1,6 @@
 import { ethers } from "hardhat";
 import { BondFactoryClone, ERC20, TestERC20 } from "../../typechain";
 
-const EasyAuctionJSON = require("../../contracts/external/EasyAuction.json");
-const GNOSIS_AUCTION_ADDRESS = {
-  mainnet: "0x0b7ffc1f4ad541a4ed16b40d8c37f0929158d101",
-  rinkeby: "0xc5992c0e0a3267c7f75493d0f717201e26be35f7",
-};
-
-export async function auctionFixture() {
-  const gnosisAuction = await ethers.getContractAt(
-    EasyAuctionJSON.abi,
-    GNOSIS_AUCTION_ADDRESS.mainnet
-  );
-  return { gnosisAuction };
-}
-
 export async function bondFactoryFixture() {
   const BondFactoryClone = await ethers.getContractFactory("BondFactoryClone");
   const factory = (await BondFactoryClone.deploy()) as BondFactoryClone;
@@ -28,7 +14,7 @@ export async function tokenFixture() {
   const borrowingToken = (await BorrowingToken.connect(issuer).deploy(
     "Borrowing Token",
     "BT",
-    ethers.utils.parseEther("2"),
+    ethers.utils.parseEther("200000000"),
     18
   )) as TestERC20;
 
@@ -38,7 +24,7 @@ export async function tokenFixture() {
   const attackingToken = (await AttackingToken.connect(attacker).deploy(
     "Attack Token",
     "AT",
-    ethers.utils.parseEther("2"),
+    ethers.utils.parseEther("2000000000"),
     20
   )) as TestERC20;
 
@@ -46,7 +32,7 @@ export async function tokenFixture() {
   const nativeToken = (await NativeToken.connect(issuer).deploy(
     "Native Token",
     "NT",
-    ethers.utils.parseEther("2"),
+    ethers.utils.parseEther("2000000000"),
     18
   )) as TestERC20;
 
@@ -54,7 +40,7 @@ export async function tokenFixture() {
   const mockUSDCToken = (await MockUSDCToken.connect(issuer).deploy(
     "USDC",
     "USDC",
-    ethers.utils.parseEther("2"),
+    ethers.utils.parseEther("2000000000"),
     6
   )) as TestERC20;
 

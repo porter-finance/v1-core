@@ -261,12 +261,17 @@ contract SimpleBond is
                     if (balanceAfter <= balanceBefore) {
                         revert ZeroCollateralizationAmount();
                     }
-                    uint256 balanceChange = balanceAfter - balanceBefore;
-                    totalCollateral[address(collateralToken)] += balanceChange;
+                    if (balanceBefore > balanceAfter) {
+                        revert TokenOverflow();
+                    }
+
+                    totalCollateral[address(collateralToken)] +=
+                        balanceAfter -
+                        balanceBefore;
                     emit CollateralDeposited(
                         _msgSender(),
                         address(collateralToken),
-                        balanceChange
+                        balanceAfter - balanceBefore
                     );
                 }
             }
@@ -316,6 +321,9 @@ contract SimpleBond is
                     uint256 balanceAfter = IERC20(collateralAddress).balanceOf(
                         address(this)
                     );
+                    if (balanceBefore < balanceAfter) {
+                        revert TokenOverflow();
+                    }
                     totalCollateral[collateralAddress] -=
                         balanceBefore -
                         balanceAfter;
@@ -331,7 +339,7 @@ contract SimpleBond is
 
     /// @notice mints the maximum amount of tokens restricted by the collateral(s)
     /// @dev nonReentrant needed as double minting would be possible otherwise
-    function mint() external onlyIssuer nonReentrant {
+    function mint() external onlyIssuer nonReentrant notPastMaturity {
         if (totalSupply() > 0) {
             revert NoMintAfterIssuance();
         }
@@ -350,9 +358,15 @@ contract SimpleBond is
                 convertibilityRatio == 0 ||
                 convertibilityRatio < collateralRatio
             ) {
-                tokensCanMint = collateralDeposited / collateralRatio;
+                // totalBondSupply = collateralDeposited * collateralRatio / 1e18
+                // collateralDeposited * 1e18 / collateralRatio = targetBondSupply * collateralRatio / 1e18
+                tokensCanMint =
+                    (collateralDeposited * 1 ether) /
+                    collateralRatio;
             } else {
-                tokensCanMint = collateralDeposited / convertibilityRatio;
+                tokensCanMint =
+                    (collateralDeposited * 1 ether) /
+                    convertibilityRatio;
             }
 
             // First collateral sets the minimum mint amount after each loop,
@@ -392,13 +406,14 @@ contract SimpleBond is
             IERC20 collateralToken = IERC20(collateralAddresses[i]);
             uint256 convertibilityRatio = convertibilityRatios[i];
             if (convertibilityRatio > 0) {
-                uint256 collateralToReceive = amountOfBondsToConvert /
-                    convertibilityRatio;
+                uint256 collateralToReceive = (amountOfBondsToConvert *
+                    convertibilityRatio) / 1 ether;
                 uint256 balanceBefore = collateralToken.balanceOf(
                     address(this)
                 );
                 collateralToken.safeTransfer(_msgSender(), collateralToReceive);
                 uint256 balanceAfter = collateralToken.balanceOf(address(this));
+
                 if (balanceAfter > balanceBefore) {
                     revert TokenOverflow();
                 }
@@ -457,11 +472,13 @@ contract SimpleBond is
         uint256 balanceAfter = IERC20(borrowingAddress).balanceOf(
             address(this)
         );
-
+        if (balanceAfter > balanceBefore) {
+            revert TokenOverflow();
+        }
         emit Redeem(
             _msgSender(),
             borrowingAddress,
-            balanceAfter - balanceBefore,
+            balanceBefore - balanceAfter,
             bondShares
         );
     }
@@ -484,20 +501,24 @@ contract SimpleBond is
             IERC20 collateralToken = IERC20(collateralAddresses[i]);
             uint256 collateralRatio = collateralRatios[i];
             if (collateralRatio > 0) {
-                uint256 collateralToReceive = bondShares * collateralRatio;
+                uint256 collateralToReceive = (bondShares * collateralRatio) /
+                    1 ether;
                 uint256 balanceBefore = collateralToken.balanceOf(
                     address(this)
                 );
                 collateralToken.safeTransfer(_msgSender(), collateralToReceive);
                 uint256 balanceAfter = collateralToken.balanceOf(address(this));
+                if (balanceAfter > balanceBefore) {
+                    revert TokenOverflow();
+                }
                 totalCollateral[address(collateralToken)] -=
-                    balanceAfter -
-                    balanceBefore;
+                    balanceBefore -
+                    balanceAfter;
                 emit RedeemDefaulted(
                     _msgSender(),
                     address(collateralToken),
                     bondShares,
-                    balanceAfter - balanceBefore
+                    balanceBefore - balanceAfter
                 );
             }
         }
