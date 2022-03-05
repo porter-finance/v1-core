@@ -1,18 +1,12 @@
 import { BigNumber, utils } from "ethers";
 import { expect } from "chai";
-import { TestERC20, SimpleBond, BondFactoryClone } from "../typechain";
-import { getBondContract, getEventArgumentsFromTransaction } from "./utilities";
+import { BondFactoryClone } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   bondFactoryFixture,
-  collateralTokenFixture,
-  borrowingTokenFixture,
-  attackingTokenFixture,
 } from "./shared/fixtures";
 
-// https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
-// import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
-const { ethers, waffle } = require("hardhat");
+const { ethers } = require("hardhat");
 
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
@@ -35,40 +29,19 @@ const ISSUER_ROLE = utils.id("ISSUER_ROLE")
 describe("BondFactory", async () => {
 
   let factory: BondFactoryClone;
-  let collateralToken: TestERC20;
-  let borrowingToken: TestERC20;
   let owner: SignerWithAddress;
   let user0: SignerWithAddress;
-  let user1: SignerWithAddress;
-  let user2: SignerWithAddress;
-  let user3: SignerWithAddress;
+
 
 
 
   beforeEach(async () => {
     [owner, user0] = await ethers.getSigners();
     ({ factory } = await bondFactoryFixture());
-    ({ collateralToken } = await collateralTokenFixture());
-    ({ borrowingToken } = await borrowingTokenFixture());
   });
 
-  it("#createBond", async () => {
-
-    await expect(factory.createBond(
-      "SimpleBond",
-      "LUG",
-      owner.address,
-      BondConfig.maturityDate,
-      BondConfig.maxBondSupply,
-      TEST_ADDRESSES[0],
-      BigNumber.from(BondConfig.collateralizationRatio),
-      TEST_ADDRESSES[1],
-      false,
-      BigNumber.from(BondConfig.convertibilityRatio)
-    )).to.be.revertedWith("AccessControl: account 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 is missing role 0x114e74f6ea3bd819998f78687bfcb11b140da08e9b7d222fa9c1f1ba1f2aa122")
-
-    await factory.grantRole(ISSUER_ROLE, owner.address)
-    const create = factory.createBond(
+  async function createBond(factory: BondFactoryClone) {
+    return factory.createBond(
       "SimpleBond",
       "LUG",
       owner.address,
@@ -80,18 +53,51 @@ describe("BondFactory", async () => {
       false,
       BigNumber.from(BondConfig.convertibilityRatio)
     )
-    await expect(create).to.emit(factory, "BondCreated")
-  });
+  }
 
-  describe('#setIsAllowListEnabled', async () => {
-    it('only owner is allowed to grant role', async () => {
+  describe("#createBond", async () => {
+
+    it('only approved issuers can create a bond', async () => {
+
+      await expect(createBond(factory)
+      ).to.be.revertedWith("AccessControl: account 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 is missing role 0x114e74f6ea3bd819998f78687bfcb11b140da08e9b7d222fa9c1f1ba1f2aa122")
+
+      await factory.grantRole(ISSUER_ROLE, owner.address)
+
+      await expect(createBond(factory)).to.emit(factory, "BondCreated")
+    });
+  })
+
+  describe('#grantRole', async () => {
+    it('fails if non owner tries to grantRole', async () => {
       await expect(factory.connect(user0).grantRole(ISSUER_ROLE, owner.address)).to.be.reverted
-      const grantRole = factory.grantRole(ISSUER_ROLE, owner.address)
-      await expect(grantRole).to.emit(factory, "RoleGranted")
+
+    })
+
+    it('emits event', async () => {
+      await expect(factory.grantRole(ISSUER_ROLE, owner.address)).to.emit(factory, "RoleGranted")
     })
 
 
-
-
   })
+  describe('#setIsAllowList', async () => {
+
+    it('fails if non owner tries to update allow list', async () => {
+      await expect(factory.connect(user0).setIsAllowListEnabled(false)).to.be.reverted
+
+    })
+    it('allowList toggle works correctly', async () => {
+      expect(await factory.isAllowListEnabled()).to.be.true
+      const disableAllowList = factory.setIsAllowListEnabled(false)
+
+      await expect(disableAllowList).to.emit(factory, "AllowListEnabled").withArgs(false)
+      expect(await factory.isAllowListEnabled()).to.be.false
+
+      const enableAllowList = factory.setIsAllowListEnabled(true)
+      await expect(enableAllowList).to.emit(factory, "AllowListEnabled").withArgs(true)
+      expect(await factory.isAllowListEnabled()).to.be.true
+
+    })
+  })
+
 })
