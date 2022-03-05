@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber, utils } from "ethers";
 import { expect } from "chai";
 import { TestERC20, SimpleBond, BondFactoryClone } from "../typechain";
 import { getBondContract, getEventArgumentsFromTransaction } from "./utilities";
@@ -13,7 +13,6 @@ import {
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
 // import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
 const { ethers, waffle } = require("hardhat");
-const { loadFixture } = waffle;
 
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
@@ -83,4 +82,21 @@ describe("BondFactory", async () => {
     )
     await expect(create).to.emit(factory, "BondCreated")
   });
+
+  describe.only('#grantIssuers', async () => {
+    it('fails if caller is not owner', async () => {
+      await expect(factory.connect(user0).grantIssuers([owner.address])).to.be.reverted
+    })
+
+    it('updates issuers', async () => {
+      await factory.grantIssuers([owner.address])
+      await factory.grantRole(utils.formatBytes32String("test"), owner.address)
+      console.log(await factory.hasRole(utils.formatBytes32String("test"), owner.address))
+      console.log(await factory.hasRole(utils.formatBytes32String("test2"), owner.address))
+
+
+    })
+
+
+  })
 })

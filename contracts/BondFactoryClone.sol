@@ -34,24 +34,6 @@ contract BondFactoryClone is AccessControl {
         emit AllowListEnabled(isAllowListEnabled);
     }
 
-    function grantIssuers(address[] memory issuers)
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        for (uint256 i = 0; i < issuers.length; i++) {
-            _grantRole(ISSUER_ROLE, issuers[i]);
-        }
-    }
-
-    function revokeIssuers(address[] memory issuers)
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        for (uint256 i = 0; i < issuers.length; i++) {
-            revokeRole(ISSUER_ROLE, issuers[i]);
-        }
-    }
-
     function createBond(
         string memory _name,
         string memory _symbol,
