@@ -14,7 +14,7 @@ contract BondFactoryClone {
     function createBond(
         string memory _name,
         string memory _symbol,
-        address _issuer,
+        address _owner,
         uint256 _maturityDate,
         address _borrowingAddress,
         address[] memory _collateralAddresses,
@@ -25,7 +25,7 @@ contract BondFactoryClone {
         SimpleBond(clone).initialize(
             _name,
             _symbol,
-            _issuer,
+            _owner,
             _maturityDate,
             _borrowingAddress,
             _collateralAddresses,

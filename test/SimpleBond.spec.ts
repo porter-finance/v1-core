@@ -25,7 +25,7 @@ const BondStanding = {
 // 3 years from now, in seconds
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-    1000
+  1000
 );
 const BondConfig: {
   targetBondSupply: BigNumber;
@@ -133,7 +133,7 @@ describe("SimpleBond", async () => {
   }
 
   beforeEach(async () => {
-    [owner, , bondHolder, attacker] = await ethers.getSigners();
+    [owner, bondHolder, attacker] = await ethers.getSigners();
     ({
       bond,
       convertibleBond,
@@ -171,7 +171,7 @@ describe("SimpleBond", async () => {
       expect(await bond.convertibilityRatios(0)).to.be.equal(0);
 
       expect(await bond.borrowingAddress()).to.be.equal(borrowingToken.address);
-      expect(await bond.issuer()).to.be.equal(owner.address);
+      expect(await bond.owner()).to.be.equal(owner.address);
     });
 
     it("should have predefined ERC20 attributes", async () => {
@@ -253,7 +253,7 @@ describe("SimpleBond", async () => {
         bond
           .connect(attacker)
           .withdrawCollateral(BondConfig.collateralAddresses, amountsToDeposit)
-      ).to.be.revertedWith("OnlyIssuerOfBondMayCallThisFunction");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 

@@ -16,8 +16,7 @@ export async function tokenFixture() {
     18
   )) as TestERC20;
 
-  const [, , , attacker] = await ethers.getSigners();
-
+  const [, , attacker] = await ethers.getSigners();
   const AttackingToken = await ethers.getContractFactory("TestERC20");
   const attackingToken = (await AttackingToken.connect(attacker).deploy(
     "Attack Token",

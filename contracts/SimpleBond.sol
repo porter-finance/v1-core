@@ -94,7 +94,6 @@ contract SimpleBond is
     );
 
     // modifiers
-    error OnlyIssuerOfBondMayCallThisFunction();
     error BondPastMaturity();
     error BondNotYetMatured();
     error BondNotYetRepaid();
@@ -131,13 +130,6 @@ contract SimpleBond is
     // Helper
     error TokenOverflow();
 
-    modifier onlyIssuer() {
-        if (issuer != _msgSender()) {
-            revert OnlyIssuerOfBondMayCallThisFunction();
-        }
-        _;
-    }
-
     modifier pastMaturity() {
         if (block.timestamp < maturityDate) {
             revert BondNotYetMatured();
@@ -173,7 +165,6 @@ contract SimpleBond is
         _;
     }
 
-    address public issuer;
     /// @notice this date is when the DAO must have repaid its debt
     /// @notice when bondholders can redeem their bonds
     uint256 public maturityDate;
@@ -205,7 +196,7 @@ contract SimpleBond is
     function initialize(
         string memory _name,
         string memory _symbol,
-        address _issuer,
+        address _owner,
         uint256 _maturityDate,
         address _borrowingAddress,
         address[] memory _collateralAddresses,
@@ -222,14 +213,13 @@ contract SimpleBond is
         __ERC20Burnable_init();
         __Ownable_init();
 
-        issuer = _issuer;
         maturityDate = _maturityDate;
         borrowingAddress = _borrowingAddress;
         collateralAddresses = _collateralAddresses;
         collateralRatios = _collateralRatios;
         convertibilityRatios = _convertibilityRatios;
 
-        _transferOwnership(_issuer);
+        _transferOwnership(_owner);
     }
 
     /// @notice Deposit collateral into bond contract
@@ -283,7 +273,7 @@ contract SimpleBond is
     function withdrawCollateral(
         address[] memory _collateralAddresses,
         uint256[] memory _amounts
-    ) public nonReentrant onlyIssuer {
+    ) public nonReentrant onlyOwner {
         for (uint256 j = 0; j < _collateralAddresses.length; j++) {
             for (uint256 k = 0; k < collateralAddresses.length; k++) {
                 if (_collateralAddresses[j] == collateralAddresses[k]) {
@@ -339,7 +329,7 @@ contract SimpleBond is
 
     /// @notice mints the maximum amount of tokens restricted by the collateral(s)
     /// @dev nonReentrant needed as double minting would be possible otherwise
-    function mint() external onlyIssuer nonReentrant notPastMaturity {
+    function mint() external onlyOwner nonReentrant notPastMaturity {
         if (totalSupply() > 0) {
             revert NoMintAfterIssuance();
         }
