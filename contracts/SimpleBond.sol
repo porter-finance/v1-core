@@ -67,7 +67,7 @@ contract SimpleBond is
         uint256 amountOfCollateralReceived
     );
 
-    /// @notice emitted when a bond is redeemed by a borrower
+    /// @notice emitted when a bond is redeemed
     event Redeem(
         address indexed receiver,
         address indexed borrowingAddress,
