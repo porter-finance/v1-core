@@ -27,7 +27,7 @@ contract BondFactoryClone is AccessControl {
     }
 
     function setIsAllowListEnabled(bool _isAllowListEnabled)
-        public
+        external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         isAllowListEnabled = _isAllowListEnabled;
