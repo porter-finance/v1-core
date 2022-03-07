@@ -26,11 +26,11 @@ const TEST_ADDRESSES: [string, string] = [
 describe("BondFactory", async () => {
   let factory: BondFactoryClone;
   let owner: SignerWithAddress;
-  let user0: SignerWithAddress;
+  let user: SignerWithAddress;
   let ISSUER_ROLE: any
 
   beforeEach(async () => {
-    [owner, user0] = await ethers.getSigners();
+    [owner, user] = await ethers.getSigners();
     ({ factory } = await bondFactoryFixture());
     ISSUER_ROLE = await factory.ISSUER_ROLE();
   });
@@ -66,7 +66,7 @@ describe("BondFactory", async () => {
         .to.emit(factory, "AllowListEnabled")
         .withArgs(false);
       expect(await factory.isAllowListEnabled()).to.be.false;
-      await expect(createBond(factory.connect(user0))).to.emit(
+      await expect(createBond(factory.connect(user))).to.emit(
         factory,
         "BondCreated"
       );
@@ -75,7 +75,7 @@ describe("BondFactory", async () => {
 
   describe("#grantRole", async () => {
     it("fails if non owner tries to grantRole", async () => {
-      await expect(factory.connect(user0).grantRole(ISSUER_ROLE, owner.address))
+      await expect(factory.connect(user).grantRole(ISSUER_ROLE, owner.address))
         .to.be.reverted;
     });
 
@@ -88,7 +88,7 @@ describe("BondFactory", async () => {
   });
   describe("#setIsAllowList", async () => {
     it("fails if non owner tries to update allow list", async () => {
-      await expect(factory.connect(user0).setIsAllowListEnabled(false)).to.be
+      await expect(factory.connect(user).setIsAllowListEnabled(false)).to.be
         .reverted;
     });
     it("allowList toggle works correctly", async () => {
@@ -98,7 +98,7 @@ describe("BondFactory", async () => {
         .to.emit(factory, "AllowListEnabled")
         .withArgs(false);
       expect(await factory.isAllowListEnabled()).to.be.false;
-      await expect(createBond(factory.connect(user0))).to.emit(
+      await expect(createBond(factory.connect(user))).to.emit(
         factory,
         "BondCreated"
       );
