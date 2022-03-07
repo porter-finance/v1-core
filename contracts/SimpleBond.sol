@@ -99,8 +99,9 @@ contract SimpleBond is
     error BondNotYetRedeemed();
     error BondNotDefaulted();
 
-    // Creation
+    // Initialization
     error InvalidMaturityDate();
+    error AddressCannotBeTheZeroAddress();
 
     // Minting
     error InusfficientCollateralToCoverTokenSupply();
@@ -164,14 +165,27 @@ contract SimpleBond is
         _;
     }
 
-    /// @notice this date is when the DAO must have repaid its debt
-    /// @notice when bondholders can redeem their bonds
+    modifier isConvertible() {
+        bool _isConvertible = false;
+        for (uint256 i = 0; i < collateralAddresses.length; i++) {
+            if (convertibilityRatios[i] > 0) {
+                _isConvertible = true;
+            }
+        }
+        if (!_isConvertible) {
+            revert NotConvertible();
+        }
+        _;
+    }
+
+    /// @notice A date in the future set at bond creation at which the bond will mature.
+    /// @notice Before this date, a bond token can be converted if convertible, but cannot be redeemed.
+    /// @notice After this date, a bond token can be redeemed for the borrowing asset.
     uint256 public maturityDate;
     address public borrowingAddress;
     address[] public collateralAddresses;
     uint256[] public collateralRatios;
     uint256[] public convertibilityRatios;
-    BondStanding public currentBondStanding;
 
     bool internal _isRepaid;
     bool internal _isIssued;
@@ -203,10 +217,11 @@ contract SimpleBond is
         uint256[] memory _collateralRatios,
         uint256[] memory _convertibilityRatios
     ) external initializer {
-        // this timestamp is a date in 2020, which basically is here to confirm
-        // the date provided is greater than 0 and a valid timestamp
-        if (_maturityDate < 1580752251) {
+        if (_maturityDate <= block.timestamp) {
             revert InvalidMaturityDate();
+        }
+        if (_borrowingAddress == address(0)) {
+            revert AddressCannotBeTheZeroAddress();
         }
 
         __ERC20_init(_name, _symbol);
@@ -240,6 +255,7 @@ contract SimpleBond is
                     uint256 balanceBefore = collateralToken.balanceOf(
                         address(this)
                     );
+                    // reentrancy possibility: the totalCollateral is updated after the transfer
                     collateralToken.safeTransferFrom(
                         _msgSender(),
                         address(this),
@@ -304,6 +320,9 @@ contract SimpleBond is
                     if (_amounts[j] > withdrawableCollateral) {
                         revert CollateralInContractInsufficientToCoverWithdraw();
                     }
+                    // reentrancy possibility: the issuer could try to transfer more collateral than is available - at the point of execution
+                    // the amount of transferred funds is _amounts[j] which is taken directly from the function arguments.
+                    // After re-entering into this function when at the time below is called, the balanceBefore
                     IERC20(collateralAddress).safeTransfer(
                         _msgSender(),
                         _amounts[j]
@@ -339,6 +358,7 @@ contract SimpleBond is
         uint256 tokensToMint = 0;
         for (uint256 i = 0; i < collateralAddresses.length; i++) {
             IERC20 collateralToken = IERC20(collateralAddresses[i]);
+            // external call reentrancy possibility: collateralDeposited is checked + used later
             uint256 collateralDeposited = collateralToken.balanceOf(
                 address(this)
             );
@@ -382,17 +402,8 @@ contract SimpleBond is
         external
         notPastMaturity
         nonReentrant
+        isConvertible
     {
-        bool isConvertible = false;
-        for (uint256 i = 0; i < collateralAddresses.length; i++) {
-            if (convertibilityRatios[i] > 0) {
-                isConvertible = true;
-            }
-        }
-        if (!isConvertible) {
-            revert NotConvertible();
-        }
-
         burn(amountOfBondsToConvert);
         // iterate over all collateral tokens and withdraw a proportional amount
         for (uint256 i = 0; i < collateralAddresses.length; i++) {
@@ -401,6 +412,7 @@ contract SimpleBond is
             if (convertibilityRatio > 0) {
                 uint256 collateralToReceive = (amountOfBondsToConvert *
                     convertibilityRatio) / 1 ether;
+                // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
                 uint256 balanceBefore = collateralToken.balanceOf(
                     address(this)
                 );
@@ -429,6 +441,7 @@ contract SimpleBond is
         if (_isRepaid) {
             revert RepaymentMet();
         }
+        // external call reentrancy possibility: this is a transfer into the contract - _isRepaid is updated after transfer
         uint256 outstandingAmount = totalSupply() -
             IERC20(borrowingAddress).balanceOf(address(this));
 
@@ -460,6 +473,7 @@ contract SimpleBond is
 
         burn(bondShares);
 
+        // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
         uint256 balanceBefore = IERC20(borrowingAddress).balanceOf(
             address(this)
         );
@@ -498,6 +512,7 @@ contract SimpleBond is
             if (collateralRatio > 0) {
                 uint256 collateralToReceive = (bondShares * collateralRatio) /
                     1 ether;
+                // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
                 uint256 balanceBefore = collateralToken.balanceOf(
                     address(this)
                 );
