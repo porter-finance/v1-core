@@ -8,7 +8,7 @@ const { ethers } = require("hardhat");
 
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-    1000
+  1000
 );
 
 const BondConfig = {
@@ -23,15 +23,16 @@ const TEST_ADDRESSES: [string, string] = [
   "0x2000000000000000000000000000000000000000",
 ];
 
-const ISSUER_ROLE = utils.id("ISSUER_ROLE");
 describe("BondFactory", async () => {
   let factory: BondFactoryClone;
   let owner: SignerWithAddress;
   let user0: SignerWithAddress;
+  let ISSUER_ROLE: any
 
   beforeEach(async () => {
     [owner, user0] = await ethers.getSigners();
     ({ factory } = await bondFactoryFixture());
+    ISSUER_ROLE = await factory.ISSUER_ROLE();
   });
 
   async function createBond(factory: BondFactoryClone) {
