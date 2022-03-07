@@ -53,7 +53,7 @@ describe("BondFactory", async () => {
   describe("#createBond", async () => {
     it("only approved issuers can create a bond", async () => {
       await expect(createBond(factory)).to.be.revertedWith(
-        "AccessControl: account 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 is missing role 0x114e74f6ea3bd819998f78687bfcb11b140da08e9b7d222fa9c1f1ba1f2aa122"
+        `AccessControl: account ${owner.address.toLowerCase()} is missing role ${ISSUER_ROLE}`
       );
 
       await factory.grantRole(ISSUER_ROLE, owner.address);
