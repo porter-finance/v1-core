@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL
 pragma solidity 0.8.9;
-import "./SimpleBond.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./SimpleBond.sol";
 
 contract BondFactoryClone is AccessControl {
     address public immutable tokenImplementation;
