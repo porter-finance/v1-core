@@ -173,7 +173,8 @@ contract SimpleBond is
     uint256[] public convertibilityRatios;
     BondStanding public currentBondStanding;
 
-    bool private _isRepaid;
+    bool internal _isRepaid;
+    bool internal _isIssued;
 
     mapping(address => uint256) public totalCollateral;
 
@@ -329,9 +330,12 @@ contract SimpleBond is
     /// @notice mints the maximum amount of tokens restricted by the collateral(s)
     /// @dev nonReentrant needed as double minting would be possible otherwise
     function mint() external onlyOwner nonReentrant notPastMaturity {
-        if (totalSupply() > 0) {
+        if (_isIssued) {
             revert NoMintAfterIssuance();
         }
+
+        _isIssued = true;
+
         uint256 tokensToMint = 0;
         for (uint256 i = 0; i < collateralAddresses.length; i++) {
             IERC20 collateralToken = IERC20(collateralAddresses[i]);
@@ -425,14 +429,16 @@ contract SimpleBond is
         if (_isRepaid) {
             revert RepaymentMet();
         }
+        uint256 outstandingAmount = totalSupply() -
+            IERC20(borrowingAddress).balanceOf(address(this));
+
         IERC20(borrowingAddress).safeTransferFrom(
             _msgSender(),
             address(this),
-            amount
+            amount >= outstandingAmount ? outstandingAmount : amount
         );
-        if (
-            IERC20(borrowingAddress).balanceOf(address(this)) >= totalSupply()
-        ) {
+
+        if (amount >= outstandingAmount) {
             _isRepaid = true;
             emit RepaymentInFull(_msgSender(), amount);
         } else {
