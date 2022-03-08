@@ -387,14 +387,14 @@ describe("SimpleBond", async () => {
         (
           {
             receiver,
-            collateralAddress,
+            collateralToken,
             amountOfBondsRedeemed,
             amountOfCollateralReceived,
           }: any,
           index: number
         ) => {
           expect(receiver).to.equal(bondHolder.address);
-          expect(collateralAddress).to.equal(
+          expect(collateralToken).to.equal(
             ConvertibleBondConfig.collateralTokens[index]
           );
           expect(amountOfBondsRedeemed).to.equal(sharesToSellToBondHolder);
@@ -452,14 +452,14 @@ describe("SimpleBond", async () => {
           (
             {
               convertorAddress,
-              collateralAddress,
+              collateralToken,
               amountOfBondsConverted,
               amountOfCollateralReceived,
             }: any,
             index: number
           ) => {
             expect(convertorAddress).to.equal(bondHolder.address);
-            expect(collateralAddress).to.equal(
+            expect(collateralToken).to.equal(
               ConvertibleBondConfig.collateralTokens[index]
             );
             expect(amountOfBondsConverted).to.equal(tokensToConvert);
