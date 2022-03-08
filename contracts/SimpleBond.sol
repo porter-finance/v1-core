@@ -172,6 +172,8 @@ contract SimpleBond is
         _;
     }
 
+    uint256 internal constant ONE = 1e18;
+
     /// @notice A date in the future set at bond creation at which the bond will mature.
     /// @notice Before this date, a bond token can be converted if convertible, but cannot be redeemed.
     /// @notice After this date, a bond token can be redeemed for the borrowing asset.
@@ -391,8 +393,8 @@ contract SimpleBond is
             // totalBondSupply = collateralDeposited * backingRatio / 1e18
             // collateralDeposited * 1e18 / backingRatio = targetBondSupply * backingRatio / 1e18
             // since the convertibility ratio is less than or equal to the backing ratio, calculate with the backing ratio
-            // todo: change ether to constant value
-            tokensCanMint = (collateralDeposited * 1 ether) / backingRatio;
+
+            tokensCanMint = (collateralDeposited * ONE) / backingRatio;
 
             // First collateral sets the minimum mint amount after each loop,
             // tokensToMint can decrease if there is not enough collateral of another type
@@ -428,7 +430,7 @@ contract SimpleBond is
             uint256 convertibilityRatio = convertibilityRatios[i];
             if (convertibilityRatio > 0) {
                 uint256 collateralToSend = (amountOfBondsToConvert *
-                    convertibilityRatio) / 1 ether;
+                    convertibilityRatio) / ONE;
                 // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
                 IERC20(collateralToken).safeTransfer(
                     _msgSender(),
@@ -515,8 +517,7 @@ contract SimpleBond is
             address collateralToken = collateralTokens[i];
             uint256 backingRatio = backingRatios[i];
             if (backingRatio > 0) {
-                uint256 collateralToReceive = (bondShares * backingRatio) /
-                    1 ether;
+                uint256 collateralToReceive = (bondShares * backingRatio) / ONE;
                 // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
                 IERC20(collateralToken).safeTransfer(
                     _msgSender(),
