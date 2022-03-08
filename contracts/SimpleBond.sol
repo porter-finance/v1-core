@@ -104,7 +104,6 @@ contract SimpleBond is
 
     // Initialization
     error InvalidMaturityDate();
-    error AddressCannotBeTheZeroAddress();
 
     // Minting
     error InusfficientCollateralToCoverTokenSupply();
@@ -255,14 +254,12 @@ contract SimpleBond is
         uint256[] memory _convertibilityRatios
     ) external initializer {
         // todo: check validity of arrays - same length, non-zero, max length - backing ratio >= convertibility ratio
+        // todo: enforce sorting of collateral tokens alphabetically by address by looping through and confirming it's bigger than the previous one, revert otherwise
         if (
             _maturityDate <= block.timestamp ||
             _maturityDate > block.timestamp + 3650 days
         ) {
             revert InvalidMaturityDate();
-        }
-        if (_owner == address(0) || _borrowingToken == address(0)) {
-            revert AddressCannotBeTheZeroAddress();
         }
 
         __ERC20_init(_name, _symbol);
@@ -394,6 +391,7 @@ contract SimpleBond is
             // totalBondSupply = collateralDeposited * backingRatio / 1e18
             // collateralDeposited * 1e18 / backingRatio = targetBondSupply * backingRatio / 1e18
             // since the convertibility ratio is less than or equal to the backing ratio, calculate with the backing ratio
+            // todo: change ether to constant value
             tokensCanMint = (collateralDeposited * 1 ether) / backingRatio;
 
             // First collateral sets the minimum mint amount after each loop,
@@ -484,6 +482,7 @@ contract SimpleBond is
         pastMaturity
         repaid
     {
+        // todo: make more like erc4626 solmate preview redeem to separate calculation logic
         if (bondShares == 0) {
             revert ZeroAmount();
         }
@@ -491,6 +490,7 @@ contract SimpleBond is
         burn(bondShares);
 
         // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
+        // todo: what if bondShares != borrowing token decimals?
         IERC20(borrowingToken).safeTransfer(_msgSender(), bondShares);
         emit Redeem(_msgSender(), borrowingToken, bondShares, bondShares);
     }
