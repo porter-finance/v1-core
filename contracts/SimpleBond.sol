@@ -10,7 +10,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 /// @title SimpleBond
 /// @notice A custom ERC20 token that can be used to issue bonds.
 /// @notice The contract handles issuance, conversion, and redemption of bonds.
-/// @dev external calls to tokens used for collateral and borrowing are used throughout to transfer and check balances
+/// @dev External calls to tokens used for collateral and borrowing are used throughout to transfer and check balances
 contract SimpleBond is
     Initializable,
     ERC20Upgradeable,
