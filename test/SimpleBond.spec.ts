@@ -169,7 +169,7 @@ describe("SimpleBond", async () => {
       expect(await bond.collateralAddresses(0)).to.be.equal(
         nativeToken.address
       );
-      expect(await bond.collateralRatios(0)).to.be.equal(
+      expect(await bond.backingRatios(0)).to.be.equal(
         BondConfig.collateralRatios[0]
       );
       expect(await bond.convertibilityRatios(0)).to.be.equal(0);
@@ -282,12 +282,7 @@ describe("SimpleBond", async () => {
     });
 
     it("accepts partial repayment", async () => {
-      console.log(await borrowingToken.balanceOf(bond.address));
-      console.log(await bond.totalSupply());
-      console.log(BondConfig.targetBondSupply.div(2));
-      console.log(BondConfig.targetBondSupply);
       await bond.repay(BondConfig.targetBondSupply.div(2));
-      console.log(await borrowingToken.balanceOf(bond.address));
 
       await expect(bond.repay(BondConfig.targetBondSupply.div(2))).to.emit(
         bond,

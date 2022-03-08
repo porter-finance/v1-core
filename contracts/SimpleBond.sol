@@ -252,32 +252,23 @@ contract SimpleBond is
                     if (amount == 0) {
                         revert ZeroCollateralizationAmount();
                     }
-                    uint256 balanceBefore = collateralToken.balanceOf(
-                        address(this)
-                    );
                     // reentrancy possibility: the totalCollateral is updated after the transfer
-                    collateralToken.safeTransferFrom(
+                    uint256 collateralDeposited = safeTransferIn(
+                        collateralToken,
                         _msgSender(),
-                        address(this),
                         amounts[j]
                     );
-                    uint256 balanceAfter = collateralToken.balanceOf(
-                        address(this)
-                    );
-                    if (balanceAfter <= balanceBefore) {
+                    if (collateralDeposited == 0) {
                         revert ZeroCollateralizationAmount();
                     }
-                    if (balanceBefore > balanceAfter) {
-                        revert TokenOverflow();
-                    }
 
-                    totalCollateral[address(collateralToken)] +=
-                        balanceAfter -
-                        balanceBefore;
+                    totalCollateral[
+                        address(collateralToken)
+                    ] += collateralDeposited;
                     emit CollateralDeposited(
                         _msgSender(),
                         address(collateralToken),
-                        balanceAfter - balanceBefore
+                        collateralDeposited
                     );
                 }
             }
@@ -327,19 +318,11 @@ contract SimpleBond is
                         _msgSender(),
                         _amounts[j]
                     );
-                    uint256 balanceAfter = IERC20(collateralAddress).balanceOf(
-                        address(this)
-                    );
-                    if (balanceBefore < balanceAfter) {
-                        revert TokenOverflow();
-                    }
-                    totalCollateral[collateralAddress] -=
-                        balanceBefore -
-                        balanceAfter;
+                    totalCollateral[collateralAddress] -= _amounts[j];
                     emit CollateralWithdrawn(
                         _msgSender(),
                         collateralAddress,
-                        balanceBefore - balanceAfter
+                        _amounts[j]
                     );
                 }
             }
@@ -368,14 +351,11 @@ contract SimpleBond is
             // 100 deposited collateral with a 1:5 ratio would allow for 100/5 tokens minted for THIS collateral type
             uint256 tokensCanMint = 0;
             if (
-                convertibilityRatio == 0 ||
-                convertibilityRatio < backingRatio
+                convertibilityRatio == 0 || convertibilityRatio < backingRatio
             ) {
                 // totalBondSupply = collateralDeposited * backingRatio / 1e18
                 // collateralDeposited * 1e18 / backingRatio = targetBondSupply * backingRatio / 1e18
-                tokensCanMint =
-                    (collateralDeposited * 1 ether) /
-                    backingRatio;
+                tokensCanMint = (collateralDeposited * 1 ether) / backingRatio;
             } else {
                 tokensCanMint =
                     (collateralDeposited * 1 ether) /
@@ -410,26 +390,16 @@ contract SimpleBond is
             IERC20 collateralToken = IERC20(collateralAddresses[i]);
             uint256 convertibilityRatio = convertibilityRatios[i];
             if (convertibilityRatio > 0) {
-                uint256 collateralToReceive = (amountOfBondsToConvert *
+                uint256 collateralToSend = (amountOfBondsToConvert *
                     convertibilityRatio) / 1 ether;
                 // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
-                uint256 balanceBefore = collateralToken.balanceOf(
-                    address(this)
-                );
-                collateralToken.safeTransfer(_msgSender(), collateralToReceive);
-                uint256 balanceAfter = collateralToken.balanceOf(address(this));
-
-                if (balanceAfter > balanceBefore) {
-                    revert TokenOverflow();
-                }
-                totalCollateral[address(collateralToken)] -=
-                    balanceBefore -
-                    balanceAfter;
+                collateralToken.safeTransfer(_msgSender(), collateralToSend);
+                totalCollateral[address(collateralToken)] -= collateralToSend;
                 emit Converted(
                     _msgSender(),
                     address(collateralToken),
                     amountOfBondsToConvert,
-                    balanceBefore - balanceAfter
+                    collateralToSend
                 );
             }
         }
@@ -445,17 +415,17 @@ contract SimpleBond is
         uint256 outstandingAmount = totalSupply() -
             IERC20(borrowingAddress).balanceOf(address(this));
 
-        IERC20(borrowingAddress).safeTransferFrom(
+        uint256 amountRepaid = safeTransferIn(
+            IERC20(borrowingAddress),
             _msgSender(),
-            address(this),
             amount >= outstandingAmount ? outstandingAmount : amount
         );
 
-        if (amount >= outstandingAmount) {
+        if (amountRepaid >= outstandingAmount) {
             _isRepaid = true;
-            emit RepaymentInFull(_msgSender(), amount);
+            emit RepaymentInFull(_msgSender(), amountRepaid);
         } else {
-            emit RepaymentDeposited(_msgSender(), amount);
+            emit RepaymentDeposited(_msgSender(), amountRepaid);
         }
     }
 
@@ -474,22 +444,8 @@ contract SimpleBond is
         burn(bondShares);
 
         // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
-        uint256 balanceBefore = IERC20(borrowingAddress).balanceOf(
-            address(this)
-        );
         IERC20(borrowingAddress).safeTransfer(_msgSender(), bondShares);
-        uint256 balanceAfter = IERC20(borrowingAddress).balanceOf(
-            address(this)
-        );
-        if (balanceAfter > balanceBefore) {
-            revert TokenOverflow();
-        }
-        emit Redeem(
-            _msgSender(),
-            borrowingAddress,
-            balanceBefore - balanceAfter,
-            bondShares
-        );
+        emit Redeem(_msgSender(), borrowingAddress, bondShares, bondShares);
     }
 
     /// @notice this function returns an amount of collateral proportional to the bonds burnt
@@ -513,22 +469,15 @@ contract SimpleBond is
                 uint256 collateralToReceive = (bondShares * backingRatio) /
                     1 ether;
                 // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
-                uint256 balanceBefore = collateralToken.balanceOf(
-                    address(this)
-                );
                 collateralToken.safeTransfer(_msgSender(), collateralToReceive);
-                uint256 balanceAfter = collateralToken.balanceOf(address(this));
-                if (balanceAfter > balanceBefore) {
-                    revert TokenOverflow();
-                }
-                totalCollateral[address(collateralToken)] -=
-                    balanceBefore -
-                    balanceAfter;
+                totalCollateral[
+                    address(collateralToken)
+                ] -= collateralToReceive;
                 emit RedeemDefaulted(
                     _msgSender(),
                     address(collateralToken),
                     bondShares,
-                    balanceBefore - balanceAfter
+                    collateralToReceive
                 );
             }
         }
@@ -550,5 +499,23 @@ contract SimpleBond is
             }
         }
         token.transfer(owner(), token.balanceOf(address(this)));
+    }
+
+    /// @notice this function returns the balance of this contract before and after a transfer into it
+    /// @dev safeTransferFrom is used to revert on any non-success return from the transfer
+    /// @dev the actual delta of tokens is returned to keep accurate balance in the case where the token has a fee
+    function safeTransferIn(
+        IERC20 token,
+        address from,
+        uint256 value
+    ) private returns (uint256) {
+        uint256 balanceBefore = token.balanceOf(address(this));
+        token.safeTransferFrom(from, address(this), value);
+
+        uint256 balanceAfter = token.balanceOf(address(this));
+        if (balanceAfter < balanceBefore) {
+            revert TokenOverflow();
+        }
+        return balanceAfter - balanceBefore;
     }
 }
