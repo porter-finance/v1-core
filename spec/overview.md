@@ -39,7 +39,7 @@ A new `Bond` contract is created for each [borrower](https://docs.porter.finance
 
 ### Collateral
 
-Borrowers specify the ERC20 token they would like to use as collateral when creating the bond. Only a single collateral type is supported per bond. The ratio for collateral backing each token is also specified by the borrower at bond creation. This "collateralization ratio" prerequisites the minting of new bonds.
+Borrowers specify the ERC20 token(s) they would like to use as collateral when creating the bond. One or more collateral tokens are supported per bond. The ratio for collateral backing each token is also specified by the borrower at bond creation. These "backing ratio(s)" control the minting of new bonds.
 
 ### Convertibility
 
@@ -91,8 +91,8 @@ ABG now has a few options.
 
 - `initateBondAuction` Initiate a Gnosis auction
 - sell tokens on the market
-- add collateral `depositCollateral` and `mint` more bonds up to the collateralization ratio
-- `withdrawCollateral` to burn bonds and withdraw collateral up to the collateralization ratio
+- add collateral `depositCollateral` and `mint` more bonds up to the backing ratio
+- `withdrawCollateral` to burn bonds and withdraw collateral up to the backing ratio
 
 ## Withdrawing collateral
 
@@ -111,9 +111,9 @@ At the time when bonds are issued, ABG can no longer burn all tokens and exit th
 For example, if 2,000,000 of the BOND tokens were sold at auction, ABG can:
 
 - Withdraw collateral up until the amount needed to cover the outstanding bonds
-  - (10,000,000 issuance - 2,000,000 distributed = 8,000,000 BOND) burnt for (8,000,000 burnt \* 3 collateralization ratio = 24,000,000 LEARN)
+  - (10,000,000 issuance - 2,000,000 distributed = 8,000,000 BOND) burnt for (8,000,000 burnt \* 3 backing ratio = 24,000,000 LEARN)
 - Repay principal and withdraw collateral
-  - (2,000,000 DAI repaid = 2,000,000 bonds now covered \* 3 collateralization ratio = 6,000,000 LEARN withdrawn)
+  - (2,000,000 DAI repaid = 2,000,000 bonds now covered \* 3 backing ratio = 6,000,000 LEARN withdrawn)
 
 Finally, at maturity date, bond holders can redeem their 2,000,000 BONDs for the deposited 2,000,000 DAI and the position is closed
 

@@ -111,7 +111,7 @@ contract SimpleBond is
     error BondSupplyExceeded();
     error NoMintAfterIssuance();
 
-    // Uncollateralization
+    // Withdraw
     error CollateralInContractInsufficientToCoverWithdraw();
 
     // Conversion
@@ -318,7 +318,7 @@ contract SimpleBond is
     // todo: refactor to an amount of bonds to burn and withdraw collateral automatically based off of the amount the issuer would receive for the bonds
     // todo: refactor the passed in list of collateral tokens
     /// @notice Withdraw collateral from bond contract
-    /// @notice The amount of collateral available to be withdrawn depends on the collateralization ratio(s)
+    /// @notice The amount of collateral available to be withdrawn depends on the backing ratio(s)
     /// @param _collateralTokens the tokens to withdraw
     /// @param _amounts the amounts of each token to withdraw
     function withdrawCollateral(

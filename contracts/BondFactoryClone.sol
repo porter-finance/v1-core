@@ -54,7 +54,7 @@ contract BondFactoryClone is AccessControl {
     /// @param _owner Owner of the bond
     /// @param _maturityDate Timestamp of when the bond matures
     /// @param _collateralTokens Addresses of the collateral to use for the bond
-    /// @param _collateralizationRatios Ratios of bond:token to be used
+    /// @param _backingRatios Ratios of bond:token to be used
     /// @param _borrowingToken Address of the token being borrowed by the issuer of the bond
     /// @param _convertibilityRatios Ratios of bond:token that the bond can be converted into
     /// @dev this uses a clone to save on deployment costs https://github.com/porter-finance/v1-core/issues/15
@@ -66,7 +66,7 @@ contract BondFactoryClone is AccessControl {
         uint256 _maturityDate,
         address _borrowingToken,
         address[] memory _collateralTokens,
-        uint256[] memory _collateralizationRatios,
+        uint256[] memory _backingRatios,
         uint256[] memory _convertibilityRatios
     ) external onlyIssuer returns (address clone) {
         clone = Clones.clone(tokenImplementation);
@@ -77,7 +77,7 @@ contract BondFactoryClone is AccessControl {
             _maturityDate,
             _borrowingToken,
             _collateralTokens,
-            _collateralizationRatios,
+            _backingRatios,
             _convertibilityRatios
         );
         emit BondCreated(clone);
