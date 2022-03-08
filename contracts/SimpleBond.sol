@@ -184,7 +184,7 @@ contract SimpleBond is
     uint256 public maturityDate;
     address public borrowingAddress;
     address[] public collateralAddresses;
-    uint256[] public collateralRatios;
+    uint256[] public backingRatios;
     uint256[] public convertibilityRatios;
 
     bool internal _isRepaid;
@@ -214,7 +214,7 @@ contract SimpleBond is
         uint256 _maturityDate,
         address _borrowingAddress,
         address[] memory _collateralAddresses,
-        uint256[] memory _collateralRatios,
+        uint256[] memory _backingRatios,
         uint256[] memory _convertibilityRatios
     ) external initializer {
         if (_maturityDate <= block.timestamp) {
@@ -231,7 +231,7 @@ contract SimpleBond is
         maturityDate = _maturityDate;
         borrowingAddress = _borrowingAddress;
         collateralAddresses = _collateralAddresses;
-        collateralRatios = _collateralRatios;
+        backingRatios = _backingRatios;
         convertibilityRatios = _convertibilityRatios;
 
         _transferOwnership(_owner);
@@ -294,13 +294,13 @@ contract SimpleBond is
             for (uint256 k = 0; k < collateralAddresses.length; k++) {
                 if (_collateralAddresses[j] == collateralAddresses[k]) {
                     address collateralAddress = collateralAddresses[k];
-                    uint256 collateralRatio = collateralRatios[k];
+                    uint256 backingRatio = backingRatios[k];
                     uint256 convertibilityRatio = convertibilityRatios[k];
-                    uint256 tokensNeededToCoverCollateralRatio = totalSupply() *
-                        collateralRatio;
+                    uint256 tokensNeededToCoverbackingRatio = totalSupply() *
+                        backingRatio;
                     uint256 tokensNeededToCoverConvertibilityRatio = totalSupply() *
                             convertibilityRatio;
-                    uint256 totalRequiredCollateral = tokensNeededToCoverCollateralRatio +
+                    uint256 totalRequiredCollateral = tokensNeededToCoverbackingRatio +
                             tokensNeededToCoverConvertibilityRatio;
                     if (
                         _isRepaid && tokensNeededToCoverConvertibilityRatio > 0
@@ -362,20 +362,20 @@ contract SimpleBond is
             uint256 collateralDeposited = collateralToken.balanceOf(
                 address(this)
             );
-            uint256 collateralRatio = collateralRatios[i];
+            uint256 backingRatio = backingRatios[i];
             uint256 convertibilityRatio = convertibilityRatios[i];
             // Each collateral type restricts the amount of mintable tokens by the ratio required to satisfy "collateralized"
             // 100 deposited collateral with a 1:5 ratio would allow for 100/5 tokens minted for THIS collateral type
             uint256 tokensCanMint = 0;
             if (
                 convertibilityRatio == 0 ||
-                convertibilityRatio < collateralRatio
+                convertibilityRatio < backingRatio
             ) {
-                // totalBondSupply = collateralDeposited * collateralRatio / 1e18
-                // collateralDeposited * 1e18 / collateralRatio = targetBondSupply * collateralRatio / 1e18
+                // totalBondSupply = collateralDeposited * backingRatio / 1e18
+                // collateralDeposited * 1e18 / backingRatio = targetBondSupply * backingRatio / 1e18
                 tokensCanMint =
                     (collateralDeposited * 1 ether) /
-                    collateralRatio;
+                    backingRatio;
             } else {
                 tokensCanMint =
                     (collateralDeposited * 1 ether) /
@@ -508,9 +508,9 @@ contract SimpleBond is
         // iterate over all collateral tokens and withdraw a proportional amount
         for (uint256 i = 0; i < collateralAddresses.length; i++) {
             IERC20 collateralToken = IERC20(collateralAddresses[i]);
-            uint256 collateralRatio = collateralRatios[i];
-            if (collateralRatio > 0) {
-                uint256 collateralToReceive = (bondShares * collateralRatio) /
+            uint256 backingRatio = backingRatios[i];
+            if (backingRatio > 0) {
+                uint256 collateralToReceive = (bondShares * backingRatio) /
                     1 ether;
                 // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
                 uint256 balanceBefore = collateralToken.balanceOf(
