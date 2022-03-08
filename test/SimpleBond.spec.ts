@@ -247,7 +247,7 @@ describe("SimpleBond", async () => {
       await bond.mint();
     });
 
-    it("withdraws collateral", async () => {
+    it("owner can withdraw collateral", async () => {
       await expect(
         bond.withdrawCollateral(
           BondConfig.collateralAddresses,
@@ -257,6 +257,22 @@ describe("SimpleBond", async () => {
     });
 
     it("reverts when called by non-issuer", async () => {
+      await expect(
+        bond
+          .connect(attacker)
+          .withdrawCollateral(BondConfig.collateralAddresses, amountsToDeposit)
+      ).to.be.revertedWith(`AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`);
+    });
+
+    it("granting and revoking withdraw role works correctly", async () => {
+      await bond.grantRole(withdrawRole, attacker.address);
+      await expect(
+        bond
+          .connect(attacker)
+          .withdrawCollateral(BondConfig.collateralAddresses, amountsToDeposit)
+      ).to.be.revertedWith("CollateralInContractInsufficientToCoverWithdraw");
+
+      await bond.revokeRole(withdrawRole, attacker.address);
       await expect(
         bond
           .connect(attacker)
