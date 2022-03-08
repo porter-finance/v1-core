@@ -33,7 +33,7 @@ A new `Bond` contract is created for each [borrower](https://docs.porter.finance
 
 ### Collateral
 
-Borrowers specify the ERC20 tokens they would like to use as collateral when creating the bond. Accepting multiple collateral types in supported.
+Borrowers specify the ERC20 tokens they would like to use as collateral when creating the bond. Multiple distinct ERC20 tokens used as collateral is supported.
 
 ### Convert
 
