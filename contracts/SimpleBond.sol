@@ -239,7 +239,9 @@ contract SimpleBond is
     string memory _symbol,
     address _owner,
     uint256 _maturityDate,
+    uint256 _bondAmount,
     address _borrowingToken,
+    uint256 _borrowingAmount,
     address[] memory _collateralTokens,
     uint256[] memory _backingRatios,
     uint256[] memory _convertibilityRatios
@@ -329,11 +331,17 @@ contract SimpleBond is
       uint256 backingRatio = backingRatios[i];
       uint256 convertibilityRatio = convertibilityRatios[i];
 
-      uint256 tokensNeededToCoverBackingRatio = _isRepaid ? 0 : totalSupply() * backingRatio;
-      uint256 tokensNeededToCoverConvertibilityRatio = _isRepaid ? 0 : totalSupply() *
-        convertibilityRatio;
+      uint256 tokensToCover = totalSupply() -
+        IERC20(borrowingToken).balanceOf(address(this));
+      uint256 tokensNeededToCoverBackingRatio = _isRepaid
+        ? 0
+        : tokensToCover * backingRatio;
+      uint256 tokensNeededToCoverConvertibilityRatio = _isRepaid
+        ? 0
+        : tokensToCover * convertibilityRatio;
 
-      uint256 totalRequiredCollateral = tokensNeededToCoverBackingRatio + tokensNeededToCoverConvertibilityRatio;
+      uint256 totalRequiredCollateral = tokensNeededToCoverBackingRatio +
+        tokensNeededToCoverConvertibilityRatio;
 
       uint256 balanceBefore = IERC20(collateralToken).balanceOf(address(this));
       if (totalRequiredCollateral >= balanceBefore) {
@@ -344,10 +352,7 @@ contract SimpleBond is
       // reentrancy possibility: the issuer could try to transfer more collateral than is available - at the point of execution
       // the amount of transferred funds is amount which is taken directly from the function arguments.
       // After re-entering into this function when at the time below is called, the balanceBefore
-      IERC20(collateralToken).safeTransfer(
-        _msgSender(),
-        collateralToWithdraw
-      );
+      IERC20(collateralToken).safeTransfer(_msgSender(), collateralToWithdraw);
       totalCollateral[collateralToken] -= collateralToWithdraw;
       emit CollateralWithdrawn(
         _msgSender(),
@@ -449,7 +454,7 @@ contract SimpleBond is
       _msgSender(),
       amount >= outstandingAmount ? outstandingAmount : amount
     );
-
+    // todo: withdrawCollateral(0); here to get their portion of collateral back
     if (amountRepaid >= outstandingAmount) {
       _isRepaid = true;
       emit RepaymentInFull(_msgSender(), amountRepaid);
