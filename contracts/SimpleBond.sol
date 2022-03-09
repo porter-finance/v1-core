@@ -208,25 +208,6 @@ contract SimpleBond is
     /// @notice this mapping keeps track of the total collateral per address that is in this contract. this amount is used when determining the portion of collateral to return to the bond holders in event of a default
     mapping(address => uint256) public totalCollateral;
 
-    /// @return the collateral addresses for the bond
-    function getCollateralTokens() external view returns (address[] memory) {
-        return collateralTokens;
-    }
-
-    /// @return the backing ratios for the bond
-    function getBackingRatios() external view returns (uint256[] memory) {
-        return backingRatios;
-    }
-
-    /// @return the convertibility ratios for the bond
-    function getConvertibilityRatios()
-        external
-        view
-        returns (uint256[] memory)
-    {
-        return convertibilityRatios;
-    }
-
     // todo: figure out why we need this
     function state() external view returns (BondStanding newStanding) {
         if (block.timestamp < maturityDate && !_isRepaid && totalSupply() > 0) {
