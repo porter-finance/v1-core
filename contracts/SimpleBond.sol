@@ -239,9 +239,7 @@ contract SimpleBond is
     string memory _symbol,
     address _owner,
     uint256 _maturityDate,
-    uint256 _bondAmount,
     address _borrowingToken,
-    uint256 _borrowingAmount,
     address[] memory _collateralTokens,
     uint256[] memory _backingRatios,
     uint256[] memory _convertibilityRatios
