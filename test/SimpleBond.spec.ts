@@ -5,6 +5,7 @@ import {
   SimpleBond,
   IERC20__factory,
   ERC20__factory,
+  BondFactoryClone,
 } from "../typechain";
 import { getBondContract, getEventArgumentsFromLoop } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -67,6 +68,7 @@ describe("SimpleBond", async () => {
   let attackingToken: TestERC20;
   let mockUSDCToken: TestERC20;
   let borrowingToken: TestERC20;
+  let factory: BondFactoryClone;
 
   // no args because of gh issue:
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
@@ -76,7 +78,10 @@ describe("SimpleBond", async () => {
 
     const { nativeToken, attackingToken, mockUSDCToken, borrowingToken } =
       await tokenFixture();
-    BondConfig.collateralTokens = [nativeToken.address, mockUSDCToken.address];
+    BondConfig.collateralTokens = [
+      mockUSDCToken.address,
+      nativeToken.address,
+    ].sort();
     BondConfig.collateralRatios = [
       utils.parseUnits("0.5", 18),
       utils.parseUnits("0.25", 18),
@@ -99,9 +104,9 @@ describe("SimpleBond", async () => {
     );
 
     ConvertibleBondConfig.collateralTokens = [
-      nativeToken.address,
       mockUSDCToken.address,
-    ];
+      nativeToken.address,
+    ].sort();
     ConvertibleBondConfig.collateralRatios = [
       utils.parseUnits("0.5", 18),
       utils.parseUnits("0.25", 18),
@@ -117,7 +122,7 @@ describe("SimpleBond", async () => {
         owner.address,
         ConvertibleBondConfig.maturityDate,
         borrowingToken.address,
-        [nativeToken.address],
+        ConvertibleBondConfig.collateralTokens,
         ConvertibleBondConfig.collateralRatios,
         ConvertibleBondConfig.convertibilityRatios
       )
@@ -130,6 +135,7 @@ describe("SimpleBond", async () => {
       attackingToken,
       mockUSDCToken,
       borrowingToken,
+      factory,
     };
   }
 
@@ -142,7 +148,52 @@ describe("SimpleBond", async () => {
       attackingToken,
       mockUSDCToken,
       borrowingToken,
+      factory,
     } = await loadFixture(fixture));
+  });
+  describe("configuration", async () => {
+    it("should revert on non-sorted addresses", async () => {
+      await expect(
+        factory.createBond(
+          "SimpleBond",
+          "LUG",
+          owner.address,
+          BondConfig.maturityDate,
+          borrowingToken.address,
+          [BondConfig.collateralTokens[1], BondConfig.collateralTokens[0]],
+          BondConfig.collateralRatios,
+          BondConfig.convertibilityRatios
+        )
+      ).to.be.revertedWith("CollateralTokensUnsorted");
+    });
+    it("should revert on non-equal lengths", async () => {
+      await expect(
+        factory.createBond(
+          "SimpleBond",
+          "LUG",
+          owner.address,
+          BondConfig.maturityDate,
+          borrowingToken.address,
+          BondConfig.collateralTokens,
+          BondConfig.collateralRatios.slice(0, 1),
+          BondConfig.convertibilityRatios
+        )
+      ).to.be.revertedWith("LengthMismatch");
+    });
+    it("should revert on less collateral than convertible", async () => {
+      await expect(
+        factory.createBond(
+          "SimpleBond",
+          "LUG",
+          owner.address,
+          BondConfig.maturityDate,
+          borrowingToken.address,
+          BondConfig.collateralTokens,
+          BondConfig.convertibilityRatios, // these are swapped
+          BondConfig.collateralRatios // these are swapped
+        )
+      ).to.be.revertedWith("BackingRatioLessThanConvertibilityRatio");
+    });
   });
 
   describe("creation", async () => {
@@ -163,7 +214,9 @@ describe("SimpleBond", async () => {
 
     it("should return public parameters", async function () {
       expect(await bond.maturityDate()).to.be.equal(BondConfig.maturityDate);
-      expect(await bond.collateralTokens(0)).to.be.equal(nativeToken.address);
+      expect(await bond.collateralTokens(0)).to.be.equal(
+        BondConfig.collateralTokens[0]
+      );
       expect(await bond.backingRatios(0)).to.be.equal(
         BondConfig.collateralRatios[0]
       );
@@ -406,7 +459,13 @@ describe("SimpleBond", async () => {
 
       expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
       expect(await borrowingToken.balanceOf(bondHolder.address)).to.be.equal(0);
-      expect(await nativeToken.balanceOf(bondHolder.address)).to.be.equal(
+      // this isn't necessarily USDC - it's attaching at the address specified
+      // this is because the tokens are sorted and we can not be sure which token it is
+      expect(
+        await mockUSDCToken
+          .attach(BondConfig.collateralTokens[0])
+          .balanceOf(bondHolder.address)
+      ).to.be.equal(
         BondConfig.collateralRatios[0]
           .mul(sharesToSellToBondHolder)
           .div(utils.parseUnits("1", 18))

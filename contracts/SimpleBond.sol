@@ -104,6 +104,10 @@ contract SimpleBond is
 
     // Initialization
     error InvalidMaturityDate();
+    error MaxCollateralTokens();
+    error LengthMismatch();
+    error BackingRatioLessThanConvertibilityRatio();
+    error CollateralTokensUnsorted();
 
     // Minting
     error InusfficientCollateralToCoverTokenSupply();
@@ -173,6 +177,7 @@ contract SimpleBond is
     }
 
     uint256 internal constant ONE = 1e18;
+    uint256 internal constant MAX_COLLATERAL_TOKENS = 20;
 
     /// @notice A date in the future set at bond creation at which the bond will mature.
     /// @notice Before this date, a bond token can be converted if convertible, but cannot be redeemed.
@@ -255,8 +260,23 @@ contract SimpleBond is
         uint256[] memory _backingRatios,
         uint256[] memory _convertibilityRatios
     ) external initializer {
-        // todo: check validity of arrays - same length, non-zero, max length - backing ratio >= convertibility ratio
-        // todo: enforce sorting of collateral tokens alphabetically by address by looping through and confirming it's bigger than the previous one, revert otherwise
+        if (_collateralTokens.length > MAX_COLLATERAL_TOKENS) {
+            revert MaxCollateralTokens();
+        }
+        if (
+            _collateralTokens.length != _backingRatios.length ||
+            _collateralTokens.length != _convertibilityRatios.length
+        ) {
+            revert LengthMismatch();
+        }
+        for (uint256 i = 0; i < _collateralTokens.length; i++) {
+            if (_backingRatios[i] < _convertibilityRatios[i]) {
+                revert BackingRatioLessThanConvertibilityRatio();
+            }
+            if (i != 0 && _collateralTokens[i - 1] >= _collateralTokens[i]) {
+                revert CollateralTokensUnsorted();
+            }
+        }
         if (
             _maturityDate <= block.timestamp ||
             _maturityDate > block.timestamp + 3650 days
