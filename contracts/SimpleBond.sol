@@ -297,38 +297,35 @@ contract SimpleBond is
         _transferOwnership(_owner);
     }
 
-    // todo: remove collateralTokens and iterate over only the existing addresses
     /// @notice Deposit collateral into bond contract
-    /// @param _collateralTokens the array of addresses used to deposit
     /// @param amounts the array of collateral per address to deposit
-    function depositCollateral(
-        address[] memory _collateralTokens,
-        uint256[] memory amounts
-    ) external nonReentrant notPastMaturity {
-        for (uint256 j = 0; j < _collateralTokens.length; j++) {
-            for (uint256 k = 0; k < collateralTokens.length; k++) {
-                if (_collateralTokens[j] == collateralTokens[k]) {
-                    address collateralToken = collateralTokens[j];
-                    uint256 amount = amounts[j];
+    function depositCollateral(uint256[] memory amounts)
+        external
+        nonReentrant
+        notPastMaturity
+    {
+        for (uint256 i = 0; i < collateralTokens.length; i++) {
+            address collateralToken = collateralTokens[i];
+            uint256 amount = amounts[i];
 
-                    if (amount == 0) {
-                        revert ZeroAmount();
-                    }
-                    // reentrancy possibility: the totalCollateral is updated after the transfer
-                    uint256 collateralDeposited = safeTransferIn(
-                        IERC20(collateralToken),
-                        _msgSender(),
-                        amount
-                    );
-
-                    totalCollateral[collateralToken] += collateralDeposited;
-                    emit CollateralDeposited(
-                        _msgSender(),
-                        collateralToken,
-                        collateralDeposited
-                    );
-                }
+            if (amount == 0) {
+                // don't revert here in case 0 collateral is deposited
+                return;
             }
+
+            // reentrancy possibility: the totalCollateral is updated after the transfer
+            uint256 collateralDeposited = safeTransferIn(
+                IERC20(collateralToken),
+                _msgSender(),
+                amount
+            );
+
+            totalCollateral[collateralToken] += collateralDeposited;
+            emit CollateralDeposited(
+                _msgSender(),
+                collateralToken,
+                collateralDeposited
+            );
         }
     }
 
@@ -336,57 +333,45 @@ contract SimpleBond is
     // todo: refactor the passed in list of collateral tokens
     /// @notice Withdraw collateral from bond contract
     /// @notice The amount of collateral available to be withdrawn depends on the backing ratio(s)
-    /// @param _collateralTokens the tokens to withdraw
     /// @param _amounts the amounts of each token to withdraw
-    function withdrawCollateral(
-        address[] memory _collateralTokens,
-        uint256[] memory _amounts
-    ) external nonReentrant onlyOwner {
-        for (uint256 j = 0; j < _collateralTokens.length; j++) {
-            for (uint256 k = 0; k < collateralTokens.length; k++) {
-                if (_collateralTokens[j] == collateralTokens[k]) {
-                    address collateralToken = collateralTokens[k];
-                    uint256 backingRatio = backingRatios[k];
-                    uint256 convertibilityRatio = convertibilityRatios[k];
-                    uint256 tokensNeededToCoverbackingRatio = totalSupply() *
-                        backingRatio;
-                    uint256 tokensNeededToCoverConvertibilityRatio = totalSupply() *
-                            convertibilityRatio;
-                    uint256 totalRequiredCollateral = tokensNeededToCoverbackingRatio +
-                            tokensNeededToCoverConvertibilityRatio;
-                    if (
-                        _isRepaid && tokensNeededToCoverConvertibilityRatio > 0
-                    ) {
-                        totalRequiredCollateral = tokensNeededToCoverConvertibilityRatio;
-                    } else if (_isRepaid) {
-                        totalRequiredCollateral = 0;
-                    }
-                    uint256 balanceBefore = IERC20(collateralToken).balanceOf(
-                        address(this)
-                    );
-                    if (totalRequiredCollateral >= balanceBefore) {
-                        revert CollateralInContractInsufficientToCoverWithdraw();
-                    }
-                    uint256 withdrawableCollateral = balanceBefore -
-                        totalRequiredCollateral;
-                    if (_amounts[j] > withdrawableCollateral) {
-                        revert CollateralInContractInsufficientToCoverWithdraw();
-                    }
-                    // reentrancy possibility: the issuer could try to transfer more collateral than is available - at the point of execution
-                    // the amount of transferred funds is _amounts[j] which is taken directly from the function arguments.
-                    // After re-entering into this function when at the time below is called, the balanceBefore
-                    IERC20(collateralToken).safeTransfer(
-                        _msgSender(),
-                        _amounts[j]
-                    );
-                    totalCollateral[collateralToken] -= _amounts[j];
-                    emit CollateralWithdrawn(
-                        _msgSender(),
-                        collateralToken,
-                        _amounts[j]
-                    );
-                }
+    function withdrawCollateral(uint256[] memory _amounts)
+        external
+        nonReentrant
+        onlyOwner
+    {
+        for (uint256 i = 0; i < collateralTokens.length; i++) {
+            uint256 amount = _amounts[i];
+            address collateralToken = collateralTokens[i];
+            uint256 backingRatio = backingRatios[i];
+            uint256 convertibilityRatio = convertibilityRatios[i];
+            uint256 tokensNeededToCoverbackingRatio = totalSupply() *
+                backingRatio;
+            uint256 tokensNeededToCoverConvertibilityRatio = totalSupply() *
+                convertibilityRatio;
+            uint256 totalRequiredCollateral = tokensNeededToCoverbackingRatio +
+                tokensNeededToCoverConvertibilityRatio;
+            if (_isRepaid && tokensNeededToCoverConvertibilityRatio > 0) {
+                totalRequiredCollateral = tokensNeededToCoverConvertibilityRatio;
+            } else if (_isRepaid) {
+                totalRequiredCollateral = 0;
             }
+            uint256 balanceBefore = IERC20(collateralToken).balanceOf(
+                address(this)
+            );
+            if (totalRequiredCollateral >= balanceBefore) {
+                revert CollateralInContractInsufficientToCoverWithdraw();
+            }
+            uint256 withdrawableCollateral = balanceBefore -
+                totalRequiredCollateral;
+            if (amount > withdrawableCollateral) {
+                revert CollateralInContractInsufficientToCoverWithdraw();
+            }
+            // reentrancy possibility: the issuer could try to transfer more collateral than is available - at the point of execution
+            // the amount of transferred funds is amount which is taken directly from the function arguments.
+            // After re-entering into this function when at the time below is called, the balanceBefore
+            IERC20(collateralToken).safeTransfer(_msgSender(), amount);
+            totalCollateral[collateralToken] -= amount;
+            emit CollateralWithdrawn(_msgSender(), collateralToken, amount);
         }
     }
 

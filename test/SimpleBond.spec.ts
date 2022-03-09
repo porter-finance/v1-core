@@ -245,10 +245,7 @@ describe("SimpleBond", async () => {
         })
       );
       const args = await getEventArgumentsFromLoop(
-        await bond.depositCollateral(
-          BondConfig.collateralTokens,
-          amountsToDeposit
-        ),
+        await bond.depositCollateral(amountsToDeposit),
         "CollateralDeposited"
       );
       args.forEach(({ amount }: { amount: string }, index: number) => {
@@ -258,16 +255,8 @@ describe("SimpleBond", async () => {
 
     it("reverts when insufficient allowance", async () => {
       await expect(
-        bond
-          .connect(attacker)
-          .depositCollateral([nativeToken.address], [utils.parseUnits("1", 18)])
+        bond.connect(attacker).depositCollateral([utils.parseUnits("1", 18)])
       ).to.be.revertedWith("ERC20: insufficient allowance");
-    });
-
-    it("reverts on zero amount", async () => {
-      await expect(
-        bond.depositCollateral([nativeToken.address], [0])
-      ).to.be.revertedWith("ZeroAmount");
     });
   });
 
@@ -284,24 +273,19 @@ describe("SimpleBond", async () => {
           return amountToDeposit;
         })
       );
-      await bond.depositCollateral(
-        BondConfig.collateralTokens,
-        amountsToDeposit
-      );
+      await bond.depositCollateral(amountsToDeposit);
       await bond.mint();
     });
 
     it("withdraws collateral", async () => {
       await expect(
-        bond.withdrawCollateral(BondConfig.collateralTokens, amountsToDeposit)
+        bond.withdrawCollateral(amountsToDeposit)
       ).to.be.revertedWith("CollateralInContractInsufficientToCoverWithdraw");
     });
 
     it("reverts when called by non-issuer", async () => {
       await expect(
-        bond
-          .connect(attacker)
-          .withdrawCollateral(BondConfig.collateralTokens, amountsToDeposit)
+        bond.connect(attacker).withdrawCollateral(amountsToDeposit)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
@@ -318,10 +302,7 @@ describe("SimpleBond", async () => {
           return amountToDeposit;
         })
       );
-      await bond.depositCollateral(
-        BondConfig.collateralTokens,
-        amountsToDeposit
-      );
+      await bond.depositCollateral(amountsToDeposit);
       await expect(bond.mint()).to.not.be.reverted;
       await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
     });
@@ -362,10 +343,7 @@ describe("SimpleBond", async () => {
           return amountToDeposit;
         })
       );
-      await bond.depositCollateral(
-        BondConfig.collateralTokens,
-        amountsToDeposit
-      );
+      await bond.depositCollateral(amountsToDeposit);
     });
 
     it("mints up to collateral depositted", async () => {
@@ -398,10 +376,7 @@ describe("SimpleBond", async () => {
           return amountToDeposit;
         })
       );
-      await bond.depositCollateral(
-        BondConfig.collateralTokens,
-        amountsToDeposit
-      );
+      await bond.depositCollateral(amountsToDeposit);
       await bond.mint();
       await bond.transfer(bondHolder.address, sharesToSellToBondHolder);
       await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
@@ -487,10 +462,7 @@ describe("SimpleBond", async () => {
             return amountToDeposit;
           })
         );
-        await convertibleBond.depositCollateral(
-          ConvertibleBondConfig.collateralTokens,
-          amountsToDeposit
-        );
+        await convertibleBond.depositCollateral(amountsToDeposit);
         await convertibleBond.mint();
         await convertibleBond.transfer(bondHolder.address, tokensToConvert);
       });
