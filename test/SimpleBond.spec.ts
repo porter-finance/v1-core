@@ -1,11 +1,6 @@
 import { BigNumber, BigNumberish, utils } from "ethers";
 import { expect } from "chai";
-import {
-  TestERC20,
-  SimpleBond,
-  IERC20__factory,
-  ERC20__factory,
-} from "../typechain";
+import { TestERC20, SimpleBond, IERC20__factory } from "../typechain";
 import { getBondContract, getEventArgumentsFromLoop } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";

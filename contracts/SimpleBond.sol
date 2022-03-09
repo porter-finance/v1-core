@@ -164,6 +164,7 @@ contract SimpleBond is
         for (uint256 i = 0; i < collateralTokens.length; i++) {
             if (convertibilityRatios[i] > 0) {
                 _isConvertible = true;
+                break;
             }
         }
         if (!_isConvertible) {
@@ -330,13 +331,19 @@ contract SimpleBond is
                         backingRatio;
                     uint256 tokensNeededToCoverConvertibilityRatio = totalSupply() *
                             convertibilityRatio;
+
+                    // To calculate the required collateral, start with the worst case - 
+                    // both the backing and convertibility ratios need to be covered
                     uint256 totalRequiredCollateral = tokensNeededToCoverbackingRatio +
                             tokensNeededToCoverConvertibilityRatio;
                     if (
                         _isRepaid && tokensNeededToCoverConvertibilityRatio > 0
                     ) {
+                      // Here the bond is repaid which means we can take collateral up
+                      // until we reach the amount necessary to cover the convertibility
                         totalRequiredCollateral = tokensNeededToCoverConvertibilityRatio;
                     } else if (_isRepaid) {
+                      // Here the bond is repaid and not convertible
                         totalRequiredCollateral = 0;
                     }
                     uint256 balanceBefore = IERC20(collateralToken).balanceOf(
