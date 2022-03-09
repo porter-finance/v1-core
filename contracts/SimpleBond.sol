@@ -2,7 +2,9 @@
 pragma solidity 0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -14,6 +16,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 contract SimpleBond is
     Initializable,
     ERC20Upgradeable,
+    AccessControlUpgradeable,
     ERC20BurnableUpgradeable,
     OwnableUpgradeable,
     ReentrancyGuard
@@ -198,6 +201,9 @@ contract SimpleBond is
     /// @dev if all of these ratios are 0, the bond is not convertible
     uint256[] public convertibilityRatios;
 
+    /// @notice the role ID for withdrawCollateral
+    bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
+
     // todo: figure out if we need this
     /// @notice this mapping keeps track of the total collateral per address that is in this contract. this amount is used when determining the portion of collateral to return to the bond holders in event of a default
     mapping(address => uint256) public totalCollateral;
@@ -274,6 +280,8 @@ contract SimpleBond is
         convertibilityRatios = _convertibilityRatios;
 
         _transferOwnership(_owner);
+        _grantRole(DEFAULT_ADMIN_ROLE, _owner);
+        _grantRole(WITHDRAW_ROLE, _owner);
     }
 
     // todo: remove collateralTokens and iterate over only the existing addresses
@@ -320,7 +328,7 @@ contract SimpleBond is
     function withdrawCollateral(
         address[] memory _collateralTokens,
         uint256[] memory _amounts
-    ) external nonReentrant onlyOwner {
+    ) external nonReentrant onlyRole(WITHDRAW_ROLE) {
         for (uint256 j = 0; j < _collateralTokens.length; j++) {
             for (uint256 k = 0; k < collateralTokens.length; k++) {
                 if (_collateralTokens[j] == collateralTokens[k]) {
