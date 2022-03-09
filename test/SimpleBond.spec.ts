@@ -406,27 +406,23 @@ describe("SimpleBond", async () => {
         );
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
       const args = await getEventArgumentsFromLoop(
-        await bond
-          .connect(bondHolder)
-          .redeemDefaulted(sharesToSellToBondHolder),
-        "RedeemDefaulted"
+        await bond.connect(bondHolder).redeem(sharesToSellToBondHolder),
+        "Redeem"
       );
       args.forEach(
         (
           {
             receiver,
-            collateralToken,
+            token,
             amountOfBondsRedeemed,
-            amountOfCollateralReceived,
+            amountOfTokensReceived,
           }: any,
           index: number
         ) => {
           expect(receiver).to.equal(bondHolder.address);
-          expect(collateralToken).to.equal(
-            ConvertibleBondConfig.collateralTokens[index]
-          );
+          expect(token).to.equal(ConvertibleBondConfig.collateralTokens[index]);
           expect(amountOfBondsRedeemed).to.equal(sharesToSellToBondHolder);
-          expect(amountOfCollateralReceived).to.equal(
+          expect(amountOfTokensReceived).to.equal(
             expectedCollateralToReceive[index]
           );
         }
