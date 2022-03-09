@@ -81,7 +81,6 @@ contract SimpleBond is
         uint256 amountOfCollateralReceived
     );
 
-    // todo: combine the two redeem events - defaulted or not
     /// @notice emitted when a bond is redeemed
     event Redeem(
         address indexed receiver,
@@ -184,10 +183,10 @@ contract SimpleBond is
     address public borrowingToken;
 
     /// @notice this flag is set after the issuer has paid back the full amount of borrowing token needed to cover the outstanding bonds
-    bool internal _isRepaid; // todo: can this be calculated on the fly?
+    bool internal _isRepaid;
 
     /// @notice this flag is set upon mint to disallow subsequent minting
-    bool internal _isIssued; // todo: can this be calculated on the fly?
+    bool internal _isIssued;
 
     /// @notice the addresses of the ERC20 tokens backing the bond which can be converted into before maturity or, in the case of a default, redeemable for at maturity
     address[] public collateralTokens;
@@ -203,11 +202,9 @@ contract SimpleBond is
     /// @notice the role ID for withdrawCollateral
     bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
 
-    // todo: figure out if we need this
     /// @notice this mapping keeps track of the total collateral per address that is in this contract. this amount is used when determining the portion of collateral to return to the bond holders in event of a default
     mapping(address => uint256) public totalCollateral;
 
-    // todo: figure out why we need this
     function state() external view returns (BondStanding newStanding) {
         if (block.timestamp < maturityDate && !_isRepaid && totalSupply() > 0) {
             newStanding = BondStanding.GOOD;
@@ -311,8 +308,6 @@ contract SimpleBond is
         }
     }
 
-    // todo: refactor to an amount of bonds to burn and withdraw collateral automatically based off of the amount the issuer would receive for the bonds
-    // todo: refactor the passed in list of collateral tokens
     /// @notice Withdraw collateral from bond contract
     /// @notice The amount of collateral available to be withdrawn depends on the backing ratio(s)
     /// @param bondsToBurn the number of bonds to burn in return for collateral
@@ -463,7 +458,6 @@ contract SimpleBond is
             _msgSender(),
             amount >= outstandingAmount ? outstandingAmount : amount
         );
-        // todo: withdrawCollateral(0); here to get their portion of collateral back
         if (amountRepaid >= outstandingAmount) {
             _isRepaid = true;
             emit RepaymentInFull(_msgSender(), amountRepaid);
@@ -475,7 +469,6 @@ contract SimpleBond is
     /// @notice this function burns bonds in return for the token borrowed against the bond
     /// @param bondShares the amount of bonds to redeem and burn
     function redeem(uint256 bondShares) external nonReentrant pastMaturity {
-        // todo: make more like erc4626 solmate preview redeem to separate calculation logic
         if (bondShares == 0) {
             revert ZeroAmount();
         }
@@ -491,7 +484,6 @@ contract SimpleBond is
     }
 
     function unsafeRedeemRepaid(uint256 bondShares) private {
-        // todo: what if bondShares != borrowing token decimals?
         IERC20(borrowingToken).safeTransfer(_msgSender(), bondShares);
         emit Redeem(_msgSender(), borrowingToken, bondShares, bondShares);
     }
@@ -503,7 +495,6 @@ contract SimpleBond is
             address(this)
         );
         if (borrowingTokenBalance > 0) {
-            // todo: what if bondShares != borrowing token decimals?
             uint256 borrowingTokensToReceive = (bondShares *
                 borrowingTokenBalance) / totalSupply();
             IERC20(borrowingToken).safeTransfer(
