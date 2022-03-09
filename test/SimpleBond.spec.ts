@@ -23,8 +23,6 @@ const BondStanding = {
   REDEEMED: 3,
 };
 
-const ISSUER_ROLE = utils.id("ISSUER_ROLE");
-
 // 3 years from now, in seconds
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
@@ -69,12 +67,15 @@ describe("SimpleBond", async () => {
   let mockUSDCToken: TestERC20;
   let borrowingToken: TestERC20;
   let factory: BondFactoryClone;
+  let withdrawRole: string;
 
   // no args because of gh issue:
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
   async function fixture() {
     const { factory } = await bondFactoryFixture();
-    await factory.grantRole(ISSUER_ROLE, owner.address);
+    const issuerRole = await factory.ISSUER_ROLE();
+
+    await factory.grantRole(issuerRole, owner.address);
 
     const { nativeToken, attackingToken, mockUSDCToken, borrowingToken } =
       await tokenFixture();
@@ -150,6 +151,7 @@ describe("SimpleBond", async () => {
       borrowingToken,
       factory,
     } = await loadFixture(fixture));
+    withdrawRole = await bond.WITHDRAW_ROLE();
   });
   describe("configuration", async () => {
     it("should revert on non-sorted addresses", async () => {
@@ -283,10 +285,32 @@ describe("SimpleBond", async () => {
       );
     });
 
+    it("owner can withdraw collateral", async () => {
+      await expect(bond.withdrawCollateral(0)).to.be.revertedWith(
+        "CollateralInContractInsufficientToCoverWithdraw"
+      );
+    });
+
     it("reverts when called by non-issuer", async () => {
       await expect(
         bond.connect(attacker).withdrawCollateral(0)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith(
+        `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
+      );
+    });
+
+    it("granting and revoking withdraw role works correctly", async () => {
+      await bond.grantRole(withdrawRole, attacker.address);
+      await expect(
+        bond.connect(attacker).withdrawCollateral(0)
+      ).to.be.revertedWith("CollateralInContractInsufficientToCoverWithdraw");
+
+      await bond.revokeRole(withdrawRole, attacker.address);
+      await expect(
+        bond.connect(attacker).withdrawCollateral(0)
+      ).to.be.revertedWith(
+        `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
+      );
     });
   });
 

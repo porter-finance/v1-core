@@ -2,7 +2,9 @@
 pragma solidity 0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -14,6 +16,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 contract SimpleBond is
     Initializable,
     ERC20Upgradeable,
+    AccessControlUpgradeable,
     ERC20BurnableUpgradeable,
     OwnableUpgradeable,
     ReentrancyGuard
@@ -78,6 +81,7 @@ contract SimpleBond is
         uint256 amountOfCollateralReceived
     );
 
+    // todo: combine the two redeem events - defaulted or not
     /// @notice emitted when a bond is redeemed
     event Redeem(
         address indexed receiver,
@@ -159,6 +163,7 @@ contract SimpleBond is
         for (uint256 i = 0; i < collateralTokens.length; i++) {
             if (convertibilityRatios[i] > 0) {
                 _isConvertible = true;
+                break;
             }
         }
         if (!_isConvertible) {
@@ -195,28 +200,12 @@ contract SimpleBond is
     /// @dev if all of these ratios are 0, the bond is not convertible
     uint256[] public convertibilityRatios;
 
+    /// @notice the role ID for withdrawCollateral
+    bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
+
     // todo: figure out if we need this
     /// @notice this mapping keeps track of the total collateral per address that is in this contract. this amount is used when determining the portion of collateral to return to the bond holders in event of a default
     mapping(address => uint256) public totalCollateral;
-
-    /// @return the collateral addresses for the bond
-    function getCollateralTokens() external view returns (address[] memory) {
-        return collateralTokens;
-    }
-
-    /// @return the backing ratios for the bond
-    function getBackingRatios() external view returns (uint256[] memory) {
-        return backingRatios;
-    }
-
-    /// @return the convertibility ratios for the bond
-    function getConvertibilityRatios()
-        external
-        view
-        returns (uint256[] memory)
-    {
-        return convertibilityRatios;
-    }
 
     // todo: figure out why we need this
     function state() external view returns (BondStanding newStanding) {
@@ -286,6 +275,8 @@ contract SimpleBond is
         convertibilityRatios = _convertibilityRatios;
 
         _transferOwnership(_owner);
+        _grantRole(DEFAULT_ADMIN_ROLE, _owner);
+        _grantRole(WITHDRAW_ROLE, _owner);
     }
 
     /// @notice Deposit collateral into bond contract
@@ -301,7 +292,7 @@ contract SimpleBond is
 
             if (amount == 0) {
                 // don't revert here in case 0 collateral is deposited
-                return;
+                continue;
             }
 
             // reentrancy possibility: the totalCollateral is updated after the transfer
@@ -320,13 +311,15 @@ contract SimpleBond is
         }
     }
 
+    // todo: refactor to an amount of bonds to burn and withdraw collateral automatically based off of the amount the issuer would receive for the bonds
+    // todo: refactor the passed in list of collateral tokens
     /// @notice Withdraw collateral from bond contract
     /// @notice The amount of collateral available to be withdrawn depends on the backing ratio(s)
     /// @param bondsToBurn the number of bonds to burn in return for collateral
     function withdrawCollateral(uint256 bondsToBurn)
         external
         nonReentrant
-        onlyOwner
+        onlyRole(WITHDRAW_ROLE)
     {
         if (bondsToBurn > 0) {
             burn(bondsToBurn);
@@ -498,6 +491,7 @@ contract SimpleBond is
     }
 
     function unsafeRedeemRepaid(uint256 bondShares) private {
+        // todo: what if bondShares != borrowing token decimals?
         IERC20(borrowingToken).safeTransfer(_msgSender(), bondShares);
         emit Redeem(_msgSender(), borrowingToken, bondShares, bondShares);
     }
