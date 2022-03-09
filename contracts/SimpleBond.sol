@@ -313,44 +313,47 @@ contract SimpleBond is
     }
   }
 
-  // todo: refactor to an amount of bonds to burn and withdraw collateral automatically based off of the amount the issuer would receive for the bonds
   /// @notice Withdraw collateral from bond contract
   /// @notice The amount of collateral available to be withdrawn depends on the backing ratio(s)
-  /// @param _amounts the amounts of each token to withdraw
-  function withdrawCollateral(uint256[] memory _amounts)
+  /// @param bondsToBurn the number of bonds to burn in return for collateral
+  function withdrawCollateral(uint256 bondsToBurn)
     external
     nonReentrant
     onlyOwner
   {
+    if (bondsToBurn > 0) {
+      burn(bondsToBurn);
+    }
     for (uint256 i = 0; i < collateralTokens.length; i++) {
-      uint256 amount = _amounts[i];
       address collateralToken = collateralTokens[i];
       uint256 backingRatio = backingRatios[i];
       uint256 convertibilityRatio = convertibilityRatios[i];
-      uint256 tokensNeededToCoverbackingRatio = totalSupply() * backingRatio;
-      uint256 tokensNeededToCoverConvertibilityRatio = totalSupply() *
+
+      uint256 tokensNeededToCoverBackingRatio = _isRepaid ? 0 : totalSupply() * backingRatio;
+      uint256 tokensNeededToCoverConvertibilityRatio = _isRepaid ? 0 : totalSupply() *
         convertibilityRatio;
-      uint256 totalRequiredCollateral = tokensNeededToCoverbackingRatio +
-        tokensNeededToCoverConvertibilityRatio;
-      if (_isRepaid && tokensNeededToCoverConvertibilityRatio > 0) {
-        totalRequiredCollateral = tokensNeededToCoverConvertibilityRatio;
-      } else if (_isRepaid) {
-        totalRequiredCollateral = 0;
-      }
+
+      uint256 totalRequiredCollateral = tokensNeededToCoverBackingRatio + tokensNeededToCoverConvertibilityRatio;
+
       uint256 balanceBefore = IERC20(collateralToken).balanceOf(address(this));
       if (totalRequiredCollateral >= balanceBefore) {
         revert CollateralInContractInsufficientToCoverWithdraw();
       }
-      uint256 withdrawableCollateral = balanceBefore - totalRequiredCollateral;
-      if (amount > withdrawableCollateral) {
-        revert CollateralInContractInsufficientToCoverWithdraw();
-      }
+      uint256 collateralToWithdraw = balanceBefore - totalRequiredCollateral;
+
       // reentrancy possibility: the issuer could try to transfer more collateral than is available - at the point of execution
       // the amount of transferred funds is amount which is taken directly from the function arguments.
       // After re-entering into this function when at the time below is called, the balanceBefore
-      IERC20(collateralToken).safeTransfer(_msgSender(), amount);
-      totalCollateral[collateralToken] -= amount;
-      emit CollateralWithdrawn(_msgSender(), collateralToken, amount);
+      IERC20(collateralToken).safeTransfer(
+        _msgSender(),
+        collateralToWithdraw
+      );
+      totalCollateral[collateralToken] -= collateralToWithdraw;
+      emit CollateralWithdrawn(
+        _msgSender(),
+        collateralToken,
+        collateralToWithdraw
+      );
     }
   }
 

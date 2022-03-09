@@ -278,14 +278,14 @@ describe("SimpleBond", async () => {
     });
 
     it("withdraws collateral", async () => {
-      await expect(
-        bond.withdrawCollateral(amountsToDeposit)
-      ).to.be.revertedWith("CollateralInContractInsufficientToCoverWithdraw");
+      await expect(bond.withdrawCollateral(0)).to.be.revertedWith(
+        "CollateralInContractInsufficientToCoverWithdraw"
+      );
     });
 
     it("reverts when called by non-issuer", async () => {
       await expect(
-        bond.connect(attacker).withdrawCollateral(amountsToDeposit)
+        bond.connect(attacker).withdrawCollateral(0)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
