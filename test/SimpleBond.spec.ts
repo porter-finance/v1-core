@@ -25,7 +25,7 @@ const BondStanding = {
 // 3 years from now, in seconds
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-  1000
+    1000
 );
 const BondConfig: {
   targetBondSupply: BigNumber;
@@ -210,10 +210,7 @@ describe("SimpleBond", async () => {
 
     it("default admin role is role admin for withdraw role", async function () {
       expect(
-        await bond.hasRole(
-          await bond.getRoleAdmin(withdrawRole),
-          owner.address
-        )
+        await bond.hasRole(await bond.getRoleAdmin(withdrawRole), owner.address)
       ).to.be.true;
     });
 
