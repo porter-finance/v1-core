@@ -1,14 +1,27 @@
 [![Porter Smart Contracts](https://user-images.githubusercontent.com/7458951/157589962-34664111-72cb-40c9-81cf-86253cb671c4.png)](https://porter.finance/#gh-dark-mode-only)
 [![Porter Smart Contracts](https://user-images.githubusercontent.com/7458951/157590019-ef886a73-bda8-489f-888d-a98faecf9c61.png)](https://porter.finance/#gh-light-mode-only)
 
+<table align="center">
+ <tr>
+  <td><a href="https://porter.finance">app</a></td>
+  <td><a href="https://docs.porter.finance" />docs</a></td>
+  <td><a href="https://discord.com/invite/9hJKzXPjHm" />discord</a></td>
+  <td><a href="https://blog.porter.finance/" />blog</a></td>
+  <td><a href="https://twitter.com/porterfinance" />twitter</a></td>
+ </tr>
+</table>
+
 # V1 
 
 Smart Contracts powering the Porter protocol. 
 
 ## Development
+
 For local development there are environment variables necessary to enable some hardhat plugins. 
 ### Deployment
-Using hardhat-deploy all of the files in the `./deploy` folder are deployed.
+
+Using hardhat-deploy all of the scripts in the `./deploy` folder are run.
+
 Deploying to rinkeby
 ```
 npx hardhat deploy --network rinkeby
