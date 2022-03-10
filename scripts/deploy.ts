@@ -67,7 +67,7 @@ async function main() {
     owner.address,
     maturityDate,
     borrowingToken1.address,
-    [nativeToken1.address],
+    nativeToken1.address,
     collateralRatio,
     convertibilityRatio
   );
@@ -77,7 +77,7 @@ async function main() {
     owner.address,
     maturityDate,
     borrowingToken2.address,
-    [nativeToken2.address],
+    nativeToken2.address,
     collateralRatio,
     convertibilityRatio
   );
