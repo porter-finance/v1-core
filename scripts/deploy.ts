@@ -7,8 +7,8 @@ import { ethers } from "hardhat";
 import { utils } from "ethers";
 import { TestERC20 } from "../typechain";
 
-const collateralRatio = [utils.parseUnits("0.5", 18)];
-const convertibilityRatio = [utils.parseUnits("0.5", 18)];
+const collateralRatio = utils.parseUnits(".5", 18);
+const convertibilityRatio = utils.parseUnits(".5", 18);
 
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
@@ -31,7 +31,7 @@ async function main() {
   const borrowingToken1 = (await BorrowingToken1.deploy(
     "Borrowing Token 1",
     "BT1",
-    ethers.utils.parseEther("1000"),
+    utils.parseUnits("1000"),
     18
   )) as TestERC20;
 
@@ -39,7 +39,7 @@ async function main() {
   const borrowingToken2 = (await BorrowingToken2.deploy(
     "Borrowing Token 1",
     "BT1",
-    ethers.utils.parseEther("2000"),
+    utils.parseUnits("2000"),
     18
   )) as TestERC20;
 
@@ -47,7 +47,7 @@ async function main() {
   const nativeToken1 = (await NativeToken1.deploy(
     "Native Token 1",
     "NT1",
-    ethers.utils.parseEther("500"),
+    utils.parseUnits("500"),
     18
   )) as TestERC20;
 
@@ -55,7 +55,7 @@ async function main() {
   const nativeToken2 = (await NativeToken2.deploy(
     "Native Token 2",
     "NT2",
-    ethers.utils.parseEther("5000"),
+    utils.parseUnits("5000"),
     18
   )) as TestERC20;
 
