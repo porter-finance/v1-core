@@ -1,4 +1,5 @@
-![GitHub-Mark-Light](https://imgur.com/PmripQh.png#gh-dark-mode-only)![GitHub-Mark-Dark](https://imgur.com/gnY5KYL.png#gh-light-mode-only)
+![Porter Smart Contracts](https://user-images.githubusercontent.com/7458951/157589962-34664111-72cb-40c9-81cf-86253cb671c4.png#gh-dark-mode-only)
+![Porter Smart Contracts](https://user-images.githubusercontent.com/7458951/157590019-ef886a73-bda8-489f-888d-a98faecf9c61.png#gh-light-mode-only)
 
 # Advanced Sample Hardhat Project
 
