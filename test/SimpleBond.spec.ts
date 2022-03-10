@@ -1,6 +1,12 @@
 import { BigNumber, BigNumberish, utils, BytesLike } from "ethers";
 import { expect } from "chai";
-import { TestERC20, SimpleBond, IERC20__factory } from "../typechain";
+import {
+  TestERC20,
+  SimpleBond,
+  IERC20__factory,
+  ERC20__factory,
+  BondFactoryClone,
+} from "../typechain";
 import { getBondContract, getEventArgumentsFromLoop } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
@@ -20,7 +26,7 @@ const BondStanding = {
 // 3 years from now, in seconds
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-    1000
+  1000
 );
 const BondConfig: {
   targetBondSupply: BigNumber;
@@ -60,6 +66,7 @@ describe("SimpleBond", async () => {
   let attackingToken: TestERC20;
   let mockUSDCToken: TestERC20;
   let borrowingToken: TestERC20;
+  let factory: BondFactoryClone;
   let withdrawRole: BytesLike;
 
   // no args because of gh issue:
@@ -72,7 +79,10 @@ describe("SimpleBond", async () => {
 
     const { nativeToken, attackingToken, mockUSDCToken, borrowingToken } =
       await tokenFixture();
-    BondConfig.collateralTokens = [nativeToken.address, mockUSDCToken.address];
+    BondConfig.collateralTokens = [
+      mockUSDCToken.address,
+      nativeToken.address,
+    ].sort();
     BondConfig.collateralRatios = [
       utils.parseUnits("0.5", 18),
       utils.parseUnits("0.25", 18),
@@ -95,9 +105,9 @@ describe("SimpleBond", async () => {
     );
 
     ConvertibleBondConfig.collateralTokens = [
-      nativeToken.address,
       mockUSDCToken.address,
-    ];
+      nativeToken.address,
+    ].sort();
     ConvertibleBondConfig.collateralRatios = [
       utils.parseUnits("0.5", 18),
       utils.parseUnits("0.25", 18),
@@ -113,7 +123,7 @@ describe("SimpleBond", async () => {
         owner.address,
         ConvertibleBondConfig.maturityDate,
         borrowingToken.address,
-        [nativeToken.address],
+        ConvertibleBondConfig.collateralTokens,
         ConvertibleBondConfig.collateralRatios,
         ConvertibleBondConfig.convertibilityRatios
       )
@@ -126,6 +136,7 @@ describe("SimpleBond", async () => {
       attackingToken,
       mockUSDCToken,
       borrowingToken,
+      factory,
     };
   }
 
@@ -138,8 +149,53 @@ describe("SimpleBond", async () => {
       attackingToken,
       mockUSDCToken,
       borrowingToken,
+      factory,
     } = await loadFixture(fixture));
     withdrawRole = await bond.WITHDRAW_ROLE();
+  });
+  describe("configuration", async () => {
+    it("should revert on non-sorted addresses", async () => {
+      await expect(
+        factory.createBond(
+          "SimpleBond",
+          "LUG",
+          owner.address,
+          BondConfig.maturityDate,
+          borrowingToken.address,
+          [BondConfig.collateralTokens[1], BondConfig.collateralTokens[0]],
+          BondConfig.collateralRatios,
+          BondConfig.convertibilityRatios
+        )
+      ).to.be.revertedWith("CollateralTokensUnsorted");
+    });
+    it("should revert on non-equal lengths", async () => {
+      await expect(
+        factory.createBond(
+          "SimpleBond",
+          "LUG",
+          owner.address,
+          BondConfig.maturityDate,
+          borrowingToken.address,
+          BondConfig.collateralTokens,
+          BondConfig.collateralRatios.slice(0, 1),
+          BondConfig.convertibilityRatios
+        )
+      ).to.be.revertedWith("LengthMismatch");
+    });
+    it("should revert on less collateral than convertible", async () => {
+      await expect(
+        factory.createBond(
+          "SimpleBond",
+          "LUG",
+          owner.address,
+          BondConfig.maturityDate,
+          borrowingToken.address,
+          BondConfig.collateralTokens,
+          BondConfig.convertibilityRatios, // these are swapped
+          BondConfig.collateralRatios // these are swapped
+        )
+      ).to.be.revertedWith("BackingRatioLessThanConvertibilityRatio");
+    });
   });
 
   describe("creation", async () => {
@@ -156,7 +212,7 @@ describe("SimpleBond", async () => {
     it("default admin role is role admin for withdraw role", async function () {
       expect(
         await bond.hasRole(
-          await bond.getRoleAdmin(await bond.WITHDRAW_ROLE()),
+          await bond.getRoleAdmin(withdrawRole),
           owner.address
         )
       ).to.be.true;
@@ -170,7 +226,9 @@ describe("SimpleBond", async () => {
 
     it("should return public parameters", async function () {
       expect(await bond.maturityDate()).to.be.equal(BondConfig.maturityDate);
-      expect(await bond.collateralTokens(0)).to.be.equal(nativeToken.address);
+      expect(await bond.collateralTokens(0)).to.be.equal(
+        BondConfig.collateralTokens[0]
+      );
       expect(await bond.backingRatios(0)).to.be.equal(
         BondConfig.collateralRatios[0]
       );
@@ -198,10 +256,7 @@ describe("SimpleBond", async () => {
         })
       );
       const args = await getEventArgumentsFromLoop(
-        await bond.depositCollateral(
-          BondConfig.collateralTokens,
-          amountsToDeposit
-        ),
+        await bond.depositCollateral(amountsToDeposit),
         "CollateralDeposited"
       );
       args.forEach(({ amount }: { amount: string }, index: number) => {
@@ -211,16 +266,8 @@ describe("SimpleBond", async () => {
 
     it("reverts when insufficient allowance", async () => {
       await expect(
-        bond
-          .connect(attacker)
-          .depositCollateral([nativeToken.address], [utils.parseUnits("1", 18)])
+        bond.connect(attacker).depositCollateral([utils.parseUnits("1", 18)])
       ).to.be.revertedWith("ERC20: insufficient allowance");
-    });
-
-    it("reverts on zero amount", async () => {
-      await expect(
-        bond.depositCollateral([nativeToken.address], [0])
-      ).to.be.revertedWith("ZeroAmount");
     });
   });
 
@@ -237,24 +284,25 @@ describe("SimpleBond", async () => {
           return amountToDeposit;
         })
       );
-      await bond.depositCollateral(
-        BondConfig.collateralTokens,
-        amountsToDeposit
-      );
+      await bond.depositCollateral(amountsToDeposit);
       await bond.mint();
     });
 
+    it("withdraws collateral", async () => {
+      await expect(bond.withdrawCollateral(0)).to.be.revertedWith(
+        "CollateralInContractInsufficientToCoverWithdraw"
+      );
+    });
+
     it("owner can withdraw collateral", async () => {
-      await expect(
-        bond.withdrawCollateral(BondConfig.collateralTokens, amountsToDeposit)
-      ).to.be.revertedWith("CollateralInContractInsufficientToCoverWithdraw");
+      await expect(bond.withdrawCollateral(0)).to.be.revertedWith(
+        "CollateralInContractInsufficientToCoverWithdraw"
+      );
     });
 
     it("reverts when called by non-issuer", async () => {
       await expect(
-        bond
-          .connect(attacker)
-          .withdrawCollateral(BondConfig.collateralTokens, amountsToDeposit)
+        bond.connect(attacker).withdrawCollateral(0)
       ).to.be.revertedWith(
         `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
       );
@@ -263,16 +311,12 @@ describe("SimpleBond", async () => {
     it("granting and revoking withdraw role works correctly", async () => {
       await bond.grantRole(withdrawRole, attacker.address);
       await expect(
-        bond
-          .connect(attacker)
-          .withdrawCollateral(BondConfig.collateralTokens, amountsToDeposit)
+        bond.connect(attacker).withdrawCollateral(0)
       ).to.be.revertedWith("CollateralInContractInsufficientToCoverWithdraw");
 
       await bond.revokeRole(withdrawRole, attacker.address);
       await expect(
-        bond
-          .connect(attacker)
-          .withdrawCollateral(BondConfig.collateralTokens, amountsToDeposit)
+        bond.connect(attacker).withdrawCollateral(0)
       ).to.be.revertedWith(
         `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
       );
@@ -291,10 +335,7 @@ describe("SimpleBond", async () => {
           return amountToDeposit;
         })
       );
-      await bond.depositCollateral(
-        BondConfig.collateralTokens,
-        amountsToDeposit
-      );
+      await bond.depositCollateral(amountsToDeposit);
       await expect(bond.mint()).to.not.be.reverted;
       await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
     });
@@ -335,10 +376,7 @@ describe("SimpleBond", async () => {
           return amountToDeposit;
         })
       );
-      await bond.depositCollateral(
-        BondConfig.collateralTokens,
-        amountsToDeposit
-      );
+      await bond.depositCollateral(amountsToDeposit);
     });
 
     it("mints up to collateral depositted", async () => {
@@ -371,10 +409,7 @@ describe("SimpleBond", async () => {
           return amountToDeposit;
         })
       );
-      await bond.depositCollateral(
-        BondConfig.collateralTokens,
-        amountsToDeposit
-      );
+      await bond.depositCollateral(amountsToDeposit);
       await bond.mint();
       await bond.transfer(bondHolder.address, sharesToSellToBondHolder);
       await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
@@ -404,27 +439,23 @@ describe("SimpleBond", async () => {
         );
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
       const args = await getEventArgumentsFromLoop(
-        await bond
-          .connect(bondHolder)
-          .redeemDefaulted(sharesToSellToBondHolder),
-        "RedeemDefaulted"
+        await bond.connect(bondHolder).redeem(sharesToSellToBondHolder),
+        "Redeem"
       );
       args.forEach(
         (
           {
             receiver,
-            collateralToken,
+            token,
             amountOfBondsRedeemed,
-            amountOfCollateralReceived,
+            amountOfTokensReceived,
           }: any,
           index: number
         ) => {
           expect(receiver).to.equal(bondHolder.address);
-          expect(collateralToken).to.equal(
-            ConvertibleBondConfig.collateralTokens[index]
-          );
+          expect(token).to.equal(ConvertibleBondConfig.collateralTokens[index]);
           expect(amountOfBondsRedeemed).to.equal(sharesToSellToBondHolder);
-          expect(amountOfCollateralReceived).to.equal(
+          expect(amountOfTokensReceived).to.equal(
             expectedCollateralToReceive[index]
           );
         }
@@ -432,7 +463,13 @@ describe("SimpleBond", async () => {
 
       expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
       expect(await borrowingToken.balanceOf(bondHolder.address)).to.be.equal(0);
-      expect(await nativeToken.balanceOf(bondHolder.address)).to.be.equal(
+      // this isn't necessarily USDC - it's attaching at the address specified
+      // this is because the tokens are sorted and we can not be sure which token it is
+      expect(
+        await mockUSDCToken
+          .attach(BondConfig.collateralTokens[0])
+          .balanceOf(bondHolder.address)
+      ).to.be.equal(
         BondConfig.collateralRatios[0]
           .mul(sharesToSellToBondHolder)
           .div(utils.parseUnits("1", 18))
@@ -454,10 +491,7 @@ describe("SimpleBond", async () => {
             return amountToDeposit;
           })
         );
-        await convertibleBond.depositCollateral(
-          ConvertibleBondConfig.collateralTokens,
-          amountsToDeposit
-        );
+        await convertibleBond.depositCollateral(amountsToDeposit);
         await convertibleBond.mint();
         await convertibleBond.transfer(bondHolder.address, tokensToConvert);
       });
