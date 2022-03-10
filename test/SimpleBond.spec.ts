@@ -4,7 +4,6 @@ import {
   TestERC20,
   SimpleBond,
   IERC20__factory,
-  ERC20__factory,
   BondFactoryClone,
 } from "../typechain";
 import { getBondContract, getEventArgumentsFromLoop } from "./utilities";
