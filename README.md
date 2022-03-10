@@ -2,13 +2,11 @@
 [![Porter Smart Contracts](https://user-images.githubusercontent.com/7458951/157590019-ef886a73-bda8-489f-888d-a98faecf9c61.png)](https://porter.finance/#gh-light-mode-only)
 
 <table align="center">
- <tr>
-  <td><a href="https://porter.finance">app</a></td>
-  <td><a href="https://docs.porter.finance" />docs</a></td>
-  <td><a href="https://discord.com/invite/9hJKzXPjHm" />discord</a></td>
-  <td><a href="https://blog.porter.finance/" />blog</a></td>
-  <td><a href="https://twitter.com/porterfinance" />twitter</a></td>
- </tr>
+ <td><a href="https://porter.finance">app</a></td>
+ <td><a href="https://docs.porter.finance">docs</a></td>
+ <td><a href="https://discord.gg/porter">discord</a></td>
+ <td><a href="https://blog.porter.finance">blog</a></td>
+ <td><a href="https://twitter.com/porterfinance_">twitter</a></td>
 </table>
 
 # V1 
