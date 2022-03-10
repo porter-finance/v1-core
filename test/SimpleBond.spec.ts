@@ -10,7 +10,6 @@ import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
 const { ethers, waffle } = require("hardhat");
 const { loadFixture } = waffle;
 
-
 const BondStanding = {
   GOOD: 0,
   DEFAULTED: 1,
@@ -21,7 +20,7 @@ const BondStanding = {
 // 3 years from now, in seconds
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-  1000
+    1000
 );
 const BondConfig: {
   targetBondSupply: BigNumber;
@@ -150,11 +149,17 @@ describe("SimpleBond", async () => {
     });
 
     it("issuer has default admin role", async function () {
-      expect(await bond.hasRole(await bond.DEFAULT_ADMIN_ROLE(), owner.address)).to.be.true
+      expect(await bond.hasRole(await bond.DEFAULT_ADMIN_ROLE(), owner.address))
+        .to.be.true;
     });
 
     it("default admin role is role admin for withdraw role", async function () {
-      expect(await bond.hasRole(await bond.getRoleAdmin(await bond.WITHDRAW_ROLE()), owner.address)).to.be.true
+      expect(
+        await bond.hasRole(
+          await bond.getRoleAdmin(await bond.WITHDRAW_ROLE()),
+          owner.address
+        )
+      ).to.be.true;
     });
 
     it("should return total value for an account", async function () {
