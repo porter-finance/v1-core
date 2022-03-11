@@ -6,14 +6,14 @@
 import { ethers } from "hardhat";
 import { utils } from "ethers";
 import { TestERC20 } from "../typechain";
-import { getBondContract } from "../test/utilities"
+import { getBondContract } from "../test/utilities";
 
 const collateralRatio = utils.parseUnits(".5", 18);
 const convertibilityRatio = utils.parseUnits(".5", 18);
 
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-  1000
+    1000
 );
 
 async function main() {
@@ -60,23 +60,23 @@ async function main() {
   //   18
   // )) as TestERC20;
 
-  const issuerRole = await factory.ISSUER_ROLE()
+  const issuerRole = await factory.ISSUER_ROLE();
   const grantRoleTx = await factory.grantRole(issuerRole, owner.address);
-  await grantRoleTx.wait()
-  await factory.hasRole(issuerRole, owner.address)
+  await grantRoleTx.wait();
+  await factory.hasRole(issuerRole, owner.address);
 
-
-
-  const bond1 = await getBondContract(factory.createBond(
-    "Bond1",
-    "LUG1",
-    owner.address,
-    maturityDate,
-    borrowingToken1.address,
-    nativeToken1.address,
-    collateralRatio,
-    convertibilityRatio
-  ));
+  const bond1 = await getBondContract(
+    factory.createBond(
+      "Bond1",
+      "LUG1",
+      owner.address,
+      maturityDate,
+      borrowingToken1.address,
+      nativeToken1.address,
+      collateralRatio,
+      convertibilityRatio
+    )
+  );
   // const bond2 = await getBondContract(factory.createBond(
   //   "Bond2",
   //   "LUG2",
