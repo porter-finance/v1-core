@@ -79,7 +79,8 @@ contract SimpleBond is
   /// @notice emitted when a bond is redeemed
   event Redeem(
     address indexed receiver,
-    address indexed token,
+    address indexed borrowingToken,
+    address indexed collateralToken,
     uint256 amountOfBondsRedeemed,
     uint256 amountOfBorrowTokensReceived,
     uint256 amountOfCollateralReceived
@@ -102,13 +103,9 @@ contract SimpleBond is
   // Minting
   error InusfficientCollateralToCoverTokenSupply();
   error BondSupplyExceeded();
-  error NoMintAfterIssuance();
 
   // Withdraw
   error CollateralInContractInsufficientToCoverWithdraw();
-
-  // Conversion
-  error NotConvertible();
 
   // Repayment
   error RepaymentMet();
@@ -152,14 +149,6 @@ contract SimpleBond is
     _;
   }
 
-  /// @dev used to check if a bond is convertible
-  modifier isConvertible() {
-    if (convertibilityRatio == 0) {
-      revert NotConvertible();
-    }
-    _;
-  }
-
   uint256 internal constant ONE = 1e18;
 
   /// @notice A date in the future set at bond creation at which the bond will mature.
@@ -183,7 +172,7 @@ contract SimpleBond is
   uint256 public backingRatio;
 
   /// @notice the ratio of ERC20 tokens the bonds will convert into before maturity
-  /// @dev if this ratio is 0, the bond is not convertible. see isConvertible modifier
+  /// @dev if this ratio is 0, the bond is not convertible.
   uint256 public convertibilityRatio;
 
   /// @notice the role ID for withdrawCollateral
@@ -283,14 +272,15 @@ contract SimpleBond is
     nonReentrant
     notPastMaturity
   {
-    uint256 tokensCanMint = maxSupply - totalSupply();
-    uint256 tokensToMint = shares < tokensCanMint ? shares : tokensCanMint;
-
-    if (tokensToMint == 0) {
-      revert ZeroAmount();
+    if (shares > maxSupply - totalSupply()) {
+      revert BondSupplyExceeded();
     }
 
-    uint256 collateralToDeposit = previewMint(tokensToMint);
+    uint256 collateralToDeposit = previewMint(shares);
+    console.log("mint\n\tcollateral: %s", collateralToDeposit);
+    if (collateralToDeposit == 0) {
+      revert ZeroAmount();
+    }
 
     // @audit-ok reentrancy possibility: totalCollateral is updated after transfer
     uint256 collateralDeposited = safeTransferIn(
@@ -307,20 +297,15 @@ contract SimpleBond is
       collateralDeposited
     );
 
-    _mint(_msgSender(), tokensToMint);
+    _mint(_msgSender(), shares);
 
-    emit Mint(_msgSender(), tokensToMint);
+    emit Mint(_msgSender(), shares);
   }
 
   /// @notice Bond holder can convert their bond to underlying collateral
   /// @notice The bond must be convertible and not past maturity
-  /// @param shares the number of bonds which will be burnt and converted into the collateral(s) at the convertibility ratio(s)
-  function convert(uint256 shares)
-    external
-    notPastMaturity
-    nonReentrant
-    isConvertible
-  {
+  /// @param shares the number of bonds which will be burnt and converted into the collateral at the convertibility ratio
+  function convert(uint256 shares) external notPastMaturity nonReentrant {
     uint256 collateralToSend = previewConvert(shares);
     if (collateralToSend == 0) {
       revert ZeroAmount();
@@ -349,7 +334,6 @@ contract SimpleBond is
     }
 
     uint256 amountToRepay = previewRepay(amount);
-    console.log(amountToRepay);
     // @audit-ok Re-entrancy possibility: this is a transfer into the contract - isRepaid is updated after transfer
     uint256 amountRepaid = safeTransferIn(
       IERC20(borrowingToken),
@@ -396,6 +380,7 @@ contract SimpleBond is
     emit Redeem(
       _msgSender(),
       borrowingToken,
+      collateralToken,
       bondShares,
       borrowingTokensToSend,
       collateralTokensToSend
