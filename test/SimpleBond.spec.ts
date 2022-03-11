@@ -36,6 +36,7 @@ const BondConfig: BondConfigType = {
   collateralRatio: BigNumber.from(0),
   convertibilityRatio: BigNumber.from(0),
   maturityDate,
+  maxSupply: utils.parseUnits("50000000", 18),
 };
 
 const ConvertibleBondConfig: BondConfigType = {
@@ -44,6 +45,7 @@ const ConvertibleBondConfig: BondConfigType = {
   collateralRatio: BigNumber.from(0),
   convertibilityRatio: BigNumber.from(0),
   maturityDate,
+  maxSupply: utils.parseUnits("50000000", 18),
 };
 
 describe("SimpleBond", async () => {
@@ -65,7 +67,7 @@ describe("SimpleBond", async () => {
     const { factory } = await bondFactoryFixture();
     const issuerRole = await factory.ISSUER_ROLE();
 
-    await factory.grantRole(issuerRole, owner.address);
+    await (await factory.grantRole(issuerRole, owner.address)).wait();
 
     const { nativeToken, attackingToken, mockUSDCToken, borrowingToken } =
       await tokenFixture();
@@ -82,7 +84,8 @@ describe("SimpleBond", async () => {
         borrowingToken.address,
         BondConfig.collateralToken,
         BondConfig.collateralRatio,
-        BondConfig.convertibilityRatio
+        BondConfig.convertibilityRatio,
+        BondConfig.maxSupply
       )
     );
 
@@ -98,7 +101,8 @@ describe("SimpleBond", async () => {
         borrowingToken.address,
         ConvertibleBondConfig.collateralToken,
         ConvertibleBondConfig.collateralRatio,
-        ConvertibleBondConfig.convertibilityRatio
+        ConvertibleBondConfig.convertibilityRatio,
+        BondConfig.maxSupply
       )
     );
 
@@ -137,7 +141,8 @@ describe("SimpleBond", async () => {
           borrowingToken.address,
           BondConfig.collateralToken,
           BondConfig.convertibilityRatio, // these are swapped
-          BondConfig.collateralRatio // these are swapped
+          BondConfig.collateralRatio, // these are swapped
+          BondConfig.maxSupply
         )
       ).to.be.revertedWith("BackingRatioLessThanConvertibilityRatio");
     });
@@ -183,28 +188,6 @@ describe("SimpleBond", async () => {
     });
   });
 
-  describe("depositCollateral", async () => {
-    it("deposits collateral", async () => {
-      const token = IERC20__factory.connect(BondConfig.collateralToken, owner);
-      const amountToDeposit = BondConfig.targetBondSupply
-        .mul(BondConfig.collateralRatio)
-        .div(utils.parseUnits("1", 18));
-      await token.approve(bond.address, amountToDeposit);
-      const { amount }: { amount: string } =
-        await getEventArgumentsFromTransaction(
-          await bond.depositCollateral(amountToDeposit),
-          "CollateralDeposited"
-        );
-      expect(amount).to.be.equal(amountToDeposit);
-    });
-
-    it("reverts when insufficient allowance", async () => {
-      await expect(
-        bond.connect(attacker).depositCollateral(utils.parseUnits("1", 18))
-      ).to.be.revertedWith("ERC20: insufficient allowance");
-    });
-  });
-
   describe("withdrawCollateral", async () => {
     beforeEach(async () => {
       const token = IERC20__factory.connect(BondConfig.collateralToken, owner);
@@ -212,8 +195,7 @@ describe("SimpleBond", async () => {
         .mul(BondConfig.collateralRatio)
         .div(utils.parseUnits("1", 18));
       await token.approve(bond.address, amountToDeposit);
-      await bond.depositCollateral(amountToDeposit);
-      await bond.mint();
+      await bond.mint(amountToDeposit);
     });
 
     it("owner can withdraw collateral", async () => {
@@ -252,13 +234,12 @@ describe("SimpleBond", async () => {
         .mul(BondConfig.collateralRatio)
         .div(utils.parseUnits("1", 18));
       await token.approve(bond.address, amountToDeposit);
-      await bond.depositCollateral(amountToDeposit);
-      await expect(bond.mint()).to.not.be.reverted;
+      await expect(bond.mint(amountToDeposit)).to.not.be.reverted;
       await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
     });
 
     it("accepts partial repayment", async () => {
-      await bond.repay(BondConfig.targetBondSupply.div(2));
+      await (await bond.repay(BondConfig.targetBondSupply.div(2))).wait();
 
       await expect(bond.repay(BondConfig.targetBondSupply.div(2))).to.emit(
         bond,
@@ -282,29 +263,32 @@ describe("SimpleBond", async () => {
   });
   describe("minting", async () => {
     const targetTokens = BondConfig.targetBondSupply;
+    const amountToDeposit = BondConfig.targetBondSupply
+      .mul(BondConfig.collateralRatio)
+      .div(utils.parseUnits("1", 18));
     beforeEach(async () => {
       const token = IERC20__factory.connect(BondConfig.collateralToken, owner);
-      const amountToDeposit = BondConfig.targetBondSupply
-        .mul(BondConfig.collateralRatio)
-        .div(utils.parseUnits("1", 18));
       await token.approve(bond.address, amountToDeposit);
-      await bond.depositCollateral(amountToDeposit);
     });
 
     it("mints up to collateral depositted", async () => {
-      await expect(bond.mint()).to.not.be.reverted;
+      await expect(bond.mint(amountToDeposit)).to.not.be.reverted;
       expect(await bond.totalSupply()).to.equal(targetTokens);
     });
 
     it("fails to mint tokens after minted", async () => {
-      await expect(bond.mint()).to.not.be.reverted;
-      await expect(bond.mint()).to.be.revertedWith("NoMintAfterIssuance");
+      await expect(bond.mint(amountToDeposit)).to.not.be.reverted;
+      await expect(bond.mint(amountToDeposit)).to.be.revertedWith(
+        "NoMintAfterIssuance"
+      );
     });
 
     it("fails to mint if not all tokens owned by issuer", async () => {
-      await expect(bond.mint()).to.not.be.reverted;
+      await expect(bond.mint(amountToDeposit)).to.not.be.reverted;
       await bond.transfer(owner.address, 1);
-      await expect(bond.mint()).to.be.revertedWith("NoMintAfterIssuance");
+      await expect(bond.mint(amountToDeposit)).to.be.revertedWith(
+        "NoMintAfterIssuance"
+      );
     });
   });
 
@@ -316,8 +300,7 @@ describe("SimpleBond", async () => {
         .mul(BondConfig.collateralRatio)
         .div(utils.parseUnits("1", 18));
       await token.approve(bond.address, amountToDeposit);
-      await bond.depositCollateral(amountToDeposit);
-      await bond.mint();
+      await bond.mint(amountToDeposit);
       await bond.transfer(bondHolder.address, sharesToSellToBondHolder);
       await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
     });
@@ -344,15 +327,21 @@ describe("SimpleBond", async () => {
         .mul(BondConfig.collateralRatio)
         .div(utils.parseUnits("1", 18));
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
-      const { receiver, token, amountOfBondsRedeemed, amountOfTokensReceived } =
-        await getEventArgumentsFromTransaction(
-          await bond.connect(bondHolder).redeem(sharesToSellToBondHolder),
-          "Redeem"
-        );
+      const {
+        receiver,
+        token,
+        amountOfBondsRedeemed,
+        amountOfBorrowTokensReceived,
+      } = await getEventArgumentsFromTransaction(
+        await bond.connect(bondHolder).redeem(sharesToSellToBondHolder),
+        "Redeem"
+      );
       expect(receiver).to.equal(bondHolder.address);
       expect(token).to.equal(BondConfig.collateralToken);
       expect(amountOfBondsRedeemed).to.equal(sharesToSellToBondHolder);
-      expect(amountOfTokensReceived).to.equal(expectedCollateralToReceive);
+      expect(amountOfBorrowTokensReceived).to.equal(
+        expectedCollateralToReceive
+      );
 
       expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
       expect(await borrowingToken.balanceOf(bondHolder.address)).to.be.equal(0);
@@ -382,8 +371,7 @@ describe("SimpleBond", async () => {
           .mul(ConvertibleBondConfig.collateralRatio)
           .div(utils.parseUnits("1", 18));
         await token.approve(convertibleBond.address, amountToDeposit);
-        await convertibleBond.depositCollateral(amountToDeposit);
-        await convertibleBond.mint();
+        await convertibleBond.mint(amountToDeposit);
         await convertibleBond.transfer(bondHolder.address, tokensToConvert);
       });
 
