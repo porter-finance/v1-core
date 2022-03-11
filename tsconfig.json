@@ -8,10 +8,13 @@
     "declaration": true
   },
   "include": [
-    "./hardhat.config.ts, ./scripts",
+    "./hardhat.config.ts",
+    "./scripts",
     "./test",
     "./deploy",
     "./typechain"
   ],
-  "files": ["./hardhat.config.ts"]
+  "files": [
+    "./hardhat.config.ts"
+  ]
 }
