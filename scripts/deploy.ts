@@ -6,6 +6,7 @@
 import { ethers } from "hardhat";
 import { utils } from "ethers";
 import { TestERC20 } from "../typechain";
+import { getBondContract } from "../test/utilities"
 
 const collateralRatio = utils.parseUnits(".5", 18);
 const convertibilityRatio = utils.parseUnits(".5", 18);
@@ -35,13 +36,13 @@ async function main() {
     18
   )) as TestERC20;
 
-  const BorrowingToken2 = await ethers.getContractFactory("TestERC20");
-  const borrowingToken2 = (await BorrowingToken2.deploy(
-    "Borrowing Token 1",
-    "BT1",
-    utils.parseUnits("2000"),
-    18
-  )) as TestERC20;
+  // const BorrowingToken2 = await ethers.getContractFactory("TestERC20");
+  // const borrowingToken2 = (await BorrowingToken2.deploy(
+  //   "Borrowing Token 1",
+  //   "BT1",
+  //   utils.parseUnits("2000"),
+  //   18
+  // )) as TestERC20;
 
   const NativeToken1 = await ethers.getContractFactory("TestERC20");
   const nativeToken1 = (await NativeToken1.deploy(
@@ -51,17 +52,22 @@ async function main() {
     18
   )) as TestERC20;
 
-  const NativeToken2 = await ethers.getContractFactory("TestERC20");
-  const nativeToken2 = (await NativeToken2.deploy(
-    "Native Token 2",
-    "NT2",
-    utils.parseUnits("5000"),
-    18
-  )) as TestERC20;
+  // const NativeToken2 = await ethers.getContractFactory("TestERC20");
+  // const nativeToken2 = (await NativeToken2.deploy(
+  //   "Native Token 2",
+  //   "NT2",
+  //   utils.parseUnits("5000"),
+  //   18
+  // )) as TestERC20;
 
-  await factory.grantRole(factory.ISSUER_ROLE(), owner.address);
+  const issuerRole = await factory.ISSUER_ROLE()
+  const grantRoleTx = await factory.grantRole(issuerRole, owner.address);
+  await grantRoleTx.wait()
+  await factory.hasRole(issuerRole, owner.address)
 
-  const bond1 = await factory.createBond(
+
+
+  const bond1 = await getBondContract(factory.createBond(
     "Bond1",
     "LUG1",
     owner.address,
@@ -70,24 +76,26 @@ async function main() {
     nativeToken1.address,
     collateralRatio,
     convertibilityRatio
-  );
-  const bond2 = await factory.createBond(
-    "Bond2",
-    "LUG2",
-    owner.address,
-    maturityDate,
-    borrowingToken2.address,
-    nativeToken2.address,
-    collateralRatio,
-    convertibilityRatio
-  );
+  ));
+  // const bond2 = await getBondContract(factory.createBond(
+  //   "Bond2",
+  //   "LUG2",
+  //   owner.address,
+  //   maturityDate,
+  //   borrowingToken2.address,
+  //   nativeToken2.address,
+  //   collateralRatio,
+  //   convertibilityRatio
+  // ));
 
   console.log({
     factory: factory.address,
     nativeToken1: nativeToken1.address,
     borrowingToken1: borrowingToken1.address,
-    nativeToken2: nativeToken2.address,
-    borrowingToken2: borrowingToken2.address
+    // nativeToken2: nativeToken2.address,
+    // borrowingToken2: borrowingToken2.address,
+    bond1: bond1.address,
+    // bond2: bond2.address
   });
 }
 
