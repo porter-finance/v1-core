@@ -1,5 +1,5 @@
 import { BigNumber, utils, BytesLike } from "ethers";
-import { expect, util } from "chai";
+import { expect } from "chai";
 import { TestERC20, SimpleBond, BondFactoryClone } from "../typechain";
 import { getBondContract, getEventArgumentsFromTransaction } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -42,7 +42,7 @@ const ConvertibleBondConfig: BondConfigType = {
   maxSupply: utils.parseUnits("50000000", 18),
 };
 
-describe("SimpleBond", async () => {
+describe("SimpleBond", () => {
   let bond: SimpleBond;
   let convertibleBond: SimpleBond;
   let owner: SignerWithAddress;
