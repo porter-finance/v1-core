@@ -243,22 +243,13 @@ contract SimpleBond is
 
   /// @notice Withdraw collateral from bond contract
   /// @notice The amount of collateral available to be withdrawn depends on the backing ratio
-  /// @param shares the number of bonds to burn in return for collateral
-  function withdrawCollateral(uint256 shares)
-    external
-    nonReentrant
-    onlyRole(WITHDRAW_ROLE)
-  {
-    // @audit-info shares are burnt before withdraw because calculations depend on totalSupply
-    burn(shares);
+  function withdrawCollateral() external nonReentrant onlyRole(WITHDRAW_ROLE) {
     uint256 collateralToSend = previewWithdraw();
 
-    // reentrancy possibility: the issuer could try to transfer more collateral than is available - at the point of execution
-    // the amount of transferred funds is amount which is taken directly from the function arguments.
-    // After re-entering into this function when at the time below is called, the balanceBefore
-    IERC20(collateralToken).safeTransfer(_msgSender(), collateralToSend);
-
     totalCollateral -= collateralToSend;
+
+    // @audit-ok reentrancy possibility: at the point of this transfer, the caller could attempt to reenter, but the totalCollateral updates beofre reaching this point, and is used in the previewWithdraw method to calculate the amount allowed to transfer out of the contract
+    IERC20(collateralToken).safeTransfer(_msgSender(), collateralToSend);
 
     emit CollateralWithdrawn(_msgSender(), collateralToken, collateralToSend);
   }
@@ -277,7 +268,7 @@ contract SimpleBond is
     }
 
     uint256 collateralToDeposit = previewMint(shares);
-    console.log("mint\n\tcollateral: %s", collateralToDeposit);
+
     if (collateralToDeposit == 0) {
       revert ZeroAmount();
     }
@@ -333,12 +324,11 @@ contract SimpleBond is
       revert ZeroAmount();
     }
 
-    uint256 amountToRepay = previewRepay(amount);
     // @audit-ok Re-entrancy possibility: this is a transfer into the contract - isRepaid is updated after transfer
     uint256 amountRepaid = safeTransferIn(
       IERC20(borrowingToken),
       _msgSender(),
-      amountToRepay
+      amount
     );
     if (
       // @audit-ok Re-entrancy possibility: isRepaid is updated after balance check
@@ -434,30 +424,41 @@ contract SimpleBond is
     return (shares * convertibilityRatio) / ONE;
   }
 
-  function previewRepay(uint256 amount) public view returns (uint256) {
-    uint256 outstandingAmount = totalSupply() -
-      IERC20(borrowingToken).balanceOf(address(this));
-    return amount < outstandingAmount ? amount : outstandingAmount;
-  }
-
   function previewWithdraw() public view returns (uint256) {
-    uint256 tokensToCover = totalSupply() -
-      IERC20(borrowingToken).balanceOf(address(this));
-
-    uint256 tokensNeededToCoverBackingRatio = isRepaid
-      ? 0
-      : tokensToCover * backingRatio;
-
-    uint256 tokensNeededToCoverConvertibilityRatio = isRepaid &&
-      maturityDate >= block.timestamp
-      ? 0
-      : tokensToCover * convertibilityRatio;
-
-    uint256 totalRequiredCollateral = tokensNeededToCoverBackingRatio +
-      tokensNeededToCoverConvertibilityRatio;
+    uint256 tokensInContract = IERC20(borrowingToken).balanceOf(address(this));
+    // bond is not paid and mature
+    // to cover backing ratio = total supply (-bonds burned) * backing ratio
+    // to cover convertibility = 0 (bonds cannot be converted)
+    // bond is not paid and not mature:
+    // to cover backing ratio = total supply (-bonds burned) * backing ratio
+    // to cover convertibility = total supply (-bonds burned) * convertibility ratio
+    // bond is paid and not mature
+    // to cover backing ratio = 0 (bonds need not be backed by collateral)
+    // to cover convertibility ratio = total supply (- bonds burned) * collateral ratio
+    // bond is paid and mature
+    // to cover backing ratio = 0
+    // to cover convertibility ratio = 0
+    // All outstanding bonds must be covered by the convertibility ratio
+    uint256 maxCollateralRequiredForConvertibility = (totalSupply() *
+      convertibilityRatio) / ONE;
+    // The outstanding bonds already repaid need not be supported by the "backing" collateral
+    uint256 maxCollateralRequiredForBacking = ((totalSupply() -
+      tokensInContract) * backingRatio) / ONE;
+    uint256 totalRequiredCollateral;
+    if (!isRepaid) {
+      totalRequiredCollateral = maxCollateralRequiredForConvertibility >
+        maxCollateralRequiredForBacking
+        ? maxCollateralRequiredForConvertibility
+        : maxCollateralRequiredForBacking;
+    } else if (maturityDate < block.timestamp) {
+      totalRequiredCollateral = maxCollateralRequiredForConvertibility;
+    } else {
+      // @audit-info redundant but explicit
+      totalRequiredCollateral = 0;
+    }
 
     if (totalRequiredCollateral >= totalCollateral) {
-      revert CollateralInContractInsufficientToCoverWithdraw();
+      return 0;
     }
 
     return totalCollateral - totalRequiredCollateral;
@@ -468,6 +469,9 @@ contract SimpleBond is
     view
     returns (uint256 borrowingTokenToSend, uint256 collateralTokenToSend)
   {
+    if (block.timestamp < maturityDate) {
+      return (0, 0);
+    }
     if (isRepaid) {
       return (shares, 0);
     } else {

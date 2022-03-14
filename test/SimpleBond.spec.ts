@@ -1,5 +1,5 @@
 import { BigNumber, utils, BytesLike } from "ethers";
-import { expect } from "chai";
+import { expect, util } from "chai";
 import { TestERC20, SimpleBond, BondFactoryClone } from "../typechain";
 import { getBondContract, getEventArgumentsFromTransaction } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -27,7 +27,7 @@ const maturityDate = Math.round(
 const BondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
   collateralToken: "",
-  collateralRatio: BigNumber.from(0),
+  collateralRatio: utils.parseUnits("0.5", 18),
   convertibilityRatio: BigNumber.from(0),
   maturityDate,
   maxSupply: utils.parseUnits("50000000", 18),
@@ -36,8 +36,8 @@ const BondConfig: BondConfigType = {
 const ConvertibleBondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
   collateralToken: "",
-  collateralRatio: BigNumber.from(0),
-  convertibilityRatio: BigNumber.from(0),
+  collateralRatio: utils.parseUnits("0.5", 18),
+  convertibilityRatio: utils.parseUnits("0.25", 18),
   maturityDate,
   maxSupply: utils.parseUnits("50000000", 18),
 };
@@ -66,8 +66,6 @@ describe("SimpleBond", async () => {
     const { nativeToken, attackingToken, mockUSDCToken, borrowingToken } =
       await tokenFixture();
     BondConfig.collateralToken = nativeToken.address;
-    BondConfig.collateralRatio = utils.parseUnits("0.5", 18);
-    BondConfig.convertibilityRatio = utils.parseUnits("0", 18);
 
     const bond = await getBondContract(
       factory.createBond(
@@ -84,8 +82,6 @@ describe("SimpleBond", async () => {
     );
 
     ConvertibleBondConfig.collateralToken = mockUSDCToken.address;
-    ConvertibleBondConfig.collateralRatio = utils.parseUnits("0.5", 18);
-    ConvertibleBondConfig.convertibilityRatio = utils.parseUnits("0.25", 18);
     const convertibleBond = await getBondContract(
       factory.createBond(
         "SimpleBond",
@@ -183,41 +179,286 @@ describe("SimpleBond", async () => {
   });
 
   describe("withdrawCollateral", async () => {
-    beforeEach(async () => {
-      const token = mockUSDCToken.attach(BondConfig.collateralToken);
-      const amountToDeposit = BondConfig.targetBondSupply
-        .mul(BondConfig.collateralRatio)
-        .div(utils.parseUnits("1", 18));
-      await token.approve(bond.address, amountToDeposit);
-      await bond.mint(amountToDeposit);
+    // Withdraw function will transfer all allowed collateral out of the contract
+    // Burn shares and withdraw
+    // Do not burn shares and withdraw
+    // Excess collateral will be available to withdraw when bonds are burned
+    // Excess collateral will be available to withdraw when borrow token is partially repaid
+    // Excess collateral will be available to withdraw when borrow token is fully repaid
+    // Excess collateral will be available to withdraw when maturity is reached
+    describe("non-convertible", async () => {
+      beforeEach(async () => {
+        const token = mockUSDCToken.attach(BondConfig.collateralToken);
+        const amountToDeposit = BondConfig.targetBondSupply
+          .mul(BondConfig.collateralRatio)
+          .div(utils.parseUnits("1", 18));
+        await token.approve(bond.address, amountToDeposit);
+        await bond.mint(BondConfig.targetBondSupply);
+      });
+      [
+        {
+          sharesToBurn: 0,
+          collateralToReceive: BigNumber.from(0),
+        },
+        {
+          sharesToBurn: utils.parseUnits("1000", 18),
+          collateralToReceive: utils
+            .parseUnits("1000", 18)
+            .mul(BondConfig.collateralRatio)
+            .div(ONE),
+        },
+      ].forEach(({ sharesToBurn, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when bonds are burned", async () => {
+          await (await bond.burn(sharesToBurn)).wait();
+          expect(await bond.previewWithdraw()).to.equal(collateralToReceive);
+        });
+      });
+
+      [
+        {
+          sharesToBurn: 0,
+          borrowTokenToRepay: utils.parseUnits("1000", 18),
+          collateralToReceive: utils
+            .parseUnits("1000", 18)
+            .mul(BondConfig.collateralRatio)
+            .div(ONE),
+        },
+        {
+          sharesToBurn: utils.parseUnits("1000", 18),
+          borrowTokenToRepay: utils.parseUnits("1000", 18),
+          collateralToReceive: utils
+            .parseUnits("2000", 18)
+            .mul(BondConfig.collateralRatio)
+            .div(ONE),
+        },
+      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when borrow token is partially repaid", async () => {
+          await (await bond.burn(sharesToBurn)).wait();
+          await borrowingToken.approve(bond.address, borrowTokenToRepay);
+          await (await bond.repay(borrowTokenToRepay)).wait();
+          expect(await bond.previewWithdraw()).to.equal(collateralToReceive);
+        });
+      });
+
+      [
+        {
+          sharesToBurn: 0,
+          borrowTokenToRepay: BondConfig.targetBondSupply,
+          collateralToReceive: BondConfig.targetBondSupply
+            .mul(BondConfig.collateralRatio)
+            .div(ONE),
+        },
+        {
+          sharesToBurn: utils.parseUnits("1000", 18),
+          borrowTokenToRepay: BondConfig.targetBondSupply,
+          collateralToReceive: BondConfig.targetBondSupply
+            .mul(BondConfig.collateralRatio)
+            .div(ONE),
+        },
+      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when borrow token is fully repaid", async () => {
+          await (await bond.burn(sharesToBurn)).wait();
+          await borrowingToken.approve(bond.address, borrowTokenToRepay);
+          await (await bond.repay(borrowTokenToRepay)).wait();
+          expect(await bond.previewWithdraw()).to.equal(collateralToReceive);
+        });
+      });
+
+      [
+        {
+          sharesToBurn: 0,
+          borrowTokenToRepay: BondConfig.targetBondSupply,
+          collateralToReceive: BondConfig.targetBondSupply
+            .mul(BondConfig.collateralRatio)
+            .div(ONE),
+        },
+        {
+          sharesToBurn: 0,
+          borrowTokenToRepay: BondConfig.targetBondSupply,
+          collateralToReceive: BondConfig.targetBondSupply
+            .mul(BondConfig.collateralRatio)
+            .div(ONE),
+        },
+      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when maturity is reached", async () => {
+          await (await bond.burn(sharesToBurn)).wait();
+          await borrowingToken.approve(bond.address, borrowTokenToRepay);
+          await (await bond.repay(borrowTokenToRepay)).wait();
+          expect(await bond.previewWithdraw()).to.equal(collateralToReceive);
+        });
+      });
+      it("reverts when called by non-issuer", async () => {
+        await expect(
+          bond.connect(attacker).withdrawCollateral()
+        ).to.be.revertedWith(
+          `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
+        );
+      });
+
+      it("granting and revoking withdraw role works correctly", async () => {
+        await bond.grantRole(withdrawRole, attacker.address);
+        await expect(bond.connect(attacker).withdrawCollateral()).to.not.be
+          .reverted;
+
+        await bond.revokeRole(withdrawRole, attacker.address);
+        await expect(
+          bond.connect(attacker).withdrawCollateral()
+        ).to.be.revertedWith(
+          `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
+        );
+      });
     });
 
-    it("owner can withdraw collateral", async () => {
-      await expect(bond.withdrawCollateral(0)).to.be.revertedWith(
-        "CollateralInContractInsufficientToCoverWithdraw"
-      );
-    });
+    describe("convertible", async () => {
+      beforeEach(async () => {
+        const token = mockUSDCToken.attach(
+          ConvertibleBondConfig.collateralToken
+        );
+        const amountToDeposit = ConvertibleBondConfig.targetBondSupply
+          .mul(ConvertibleBondConfig.collateralRatio)
+          .div(utils.parseUnits("1", 18));
+        await token.approve(convertibleBond.address, amountToDeposit);
+        await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
+      });
+      [
+        {
+          sharesToBurn: 0,
+          collateralToReceive: BigNumber.from(0),
+        },
+        {
+          sharesToBurn: utils.parseUnits("1000", 18),
+          collateralToReceive: utils
+            .parseUnits("1000", 18)
+            .mul(ConvertibleBondConfig.collateralRatio)
+            .div(ONE),
+        },
+      ].forEach(({ sharesToBurn, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when bonds are burned", async () => {
+          await (await convertibleBond.burn(sharesToBurn)).wait();
+          expect(await convertibleBond.previewWithdraw()).to.equal(
+            collateralToReceive
+          );
+        });
+      });
 
-    it("reverts when called by non-issuer", async () => {
-      await expect(
-        bond.connect(attacker).withdrawCollateral(0)
-      ).to.be.revertedWith(
-        `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
-      );
-    });
+      [
+        {
+          sharesToBurn: 0,
+          borrowTokenToRepay: utils.parseUnits("1000", 18),
+          collateralToReceive: utils
+            .parseUnits("1000", 18)
+            .mul(ConvertibleBondConfig.collateralRatio)
+            .div(ONE),
+        },
+        {
+          sharesToBurn: utils.parseUnits("1000", 18),
+          borrowTokenToRepay: utils.parseUnits("1000", 18),
+          collateralToReceive: utils
+            .parseUnits("2000", 18)
+            .mul(ConvertibleBondConfig.collateralRatio)
+            .div(ONE),
+        },
+      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when borrow token is partially repaid", async () => {
+          await (await convertibleBond.burn(sharesToBurn)).wait();
+          await borrowingToken.approve(
+            convertibleBond.address,
+            borrowTokenToRepay
+          );
+          await (await convertibleBond.repay(borrowTokenToRepay)).wait();
+          expect(await convertibleBond.previewWithdraw()).to.equal(
+            collateralToReceive
+          );
+        });
+      });
 
-    it("granting and revoking withdraw role works correctly", async () => {
-      await bond.grantRole(withdrawRole, attacker.address);
-      await expect(
-        bond.connect(attacker).withdrawCollateral(0)
-      ).to.be.revertedWith("CollateralInContractInsufficientToCoverWithdraw");
+      [
+        {
+          sharesToBurn: 0,
+          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply,
+          collateralToReceive: ConvertibleBondConfig.targetBondSupply
+            .mul(ConvertibleBondConfig.collateralRatio)
+            .div(ONE),
+        },
+        {
+          sharesToBurn: utils.parseUnits("1000", 18),
+          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply,
+          collateralToReceive: ConvertibleBondConfig.targetBondSupply
+            .mul(ConvertibleBondConfig.collateralRatio)
+            .div(ONE),
+        },
+      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when borrow token is fully repaid", async () => {
+          await (await convertibleBond.burn(sharesToBurn)).wait();
+          await borrowingToken.approve(
+            convertibleBond.address,
+            borrowTokenToRepay
+          );
+          await (await convertibleBond.repay(borrowTokenToRepay)).wait();
+          console.log(await convertibleBond.totalSupply());
+          console.log(
+            await mockUSDCToken
+              .attach(ConvertibleBondConfig.collateralToken)
+              .balanceOf(convertibleBond.address)
+          );
+          console.log(await borrowingToken.balanceOf(convertibleBond.address));
+          expect(await convertibleBond.previewWithdraw()).to.equal(
+            collateralToReceive
+          );
+        });
+      });
 
-      await bond.revokeRole(withdrawRole, attacker.address);
-      await expect(
-        bond.connect(attacker).withdrawCollateral(0)
-      ).to.be.revertedWith(
-        `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
-      );
+      [
+        {
+          sharesToBurn: 0,
+          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply,
+          collateralToReceive: ConvertibleBondConfig.targetBondSupply
+            .mul(ConvertibleBondConfig.collateralRatio)
+            .div(ONE),
+        },
+        {
+          sharesToBurn: 0,
+          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply,
+          collateralToReceive: ConvertibleBondConfig.targetBondSupply
+            .mul(ConvertibleBondConfig.collateralRatio)
+            .div(ONE),
+        },
+      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when maturity is reached", async () => {
+          await (await convertibleBond.burn(sharesToBurn)).wait();
+          await borrowingToken.approve(
+            convertibleBond.address,
+            borrowTokenToRepay
+          );
+          await (await convertibleBond.repay(borrowTokenToRepay)).wait();
+          await ethers.provider.send("evm_mine", [
+            ConvertibleBondConfig.maturityDate,
+          ]);
+          expect(await convertibleBond.previewWithdraw()).to.equal(
+            collateralToReceive
+          );
+        });
+      });
+      it("reverts when called by non-issuer", async () => {
+        await expect(
+          bond.connect(attacker).withdrawCollateral()
+        ).to.be.revertedWith(
+          `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
+        );
+      });
+
+      it("granting and revoking withdraw role works correctly", async () => {
+        await convertibleBond.grantRole(withdrawRole, attacker.address);
+        await expect(convertibleBond.connect(attacker).withdrawCollateral()).to
+          .not.be.reverted;
+
+        await convertibleBond.revokeRole(withdrawRole, attacker.address);
+        await expect(
+          convertibleBond.connect(attacker).withdrawCollateral()
+        ).to.be.revertedWith(
+          `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
+        );
+      });
     });
   });
 
@@ -232,30 +473,39 @@ describe("SimpleBond", async () => {
       await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
     });
 
-    it("previews redeem accepts partial repayment", async () => {
-      await Promise.all(
-        [
-          [0, 0],
-          [
-            BondConfig.targetBondSupply.div(4),
-            BondConfig.targetBondSupply.div(4),
-          ],
-          [
-            BondConfig.targetBondSupply.div(2),
-            BondConfig.targetBondSupply.div(2),
-          ],
-          [BondConfig.targetBondSupply, BondConfig.targetBondSupply],
-          [BondConfig.targetBondSupply.mul(2), BondConfig.targetBondSupply],
-          [
-            BondConfig.targetBondSupply.mul(200000000000),
-            BondConfig.targetBondSupply,
-          ],
-        ].map(async ([repaymentAmount, previewRepayOutput]) => {
-          expect(await bond.previewRepay(repaymentAmount)).to.equal(
-            previewRepayOutput
-          );
-        })
-      );
+    [
+      { repaymentAmount: 0, previewRepayOutput: 0, description: "0 in 0 out" },
+      {
+        repaymentAmount: BondConfig.targetBondSupply.div(4),
+        previewRepayOutput: BondConfig.targetBondSupply.div(4),
+        description: "less than target",
+      },
+      {
+        repaymentAmount: BondConfig.targetBondSupply.div(2),
+        previewRepayOutput: BondConfig.targetBondSupply.div(2),
+        description: "less than target",
+      },
+      {
+        repaymentAmount: BondConfig.targetBondSupply,
+        previewRepayOutput: BondConfig.targetBondSupply,
+        description: "target",
+      },
+      {
+        repaymentAmount: BondConfig.targetBondSupply.mul(2),
+        previewRepayOutput: BondConfig.targetBondSupply,
+        description: "bounded by target",
+      },
+      {
+        repaymentAmount: BondConfig.targetBondSupply.mul(200000000000),
+        previewRepayOutput: BondConfig.targetBondSupply,
+        description: "bounded by target",
+      },
+    ].forEach(({ repaymentAmount, previewRepayOutput, description }) => {
+      it(`previews repay ${description}`, async () => {
+        expect(await bond.previewRepay(repaymentAmount)).to.equal(
+          previewRepayOutput
+        );
+      });
     });
 
     it("accepts partial repayment", async () => {
@@ -282,51 +532,55 @@ describe("SimpleBond", async () => {
     });
   });
   describe("minting", async () => {
-    let targetTokens: BigNumber;
-    let amountToDeposit: BigNumber;
     beforeEach(async () => {
-      targetTokens = BondConfig.targetBondSupply;
-      amountToDeposit = BondConfig.targetBondSupply
-        .mul(BondConfig.collateralRatio)
-        .div(utils.parseUnits("1", 18));
       await mockUSDCToken
         .attach(BondConfig.collateralToken)
-        .approve(bond.address, amountToDeposit);
+        .approve(
+          bond.address,
+          BondConfig.targetBondSupply
+            .mul(BondConfig.collateralRatio)
+            .div(utils.parseUnits("1", 18))
+        );
     });
 
-    it("previews mint valid", async () => {
-      await Promise.all(
-        [
-          [0, BigNumber.from(0)],
-          [
-            BondConfig.targetBondSupply.div(4),
-            BondConfig.collateralRatio
-              .mul(BondConfig.targetBondSupply.div(4))
-              .div(ONE),
-          ],
-          [
-            BondConfig.targetBondSupply.div(2),
-            BondConfig.collateralRatio
-              .mul(BondConfig.targetBondSupply.div(2))
-              .div(ONE),
-          ],
-          [
-            BondConfig.targetBondSupply,
-            BondConfig.collateralRatio
-              .mul(BondConfig.targetBondSupply)
-              .div(ONE),
-          ],
-        ].map(async ([mintAmount, collateralToDeposit], index) => {
-          expect(await bond.previewMint(mintAmount), index.toString()).to.equal(
-            collateralToDeposit
-          );
-        })
-      );
+    [
+      {
+        mintAmount: 0,
+        collateralToDeposit: BigNumber.from(0),
+        description: "zero target",
+      },
+      {
+        mintAmount: BondConfig.targetBondSupply.div(4),
+        collateralToDeposit: BondConfig.collateralRatio
+          .mul(BondConfig.targetBondSupply.div(4))
+          .div(ONE),
+        description: "quarter target",
+      },
+      {
+        mintAmount: BondConfig.targetBondSupply.div(2),
+        collateralToDeposit: BondConfig.collateralRatio
+          .mul(BondConfig.targetBondSupply.div(2))
+          .div(ONE),
+        description: "half target",
+      },
+      {
+        mintAmount: BondConfig.targetBondSupply,
+        collateralToDeposit: BondConfig.collateralRatio
+          .mul(BondConfig.targetBondSupply)
+          .div(ONE),
+        description: "target",
+      },
+    ].forEach(({ mintAmount, collateralToDeposit, description }) => {
+      it(`previews mint ${description}`, async () => {
+        expect(await bond.previewMint(mintAmount)).to.equal(
+          collateralToDeposit
+        );
+      });
     });
 
     it("mints up to collateral depositted", async () => {
       await expect(bond.mint(BondConfig.targetBondSupply)).to.not.be.reverted;
-      expect(await bond.totalSupply()).to.equal(targetTokens);
+      expect(await bond.totalSupply()).to.equal(BondConfig.targetBondSupply);
     });
 
     it("cannot mint more than max supply", async () => {
@@ -337,18 +591,139 @@ describe("SimpleBond", async () => {
   });
 
   describe("redemption", async () => {
-    let sharesToSellToBondHolder: BigNumber;
+    // Bond holder has 1000 bonds
+    let sharesToSellToBondHolder = utils.parseUnits("1000", 18);
+    // Bond holder will have their bonds and the contract will be able to accept deposits of borrowing token
     beforeEach(async () => {
       sharesToSellToBondHolder = utils.parseUnits("1000", 18);
-      const token = mockUSDCToken.attach(BondConfig.collateralToken);
       const amountToDeposit = BondConfig.targetBondSupply
         .mul(BondConfig.collateralRatio)
         .div(utils.parseUnits("1", 18));
-      await token.approve(bond.address, amountToDeposit);
-      await bond.mint(amountToDeposit);
+      await mockUSDCToken
+        .attach(BondConfig.collateralToken)
+        .approve(bond.address, amountToDeposit);
+      await bond.mint(BondConfig.targetBondSupply);
       await bond.transfer(bondHolder.address, sharesToSellToBondHolder);
       await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
     });
+
+    [
+      {
+        sharesToRedeem: sharesToSellToBondHolder,
+        borrowingTokenToSend: sharesToSellToBondHolder,
+        collateralTokenToSend: BigNumber.from(0),
+      },
+      {
+        sharesToRedeem: 0,
+        borrowingTokenToSend: BigNumber.from(0),
+        collateralTokenToSend: BigNumber.from(0),
+      },
+    ].forEach(
+      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
+        it("Bond is repaid & past maturity = Withdraw of borrowing", async () => {
+          await bond.repay(BondConfig.targetBondSupply);
+          await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
+          expect(
+            await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
+          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+        });
+      }
+    );
+
+    [
+      {
+        sharesToRedeem: sharesToSellToBondHolder,
+        borrowingTokenToSend: BigNumber.from(0),
+        collateralTokenToSend: BigNumber.from(0),
+      },
+      {
+        sharesToRedeem: 0,
+        borrowingTokenToSend: BigNumber.from(0),
+        collateralTokenToSend: BigNumber.from(0),
+      },
+    ].forEach(
+      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
+        it("Bond is repaid & not past maturity = No withdraw", async () => {
+          await bond.repay(BondConfig.targetBondSupply);
+          expect(
+            await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
+          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+        });
+      }
+    );
+
+    [
+      {
+        sharesToRedeem: sharesToSellToBondHolder,
+        borrowingTokenToSend: BigNumber.from(0),
+        collateralTokenToSend: sharesToSellToBondHolder
+          .mul(BondConfig.collateralRatio)
+          .div(ONE),
+      },
+      {
+        sharesToRedeem: 0,
+        borrowingTokenToSend: BigNumber.from(0),
+        collateralTokenToSend: BigNumber.from(0),
+      },
+    ].forEach(
+      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
+        it("Bond is not repaid & past maturity = Withdraw of collateral", async () => {
+          await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
+          expect(
+            await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
+          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+        });
+      }
+    );
+
+    [
+      {
+        sharesToRedeem: sharesToSellToBondHolder,
+        borrowingTokenToSend: sharesToSellToBondHolder
+          .mul(BondConfig.targetBondSupply.div(2))
+          .div(BondConfig.targetBondSupply),
+        collateralTokenToSend: sharesToSellToBondHolder
+          .mul(BondConfig.collateralRatio)
+          .div(ONE),
+      },
+      {
+        sharesToRedeem: 0,
+        borrowingTokenToSend: BigNumber.from(0),
+        collateralTokenToSend: BigNumber.from(0),
+      },
+    ].forEach(
+      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
+        it("Bond is partially repaid & past maturity = Withdraw of collateral & borrowing", async () => {
+          await bond.repay(BondConfig.targetBondSupply.div(2));
+          await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
+          expect(
+            await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
+          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+        });
+      }
+    );
+
+    [
+      {
+        sharesToRedeem: sharesToSellToBondHolder,
+        borrowingTokenToSend: BigNumber.from(0),
+        collateralTokenToSend: BigNumber.from(0),
+      },
+      {
+        sharesToRedeem: 0,
+        borrowingTokenToSend: BigNumber.from(0),
+        collateralTokenToSend: BigNumber.from(0),
+      },
+    ].forEach(
+      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
+        it("Bond is not repaid & not past maturity = No withdraw", async () => {
+          expect(
+            await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
+          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+        });
+      }
+    );
+
     it("should redeem bond at maturity for borrowing token", async function () {
       await bond.repay(BondConfig.targetBondSupply);
       // Fast forward to expire
@@ -393,8 +768,6 @@ describe("SimpleBond", async () => {
       expect(
         await mockUSDCToken.attach(borrowingToken).balanceOf(bondHolder.address)
       ).to.be.equal(0);
-      // this isn't necessarily USDC - it's attaching at the address specified
-      // this is because the tokens are sorted and we can not be sure which token it is
       expect(
         await mockUSDCToken
           .attach(BondConfig.collateralToken)
@@ -421,29 +794,28 @@ describe("SimpleBond", async () => {
         await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
         await convertibleBond.transfer(bondHolder.address, tokensToConvert);
       });
-      it("previews convert", async () => {
-        await Promise.all(
-          [
-            [0, 0],
-            [
-              BondConfig.targetBondSupply,
-              BondConfig.convertibilityRatio
-                .mul(BondConfig.targetBondSupply)
-                .div(ONE),
-            ],
-            [
-              BondConfig.targetBondSupply.div(2),
-              BondConfig.convertibilityRatio
-                .mul(BondConfig.targetBondSupply.div(2))
-                .div(ONE),
-            ],
-          ].map(async ([convertAmount, assetsToReceive], index) => {
-            expect(
-              await bond.previewConvert(convertAmount),
-              index.toString()
-            ).to.equal(assetsToReceive);
-          })
-        );
+      [
+        { convertAmount: 0, assetsToReceive: 0, description: "zero converted" },
+        {
+          convertAmount: BondConfig.targetBondSupply,
+          assetsToReceive: BondConfig.convertibilityRatio
+            .mul(BondConfig.targetBondSupply)
+            .div(ONE),
+          description: "target converted",
+        },
+        {
+          convertAmount: BondConfig.targetBondSupply.div(2),
+          assetsToReceive: BondConfig.convertibilityRatio
+            .mul(BondConfig.targetBondSupply.div(2))
+            .div(ONE),
+          description: "double target converted",
+        },
+      ].forEach(({ convertAmount, assetsToReceive, description }) => {
+        it(`previews convert ${description}`, async () => {
+          expect(await bond.previewConvert(convertAmount)).to.equal(
+            assetsToReceive
+          );
+        });
       });
       it("converts bond amount into collateral at convertibilityRatio", async () => {
         const expectedCollateralToWithdraw = tokensToConvert
