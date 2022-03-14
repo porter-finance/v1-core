@@ -54,6 +54,7 @@ describe("SimpleBond", () => {
   let borrowingToken: TestERC20;
   let factory: BondFactoryClone;
   let withdrawRole: BytesLike;
+  let mintRole: BytesLike;
 
   // no args because of gh issue:
   // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
@@ -119,6 +120,7 @@ describe("SimpleBond", () => {
       factory,
     } = await loadFixture(fixture));
     withdrawRole = await bond.WITHDRAW_ROLE();
+    mintRole = await bond.MINT_ROLE();
   });
   describe("configuration", async () => {
     it("should revert on less collateral than convertible", async () => {
@@ -139,29 +141,36 @@ describe("SimpleBond", () => {
   });
 
   describe("creation", async () => {
-    it("should have no minted coins", async function () {
+    it("should have no minted coins", async () => {
       expect(await bond.balanceOf(owner.address)).to.be.equal(0);
       expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
     });
 
-    it("issuer has default admin role", async function () {
-      expect(await bond.hasRole(await bond.DEFAULT_ADMIN_ROLE(), owner.address))
-        .to.be.true;
+    it("issuer has default admin role", async () => {
+      expect(
+        await bond.hasRole(await bond.DEFAULT_ADMIN_ROLE(), owner.address)
+      ).to.be.equal(true);
     });
 
-    it("default admin role is role admin for withdraw role", async function () {
+    it("default admin role is role admin for withdraw role", async () => {
       expect(
         await bond.hasRole(await bond.getRoleAdmin(withdrawRole), owner.address)
-      ).to.be.true;
+      ).to.be.equal(true);
     });
 
-    it("should return total value for an account", async function () {
+    it("default admin role is role admin for mint role", async () => {
+      expect(
+        await bond.hasRole(await bond.getRoleAdmin(mintRole), owner.address)
+      ).to.be.equal(true);
+    });
+
+    it("should return total value for an account", async () => {
       expect(
         await bond.connect(bondHolder).balanceOf(owner.address)
       ).to.be.equal(0);
     });
 
-    it("should return public parameters", async function () {
+    it("should return public parameters", async () => {
       expect(await bond.maturityDate()).to.be.equal(BondConfig.maturityDate);
       expect(await bond.collateralToken()).to.be.equal(
         BondConfig.collateralToken
@@ -502,6 +511,12 @@ describe("SimpleBond", () => {
         );
     });
 
+    it("reverts when called by non-issuer", async () => {
+      await expect(bond.connect(attacker).mint(0)).to.be.revertedWith(
+        `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${mintRole}`
+      );
+    });
+
     [
       {
         mintAmount: 0,
@@ -689,7 +704,7 @@ describe("SimpleBond", () => {
       }
     );
 
-    it("should redeem bond at maturity for borrowing token", async function () {
+    it("should redeem bond at maturity for borrowing token", async () => {
       await bond.repay(BondConfig.targetBondSupply);
       // Fast forward to expire
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
@@ -707,7 +722,7 @@ describe("SimpleBond", () => {
         sharesToSellToBondHolder
       );
     });
-    it("should redeem bond at default for collateral token", async function () {
+    it("should redeem bond at default for collateral token", async () => {
       const expectedCollateralToReceive = sharesToSellToBondHolder
         .mul(await bond.totalCollateral())
         .div(await bond.totalSupply());

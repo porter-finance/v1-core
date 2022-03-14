@@ -152,6 +152,9 @@ contract SimpleBond is
   /// @notice the role ID for withdrawCollateral
   bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
 
+  /// @notice the role ID for mint
+  bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
+
   /// @notice this mapping keeps track of the total collateral in this contract. this amount is used when determining the portion of collateral to return to the bond holders in event of a default
   uint256 public totalCollateral;
 
@@ -213,6 +216,7 @@ contract SimpleBond is
 
     _grantRole(DEFAULT_ADMIN_ROLE, _owner);
     _grantRole(WITHDRAW_ROLE, _owner);
+    _grantRole(MINT_ROLE, _owner);
   }
 
   /// @notice Withdraw collateral from bond contract
@@ -233,7 +237,7 @@ contract SimpleBond is
   /// @param bonds the amount of bonds to mint
   function mint(uint256 bonds)
     external
-    onlyRole(WITHDRAW_ROLE)
+    onlyRole(MINT_ROLE)
     nonReentrant
     notPastMaturity
   {

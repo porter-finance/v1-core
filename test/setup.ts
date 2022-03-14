@@ -36,6 +36,7 @@ export const createBond = async (
     new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
       1000
   );
+  const maxSupply = ethers.utils.parseUnits("50000000", 18);
 
   const [owner] = await ethers.getSigners();
   const issuerRole = await factory.ISSUER_ROLE();
@@ -51,7 +52,8 @@ export const createBond = async (
       nativeToken.address,
       borrowToken.address,
       collateralRatio,
-      convertibilityRatio
+      convertibilityRatio,
+      maxSupply
     )
   );
   return bond;
