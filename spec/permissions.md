@@ -11,7 +11,7 @@ Method only callable by this role
 `BondFactory.revokeRole('ISSUER_ROLE)`
 `BondFactory.isAllowListEnabled(bool)`
 
-The power admin can grant or revoke the `ISSUER_ROLE`, in addition to enabled or disabling the allow-list for creating new bonds. 
+The Porter Admin can grant or revoke the `ISSUER_ROLE`, in addition to enabled or disabling the allow-list for creating new bonds. 
 This role has the ability to be revoked. Disabling the allow list then revoking this role would leave `BondFactory` in a fully permissionless state.
 
 ## Issuer - ISSUER_ROLE
