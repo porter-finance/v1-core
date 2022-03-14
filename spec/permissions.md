@@ -1,12 +1,12 @@
 # Permissions
 
-There are a few differnt entities with different permissions in the porter protocol
+There are a few different entities with different permissions in the porter protocol
 
 # BondFactory 
 ## Porter Admin
 Owner of the bondfactory contract.
 
-Method only collable by this role
+Method only callable by this role
 `BondFactory.grantRole('ISSUER_ROLE')`
 `BondFactory.revokeRole('ISSUER_ROLE)`
 `BondFactory.isAllowListEnabled(bool)`
