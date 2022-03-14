@@ -1,9 +1,8 @@
 import { ethers } from "hardhat";
-import { Contract } from "ethers";
 import { TestERC20, BondFactoryClone } from "../typechain";
 import { getBondContract } from "./utilities";
 
-export const deployNATIVEandBORROW = async () => {
+export const deployNATIVEandREPAY = async () => {
   const MockErc20Contract = await ethers.getContractFactory("TestERC20");
   const native = (await MockErc20Contract.deploy(
     "Native Token",
@@ -12,20 +11,20 @@ export const deployNATIVEandBORROW = async () => {
     18
   )) as TestERC20;
 
-  const borrow = (await MockErc20Contract.deploy(
-    "Borrowing Token",
-    "BORROW",
+  const repay = (await MockErc20Contract.deploy(
+    "Repayment Token",
+    "REPAY",
     ethers.utils.parseUnits("500"),
     18
   )) as TestERC20;
 
-  return { native, borrow };
+  return { native, repay };
 };
 
 export const createBond = async (
   factory: BondFactoryClone,
   nativeToken: TestERC20,
-  borrowToken: TestERC20
+  repaymentToken: TestERC20
 ) => {
   // these could be converted to parameters
   const bondName = "Always be growing";
@@ -50,7 +49,7 @@ export const createBond = async (
       owner.address,
       maturityDate,
       nativeToken.address,
-      borrowToken.address,
+      repaymentToken.address,
       collateralRatio,
       convertibilityRatio,
       maxSupply

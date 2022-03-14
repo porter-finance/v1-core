@@ -51,7 +51,7 @@ describe("SimpleBond", () => {
   let nativeToken: TestERC20;
   let attackingToken: TestERC20;
   let mockUSDCToken: TestERC20;
-  let borrowingToken: TestERC20;
+  let repaymentToken: TestERC20;
   let factory: BondFactoryClone;
   let withdrawRole: BytesLike;
   let mintRole: BytesLike;
@@ -64,7 +64,7 @@ describe("SimpleBond", () => {
 
     await (await factory.grantRole(issuerRole, owner.address)).wait();
 
-    const { nativeToken, attackingToken, mockUSDCToken, borrowingToken } =
+    const { nativeToken, attackingToken, mockUSDCToken, repaymentToken } =
       await tokenFixture();
     BondConfig.collateralToken = nativeToken.address;
 
@@ -74,7 +74,7 @@ describe("SimpleBond", () => {
         "LUG",
         owner.address,
         BondConfig.maturityDate,
-        borrowingToken.address,
+        repaymentToken.address,
         BondConfig.collateralToken,
         BondConfig.collateralRatio,
         BondConfig.convertibilityRatio,
@@ -89,7 +89,7 @@ describe("SimpleBond", () => {
         "LUG",
         owner.address,
         ConvertibleBondConfig.maturityDate,
-        borrowingToken.address,
+        repaymentToken.address,
         ConvertibleBondConfig.collateralToken,
         ConvertibleBondConfig.collateralRatio,
         ConvertibleBondConfig.convertibilityRatio,
@@ -103,7 +103,7 @@ describe("SimpleBond", () => {
       nativeToken,
       attackingToken,
       mockUSDCToken,
-      borrowingToken,
+      repaymentToken,
       factory,
     };
   }
@@ -116,7 +116,7 @@ describe("SimpleBond", () => {
       nativeToken,
       attackingToken,
       mockUSDCToken,
-      borrowingToken,
+      repaymentToken,
       factory,
     } = await loadFixture(fixture));
     withdrawRole = await bond.WITHDRAW_ROLE();
@@ -130,7 +130,7 @@ describe("SimpleBond", () => {
           "LUG",
           owner.address,
           BondConfig.maturityDate,
-          borrowingToken.address,
+          repaymentToken.address,
           BondConfig.collateralToken,
           BondConfig.convertibilityRatio, // these are swapped
           BondConfig.collateralRatio, // these are swapped
@@ -178,7 +178,7 @@ describe("SimpleBond", () => {
       expect(await bond.backingRatio()).to.be.equal(BondConfig.collateralRatio);
       expect(await bond.convertibilityRatio()).to.be.equal(0);
 
-      expect(await bond.borrowingToken()).to.be.equal(borrowingToken.address);
+      expect(await bond.repaymentToken()).to.be.equal(repaymentToken.address);
     });
 
     it("should have predefined ERC20 attributes", async () => {
@@ -192,8 +192,8 @@ describe("SimpleBond", () => {
     // Burn shares and withdraw
     // Do not burn shares and withdraw
     // Excess collateral will be available to withdraw when bonds are burned
-    // Excess collateral will be available to withdraw when borrow token is partially repaid
-    // Excess collateral will be available to withdraw when borrow token is fully repaid
+    // Excess collateral will be available to withdraw when repayment token is partially repaid
+    // Excess collateral will be available to withdraw when repayment token is fully repaid
     // Excess collateral will be available to withdraw when maturity is reached
     describe("non-convertible", async () => {
       beforeEach(async () => {
@@ -226,7 +226,7 @@ describe("SimpleBond", () => {
       [
         {
           sharesToBurn: 0,
-          borrowTokenToRepay: utils.parseUnits("1000", 18),
+          repaymentTokenAmount: utils.parseUnits("1000", 18),
           collateralToReceive: utils
             .parseUnits("1000", 18)
             .mul(BondConfig.collateralRatio)
@@ -234,17 +234,17 @@ describe("SimpleBond", () => {
         },
         {
           sharesToBurn: utils.parseUnits("1000", 18),
-          borrowTokenToRepay: utils.parseUnits("1000", 18),
+          repaymentTokenAmount: utils.parseUnits("1000", 18),
           collateralToReceive: utils
             .parseUnits("2000", 18)
             .mul(BondConfig.collateralRatio)
             .div(ONE),
         },
-      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
-        it("Excess collateral will be available to withdraw when borrow token is partially repaid", async () => {
+      ].forEach(({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when repayment token is partially repaid", async () => {
           await (await bond.burn(sharesToBurn)).wait();
-          await borrowingToken.approve(bond.address, borrowTokenToRepay);
-          await (await bond.repay(borrowTokenToRepay)).wait();
+          await repaymentToken.approve(bond.address, repaymentTokenAmount);
+          await (await bond.repay(repaymentTokenAmount)).wait();
           expect(await bond.previewWithdraw()).to.equal(collateralToReceive);
         });
       });
@@ -252,23 +252,23 @@ describe("SimpleBond", () => {
       [
         {
           sharesToBurn: 0,
-          borrowTokenToRepay: BondConfig.targetBondSupply,
+          repaymentTokenAmount: BondConfig.targetBondSupply,
           collateralToReceive: BondConfig.targetBondSupply
             .mul(BondConfig.collateralRatio)
             .div(ONE),
         },
         {
           sharesToBurn: utils.parseUnits("1000", 18),
-          borrowTokenToRepay: BondConfig.targetBondSupply,
+          repaymentTokenAmount: BondConfig.targetBondSupply,
           collateralToReceive: BondConfig.targetBondSupply
             .mul(BondConfig.collateralRatio)
             .div(ONE),
         },
-      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
-        it("Excess collateral will be available to withdraw when borrow token is fully repaid", async () => {
+      ].forEach(({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when repayment token is fully repaid", async () => {
           await (await bond.burn(sharesToBurn)).wait();
-          await borrowingToken.approve(bond.address, borrowTokenToRepay);
-          await (await bond.repay(borrowTokenToRepay)).wait();
+          await repaymentToken.approve(bond.address, repaymentTokenAmount);
+          await (await bond.repay(repaymentTokenAmount)).wait();
           expect(await bond.previewWithdraw()).to.equal(collateralToReceive);
         });
       });
@@ -276,23 +276,23 @@ describe("SimpleBond", () => {
       [
         {
           sharesToBurn: 0,
-          borrowTokenToRepay: BondConfig.targetBondSupply,
+          repaymentTokenAmount: BondConfig.targetBondSupply,
           collateralToReceive: BondConfig.targetBondSupply
             .mul(BondConfig.collateralRatio)
             .div(ONE),
         },
         {
           sharesToBurn: 0,
-          borrowTokenToRepay: BondConfig.targetBondSupply,
+          repaymentTokenAmount: BondConfig.targetBondSupply,
           collateralToReceive: BondConfig.targetBondSupply
             .mul(BondConfig.collateralRatio)
             .div(ONE),
         },
-      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
+      ].forEach(({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
         it("Excess collateral will be available to withdraw when maturity is reached", async () => {
           await (await bond.burn(sharesToBurn)).wait();
-          await borrowingToken.approve(bond.address, borrowTokenToRepay);
-          await (await bond.repay(borrowTokenToRepay)).wait();
+          await repaymentToken.approve(bond.address, repaymentTokenAmount);
+          await (await bond.repay(repaymentTokenAmount)).wait();
           expect(await bond.previewWithdraw()).to.equal(collateralToReceive);
         });
       });
@@ -353,7 +353,7 @@ describe("SimpleBond", () => {
       [
         {
           sharesToBurn: 0,
-          borrowTokenToRepay: utils.parseUnits("1000", 18),
+          repaymentTokenAmount: utils.parseUnits("1000", 18),
           collateralToReceive: utils
             .parseUnits("1000", 18)
             .mul(ConvertibleBondConfig.collateralRatio)
@@ -361,20 +361,20 @@ describe("SimpleBond", () => {
         },
         {
           sharesToBurn: utils.parseUnits("1000", 18),
-          borrowTokenToRepay: utils.parseUnits("1000", 18),
+          repaymentTokenAmount: utils.parseUnits("1000", 18),
           collateralToReceive: utils
             .parseUnits("2000", 18)
             .mul(ConvertibleBondConfig.collateralRatio)
             .div(ONE),
         },
-      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
-        it("Excess collateral will be available to withdraw when borrow token is partially repaid", async () => {
+      ].forEach(({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when repayment token is partially repaid", async () => {
           await (await convertibleBond.burn(sharesToBurn)).wait();
-          await borrowingToken.approve(
+          await repaymentToken.approve(
             convertibleBond.address,
-            borrowTokenToRepay
+            repaymentTokenAmount
           );
-          await (await convertibleBond.repay(borrowTokenToRepay)).wait();
+          await (await convertibleBond.repay(repaymentTokenAmount)).wait();
           expect(await convertibleBond.previewWithdraw()).to.equal(
             collateralToReceive
           );
@@ -384,26 +384,26 @@ describe("SimpleBond", () => {
       [
         {
           sharesToBurn: 0,
-          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply,
+          repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply,
           collateralToReceive: ConvertibleBondConfig.targetBondSupply
             .mul(ConvertibleBondConfig.collateralRatio)
             .div(ONE),
         },
         {
           sharesToBurn: utils.parseUnits("1000", 18),
-          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply,
+          repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply,
           collateralToReceive: ConvertibleBondConfig.targetBondSupply
             .mul(ConvertibleBondConfig.collateralRatio)
             .div(ONE),
         },
-      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
-        it("Excess collateral will be available to withdraw when borrow token is fully repaid", async () => {
+      ].forEach(({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
+        it("Excess collateral will be available to withdraw when repayment token is fully repaid", async () => {
           await (await convertibleBond.burn(sharesToBurn)).wait();
-          await borrowingToken.approve(
+          await repaymentToken.approve(
             convertibleBond.address,
-            borrowTokenToRepay
+            repaymentTokenAmount
           );
-          await (await convertibleBond.repay(borrowTokenToRepay)).wait();
+          await (await convertibleBond.repay(repaymentTokenAmount)).wait();
           expect(await convertibleBond.previewWithdraw()).to.equal(
             collateralToReceive
           );
@@ -413,7 +413,7 @@ describe("SimpleBond", () => {
       [
         {
           sharesToBurn: 0,
-          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply.div(4),
+          repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply.div(4),
           collateralToReceive: ConvertibleBondConfig.targetBondSupply
             .div(4)
             .mul(ConvertibleBondConfig.collateralRatio)
@@ -421,19 +421,19 @@ describe("SimpleBond", () => {
         },
         {
           sharesToBurn: 0,
-          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply,
+          repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply,
           collateralToReceive: ConvertibleBondConfig.targetBondSupply
             .mul(ConvertibleBondConfig.collateralRatio)
             .div(ONE),
         },
-      ].forEach(({ sharesToBurn, borrowTokenToRepay, collateralToReceive }) => {
+      ].forEach(({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
         it("Excess collateral will be available to withdraw when maturity is reached", async () => {
           await (await convertibleBond.burn(sharesToBurn)).wait();
-          await borrowingToken.approve(
+          await repaymentToken.approve(
             convertibleBond.address,
-            borrowTokenToRepay
+            repaymentTokenAmount
           );
-          await (await convertibleBond.repay(borrowTokenToRepay)).wait();
+          await (await convertibleBond.repay(repaymentTokenAmount)).wait();
           await ethers.provider.send("evm_mine", [
             ConvertibleBondConfig.maturityDate,
           ]);
@@ -473,7 +473,7 @@ describe("SimpleBond", () => {
         .div(utils.parseUnits("1", 18));
       await token.approve(bond.address, amountToDeposit);
       await expect(bond.mint(BondConfig.targetBondSupply)).to.not.be.reverted;
-      await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
+      await repaymentToken.approve(bond.address, BondConfig.targetBondSupply);
     });
 
     it("accepts partial repayment", async () => {
@@ -567,7 +567,7 @@ describe("SimpleBond", () => {
   describe("redemption", async () => {
     // Bond holder has 1000 bonds
     let sharesToSellToBondHolder = utils.parseUnits("1000", 18);
-    // Bond holder will have their bonds and the contract will be able to accept deposits of borrowing token
+    // Bond holder will have their bonds and the contract will be able to accept deposits of repayment token
     beforeEach(async () => {
       sharesToSellToBondHolder = utils.parseUnits("1000", 18);
       const amountToDeposit = BondConfig.targetBondSupply
@@ -578,28 +578,28 @@ describe("SimpleBond", () => {
         .approve(bond.address, amountToDeposit);
       await bond.mint(BondConfig.targetBondSupply);
       await bond.transfer(bondHolder.address, sharesToSellToBondHolder);
-      await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
+      await repaymentToken.approve(bond.address, BondConfig.targetBondSupply);
     });
 
     [
       {
         sharesToRedeem: sharesToSellToBondHolder,
-        borrowingTokenToSend: sharesToSellToBondHolder,
+        repaymentTokenToSend: sharesToSellToBondHolder,
         collateralTokenToSend: BigNumber.from(0),
       },
       {
         sharesToRedeem: 0,
-        borrowingTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: BigNumber.from(0),
         collateralTokenToSend: BigNumber.from(0),
       },
     ].forEach(
-      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
-        it("Bond is repaid & past maturity = Withdraw of borrowing", async () => {
+      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
+        it("Bond is repaid & past maturity = Withdraw of repayment token", async () => {
           await bond.repay(BondConfig.targetBondSupply);
           await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
         });
       }
     );
@@ -607,21 +607,21 @@ describe("SimpleBond", () => {
     [
       {
         sharesToRedeem: sharesToSellToBondHolder,
-        borrowingTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: BigNumber.from(0),
         collateralTokenToSend: BigNumber.from(0),
       },
       {
         sharesToRedeem: 0,
-        borrowingTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: BigNumber.from(0),
         collateralTokenToSend: BigNumber.from(0),
       },
     ].forEach(
-      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
+      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
         it("Bond is repaid & not past maturity = No withdraw", async () => {
           await bond.repay(BondConfig.targetBondSupply);
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
         });
       }
     );
@@ -629,23 +629,23 @@ describe("SimpleBond", () => {
     [
       {
         sharesToRedeem: sharesToSellToBondHolder,
-        borrowingTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: BigNumber.from(0),
         collateralTokenToSend: sharesToSellToBondHolder
           .mul(BondConfig.collateralRatio)
           .div(ONE),
       },
       {
         sharesToRedeem: 0,
-        borrowingTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: BigNumber.from(0),
         collateralTokenToSend: BigNumber.from(0),
       },
     ].forEach(
-      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
+      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
         it("Bond is not repaid & past maturity = Withdraw of collateral", async () => {
           await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
         });
       }
     );
@@ -653,7 +653,7 @@ describe("SimpleBond", () => {
     [
       {
         sharesToRedeem: sharesToSellToBondHolder,
-        borrowingTokenToSend: sharesToSellToBondHolder
+        repaymentTokenToSend: sharesToSellToBondHolder
           .mul(BondConfig.targetBondSupply.div(2))
           .div(BondConfig.targetBondSupply),
         collateralTokenToSend: sharesToSellToBondHolder
@@ -668,17 +668,17 @@ describe("SimpleBond", () => {
       },
       {
         sharesToRedeem: 0,
-        borrowingTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: BigNumber.from(0),
         collateralTokenToSend: BigNumber.from(0),
       },
     ].forEach(
-      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
-        it("Bond is partially repaid & past maturity = Withdraw of collateral & borrowing", async () => {
+      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
+        it("Bond is partially repaid & past maturity = Withdraw of collateral & repayment token", async () => {
           await bond.repay(BondConfig.targetBondSupply.div(2));
           await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
         });
       }
     );
@@ -686,25 +686,25 @@ describe("SimpleBond", () => {
     [
       {
         sharesToRedeem: sharesToSellToBondHolder,
-        borrowingTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: BigNumber.from(0),
         collateralTokenToSend: BigNumber.from(0),
       },
       {
         sharesToRedeem: 0,
-        borrowingTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: BigNumber.from(0),
         collateralTokenToSend: BigNumber.from(0),
       },
     ].forEach(
-      ({ sharesToRedeem, borrowingTokenToSend, collateralTokenToSend }) => {
+      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
         it("Bond is not repaid & not past maturity = No withdraw", async () => {
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([borrowingTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
         });
       }
     );
 
-    it("should redeem bond at maturity for borrowing token", async () => {
+    it("should redeem bond at maturity for repayment token", async () => {
       await bond.repay(BondConfig.targetBondSupply);
       // Fast forward to expire
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
@@ -718,7 +718,7 @@ describe("SimpleBond", () => {
       );
       await bond.connect(bondHolder).redeem(sharesToSellToBondHolder);
       expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
-      expect(await borrowingToken.balanceOf(bondHolder.address)).to.be.equal(
+      expect(await repaymentToken.balanceOf(bondHolder.address)).to.be.equal(
         sharesToSellToBondHolder
       );
     });
@@ -729,10 +729,10 @@ describe("SimpleBond", () => {
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
       const {
         receiver,
-        borrowingToken,
+        repaymentToken,
         collateralToken,
         amountOfBondsRedeemed,
-        amountOfBorrowTokensReceived,
+        amountOfRepaymentTokensReceived,
         amountOfCollateralReceived,
       } = await getEventArgumentsFromTransaction(
         await bond.connect(bondHolder).redeem(sharesToSellToBondHolder),
@@ -741,12 +741,12 @@ describe("SimpleBond", () => {
       expect(receiver).to.equal(bondHolder.address);
       expect(collateralToken).to.equal(BondConfig.collateralToken);
       expect(amountOfBondsRedeemed).to.equal(sharesToSellToBondHolder);
-      expect(amountOfBorrowTokensReceived).to.equal(0);
+      expect(amountOfRepaymentTokensReceived).to.equal(0);
       expect(amountOfCollateralReceived).to.equal(expectedCollateralToReceive);
 
       expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
       expect(
-        await mockUSDCToken.attach(borrowingToken).balanceOf(bondHolder.address)
+        await mockUSDCToken.attach(repaymentToken).balanceOf(bondHolder.address)
       ).to.be.equal(0);
       expect(
         await mockUSDCToken
@@ -836,11 +836,11 @@ describe("SimpleBond", () => {
       expect(await attackingToken.balanceOf(owner.address)).to.be.equal(1000);
     });
 
-    it("disallows removal of a collateral, borrowing, or itself", async () => {
+    it("disallows removal of a collateral, repayment, or itself", async () => {
       await expect(bond.sweep(bond.address)).to.be.revertedWith(
         "SweepDisallowedForToken"
       );
-      await expect(bond.sweep(borrowingToken.address)).to.be.revertedWith(
+      await expect(bond.sweep(repaymentToken.address)).to.be.revertedWith(
         "SweepDisallowedForToken"
       );
       await expect(bond.sweep(nativeToken.address)).to.be.revertedWith(

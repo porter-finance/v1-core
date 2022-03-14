@@ -8,10 +8,10 @@ export async function bondFactoryFixture() {
 }
 
 export async function tokenFixture() {
-  const BorrowingToken = await ethers.getContractFactory("TestERC20");
-  const borrowingToken = (await BorrowingToken.deploy(
-    "Borrowing Token",
-    "BT",
+  const RepaymentToken = await ethers.getContractFactory("TestERC20");
+  const repaymentToken = (await RepaymentToken.deploy(
+    "Repayment Token",
+    "RT",
     ethers.utils.parseEther("200000000"),
     18
   )) as TestERC20;
@@ -41,7 +41,7 @@ export async function tokenFixture() {
     6
   )) as TestERC20;
 
-  return { borrowingToken, attackingToken, nativeToken, mockUSDCToken };
+  return { repaymentToken, attackingToken, nativeToken, mockUSDCToken };
 }
 
 export async function convertToCurrencyDecimals(token: ERC20, amount: string) {
