@@ -395,13 +395,6 @@ describe("SimpleBond", async () => {
             borrowTokenToRepay
           );
           await (await convertibleBond.repay(borrowTokenToRepay)).wait();
-          console.log(await convertibleBond.totalSupply());
-          console.log(
-            await mockUSDCToken
-              .attach(ConvertibleBondConfig.collateralToken)
-              .balanceOf(convertibleBond.address)
-          );
-          console.log(await borrowingToken.balanceOf(convertibleBond.address));
           expect(await convertibleBond.previewWithdraw()).to.equal(
             collateralToReceive
           );
@@ -411,8 +404,9 @@ describe("SimpleBond", async () => {
       [
         {
           sharesToBurn: 0,
-          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply,
+          borrowTokenToRepay: ConvertibleBondConfig.targetBondSupply.div(4),
           collateralToReceive: ConvertibleBondConfig.targetBondSupply
+            .div(4)
             .mul(ConvertibleBondConfig.collateralRatio)
             .div(ONE),
         },
@@ -471,41 +465,6 @@ describe("SimpleBond", async () => {
       await token.approve(bond.address, amountToDeposit);
       await expect(bond.mint(BondConfig.targetBondSupply)).to.not.be.reverted;
       await borrowingToken.approve(bond.address, BondConfig.targetBondSupply);
-    });
-
-    [
-      { repaymentAmount: 0, previewRepayOutput: 0, description: "0 in 0 out" },
-      {
-        repaymentAmount: BondConfig.targetBondSupply.div(4),
-        previewRepayOutput: BondConfig.targetBondSupply.div(4),
-        description: "less than target",
-      },
-      {
-        repaymentAmount: BondConfig.targetBondSupply.div(2),
-        previewRepayOutput: BondConfig.targetBondSupply.div(2),
-        description: "less than target",
-      },
-      {
-        repaymentAmount: BondConfig.targetBondSupply,
-        previewRepayOutput: BondConfig.targetBondSupply,
-        description: "target",
-      },
-      {
-        repaymentAmount: BondConfig.targetBondSupply.mul(2),
-        previewRepayOutput: BondConfig.targetBondSupply,
-        description: "bounded by target",
-      },
-      {
-        repaymentAmount: BondConfig.targetBondSupply.mul(200000000000),
-        previewRepayOutput: BondConfig.targetBondSupply,
-        description: "bounded by target",
-      },
-    ].forEach(({ repaymentAmount, previewRepayOutput, description }) => {
-      it(`previews repay ${description}`, async () => {
-        expect(await bond.previewRepay(repaymentAmount)).to.equal(
-          previewRepayOutput
-        );
-      });
     });
 
     it("accepts partial repayment", async () => {
@@ -683,8 +642,14 @@ describe("SimpleBond", async () => {
           .mul(BondConfig.targetBondSupply.div(2))
           .div(BondConfig.targetBondSupply),
         collateralTokenToSend: sharesToSellToBondHolder
-          .mul(BondConfig.collateralRatio)
-          .div(ONE),
+          .mul(
+            // this is the amount of collateral in the contract. can't use await totalCollateral here since we're in the describe. could put in the beforeEach, but i'd rather be explicit here
+            BondConfig.targetBondSupply
+              .div(2)
+              .mul(BondConfig.collateralRatio)
+              .div(ONE)
+          )
+          .div(BondConfig.targetBondSupply.div(2)),
       },
       {
         sharesToRedeem: 0,
@@ -744,8 +709,8 @@ describe("SimpleBond", async () => {
     });
     it("should redeem bond at default for collateral token", async function () {
       const expectedCollateralToReceive = sharesToSellToBondHolder
-        .mul(BondConfig.collateralRatio)
-        .div(utils.parseUnits("1", 18));
+        .mul(await bond.totalCollateral())
+        .div(await bond.totalSupply());
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
       const {
         receiver,

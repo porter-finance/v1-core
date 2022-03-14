@@ -178,7 +178,7 @@ contract SimpleBond is
   /// @notice the role ID for withdrawCollateral
   bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
 
-  /// @notice this mapping keeps track of the total collateral per address that is in this contract. this amount is used when determining the portion of collateral to return to the bond holders in event of a default
+  /// @notice this mapping keeps track of the total collateral in this contract. this amount is used when determining the portion of collateral to return to the bond holders in event of a default
   uint256 public totalCollateral;
 
   /// @notice the max amount of bonds able to be minted
@@ -332,7 +332,7 @@ contract SimpleBond is
     );
     if (
       // @audit-ok Re-entrancy possibility: isRepaid is updated after balance check
-      (totalSupply() - IERC20(borrowingToken).balanceOf(address(this))) == 0
+      IERC20(borrowingToken).balanceOf(address(this)) >= totalSupply()
     ) {
       isRepaid = true;
       emit RepaymentInFull(_msgSender(), amountRepaid);
@@ -348,24 +348,26 @@ contract SimpleBond is
       revert ZeroAmount();
     }
 
-    burn(bondShares);
-
+    // calculate amount before burning as the preview function uses totalSupply.
     (
       uint256 borrowingTokensToSend,
       uint256 collateralTokensToSend
     ) = previewRedeem(bondShares);
 
-    // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
+    totalCollateral -= collateralTokensToSend;
+
+    burn(bondShares);
+
+    // @audit-ok reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
     if (borrowingTokensToSend > 0) {
       IERC20(borrowingToken).safeTransfer(_msgSender(), borrowingTokensToSend);
     }
     if (collateralTokensToSend > 0) {
-      // external call reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
+      // @audit-ok reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
       IERC20(collateralToken).safeTransfer(
         _msgSender(),
         collateralTokensToSend
       );
-      totalCollateral -= collateralTokensToSend;
     }
     emit Redeem(
       _msgSender(),
@@ -425,7 +427,10 @@ contract SimpleBond is
   }
 
   function previewWithdraw() public view returns (uint256) {
-    uint256 tokensInContract = IERC20(borrowingToken).balanceOf(address(this));
+    uint256 tokensRepaid = IERC20(borrowingToken).balanceOf(address(this));
+    uint256 tokensNotCoveredByRepayment = tokensRepaid > totalSupply()
+      ? 0
+      : totalSupply() - tokensRepaid;
     // bond is not paid and mature
     // to cover backing ratio = total supply (-bonds burned) * backing ratio
     // to cover convertibility = 0 (bonds cannot be converted)
@@ -442,8 +447,8 @@ contract SimpleBond is
     uint256 maxCollateralRequiredForConvertibility = (totalSupply() *
       convertibilityRatio) / ONE;
     // The outstanding bonds already repaid need not be supported by the "backing" collateral
-    uint256 maxCollateralRequiredForBacking = ((totalSupply() -
-      tokensInContract) * backingRatio) / ONE;
+    uint256 maxCollateralRequiredForBacking = (tokensNotCoveredByRepayment *
+      backingRatio) / ONE;
     uint256 totalRequiredCollateral;
     if (!isRepaid) {
       totalRequiredCollateral = maxCollateralRequiredForConvertibility >
@@ -479,9 +484,10 @@ contract SimpleBond is
         address(this)
       );
 
+      // A defaulted bond is redeemable for its portion of borrowing tokens posibly deposited and the portion of collateral in the contract.
       return (
-        ((shares * borrowingTokensInContract) / totalSupply()),
-        ((shares * backingRatio) / ONE)
+        ((shares * borrowingTokensInContract) / (totalSupply())),
+        ((shares * totalCollateral) / (totalSupply()))
       );
     }
   }
