@@ -23,6 +23,7 @@ const BondConfig: BondConfigType = {
   collateralRatio: BigNumber.from(0),
   convertibilityRatio: BigNumber.from(0),
   maturityDate,
+  repaymentRatio: utils.parseUnits("1", 18),
   maxSupply: utils.parseUnits("50000000", 18),
 };
 
@@ -51,6 +52,7 @@ describe("BondFactory", async () => {
       BondConfig.collateralToken,
       BondConfig.collateralRatio,
       BondConfig.convertibilityRatio,
+      BondConfig.repaymentRatio,
       BondConfig.maxSupply
     );
   }
@@ -70,7 +72,7 @@ describe("BondFactory", async () => {
       await expect(factory.setIsAllowListEnabled(false))
         .to.emit(factory, "AllowListEnabled")
         .withArgs(false);
-      expect(await factory.isAllowListEnabled()).to.be.false;
+      expect(await factory.isAllowListEnabled()).to.be.equal(false);
       await expect(createBond(factory.connect(user))).to.emit(
         factory,
         "BondCreated"
@@ -97,12 +99,12 @@ describe("BondFactory", async () => {
         .reverted;
     });
     it("allowList toggle works correctly", async () => {
-      expect(await factory.isAllowListEnabled()).to.be.true;
+      expect(await factory.isAllowListEnabled()).to.be.equal(true);
 
       await expect(factory.setIsAllowListEnabled(false))
         .to.emit(factory, "AllowListEnabled")
         .withArgs(false);
-      expect(await factory.isAllowListEnabled()).to.be.false;
+      expect(await factory.isAllowListEnabled()).to.be.equal(false);
       await expect(createBond(factory.connect(user))).to.emit(
         factory,
         "BondCreated"
@@ -111,7 +113,7 @@ describe("BondFactory", async () => {
       await expect(factory.setIsAllowListEnabled(true))
         .to.emit(factory, "AllowListEnabled")
         .withArgs(true);
-      expect(await factory.isAllowListEnabled()).to.be.true;
+      expect(await factory.isAllowListEnabled()).to.be.equal(true);
     });
   });
 });

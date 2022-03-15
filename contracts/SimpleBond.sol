@@ -149,6 +149,9 @@ contract SimpleBond is
   /// @dev if this ratio is 0, the bond is not convertible.
   uint256 public convertibilityRatio;
 
+  /// @notice The ratio at which the repayment token's decimals deviate from the 18 decimal bond. 1e18 for a 1:1 ratio
+  uint256 public repaymentRatio;
+
   /// @notice the role ID for withdrawCollateral
   bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
 
@@ -183,6 +186,7 @@ contract SimpleBond is
   /// @param _collateralToken the ERC20 token address for the bond
   /// @param _backingRatio the amount of tokens per bond needed
   /// @param _convertibilityRatio the amount of tokens per bond a convertible bond can be converted for
+  /// @param _repaymentRatio the amount of tokens a bond will be repaid in
   function initialize(
     string memory _name,
     string memory _symbol,
@@ -192,6 +196,7 @@ contract SimpleBond is
     address _collateralToken,
     uint256 _backingRatio,
     uint256 _convertibilityRatio,
+    uint256 _repaymentRatio,
     uint256 _maxSupply
   ) external initializer {
     if (_backingRatio < _convertibilityRatio) {
@@ -212,6 +217,7 @@ contract SimpleBond is
     collateralToken = _collateralToken;
     backingRatio = _backingRatio;
     convertibilityRatio = _convertibilityRatio;
+    repaymentRatio = _repaymentRatio;
     maxSupply = _maxSupply;
 
     _grantRole(DEFAULT_ADMIN_ROLE, _owner);
@@ -310,7 +316,8 @@ contract SimpleBond is
     );
     if (
       // @audit-ok Re-entrancy possibility: isRepaid is updated after balance check
-      IERC20(repaymentToken).balanceOf(address(this)) >= totalSupply()
+      ((IERC20(repaymentToken).balanceOf(address(this)) * ONE) /
+        repaymentRatio) >= totalSupply()
     ) {
       isRepaid = true;
       emit RepaymentInFull(_msgSender(), amountRepaid);
@@ -405,10 +412,13 @@ contract SimpleBond is
   }
 
   function previewWithdraw() public view returns (uint256) {
-    uint256 tokensRepaid = IERC20(repaymentToken).balanceOf(address(this));
-    uint256 tokensNotCoveredByRepayment = tokensRepaid > totalSupply()
+    uint256 tokensCoveredByRepayment = (IERC20(repaymentToken).balanceOf(
+      address(this)
+    ) * ONE) / repaymentRatio;
+    uint256 tokensNotCoveredByRepayment = tokensCoveredByRepayment >
+      totalSupply()
       ? 0
-      : totalSupply() - tokensRepaid;
+      : totalSupply() - tokensCoveredByRepayment;
     // bond is not paid and mature
     // to cover backing ratio = total supply (-bonds burned) * backing ratio
     // to cover convertibility = 0 (bonds cannot be converted)
@@ -464,8 +474,9 @@ contract SimpleBond is
 
       // A defaulted bond is redeemable for its portion of repayment tokens posibly deposited and the portion of collateral in the contract.
       return (
-        ((bonds * repaymentTokensInContract) / (totalSupply())),
-        ((bonds * totalCollateral) / (totalSupply()))
+        ((bonds * ((repaymentTokensInContract * ONE) / repaymentRatio)) /
+          (totalSupply())),
+        ((bonds * ((totalCollateral * ONE) / ONE)) / (totalSupply()))
       );
     }
   }

@@ -24,6 +24,7 @@ contract BondFactoryClone is AccessControl {
     address repaymentToken,
     address collateralToken,
     uint256 backingRatio,
+    uint256 repaymentRatio,
     uint256 convertibilityRatio
   );
 
@@ -79,6 +80,7 @@ contract BondFactoryClone is AccessControl {
     address _collateralToken,
     uint256 _backingRatio,
     uint256 _convertibilityRatio,
+    uint256 _repaymentRatio,
     uint256 _maxSupply
   ) external onlyIssuer returns (address clone) {
     clone = Clones.clone(tokenImplementation);
@@ -91,6 +93,7 @@ contract BondFactoryClone is AccessControl {
       _collateralToken,
       _backingRatio,
       _convertibilityRatio,
+      _repaymentRatio,
       _maxSupply
     );
     emit BondCreated(
@@ -102,6 +105,7 @@ contract BondFactoryClone is AccessControl {
       _repaymentToken,
       _collateralToken,
       _backingRatio,
+      _repaymentRatio,
       _convertibilityRatio
     );
   }

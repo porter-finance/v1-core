@@ -5,6 +5,7 @@ export type BondConfigType = {
   collateralToken: string;
   collateralRatio: BigNumber;
   convertibilityRatio: BigNumber;
+  repaymentRatio: BigNumber;
   maturityDate: BigNumberish;
   maxSupply: BigNumber;
 };
