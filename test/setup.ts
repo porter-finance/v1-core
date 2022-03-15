@@ -1,8 +1,9 @@
-import { ethers } from "hardhat";
-import { Contract } from "ethers";
+import { ethers, network } from "hardhat";
 import { TestERC20, BondFactoryClone } from "../typechain";
 import { getBondContract } from "./utilities";
+import { eEthereumNetwork } from './interfaces'
 
+const { FORK, RINKEBY_DEPLOYER_ADDRESS } = process.env
 export const deployNATIVEandBORROW = async () => {
   const MockErc20Contract = await ethers.getContractFactory("TestERC20");
   const native = (await MockErc20Contract.deploy(
@@ -23,31 +24,49 @@ export const deployNATIVEandBORROW = async () => {
 };
 
 export const createBond = async (
-  factory: BondFactoryClone,
+  factoryAddress: string | undefined,
   nativeToken: TestERC20,
   borrowToken: TestERC20
 ) => {
   // these could be converted to parameters
   const bondName = "Always be growing";
-  const bondSymbol = "LUG";
+  const bondSymbol = "LEARN";
   const collateralRatio = ethers.utils.parseUnits(".5", 18);
   const convertibilityRatio = ethers.utils.parseUnits(".5", 18);
   const maturityDate = Math.round(
     new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-      1000
+    1000
   );
   const maxSupply = ethers.utils.parseUnits("50000000", 18);
+  let [issuer] = await ethers.getSigners();
+  if (FORK === eEthereumNetwork.rinkeby) {
+    if (!RINKEBY_DEPLOYER_ADDRESS) throw "{RINKEBY_DEPLOYER_ADDRESS} env variable is required"
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [RINKEBY_DEPLOYER_ADDRESS],
+    });
+    issuer = await ethers.getSigner(RINKEBY_DEPLOYER_ADDRESS)
+  }
 
-  const [owner] = await ethers.getSigners();
+  let factory;
+  if (factoryAddress) {
+    factory = await ethers.getContractAt("BondFactoryClone", factoryAddress) as BondFactoryClone
+  }
+  else {
+    const BondFactoryClone = await ethers.getContractFactory(
+      "BondFactoryClone"
+    );
+    factory = await BondFactoryClone.connect(issuer).deploy();
+  }
   const issuerRole = await factory.ISSUER_ROLE();
-  const grantRoleTx = await factory.grantRole(issuerRole, owner.address);
+  const grantRoleTx = await factory.connect(issuer).grantRole(issuerRole, issuer.address);
   await grantRoleTx.wait();
 
   const bond = await getBondContract(
-    factory.createBond(
+    factory.connect(issuer).createBond(
       bondName,
       bondSymbol,
-      owner.address,
+      issuer.address,
       maturityDate,
       nativeToken.address,
       borrowToken.address,
