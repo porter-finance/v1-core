@@ -14,7 +14,6 @@ describe("Integration", () => {
       params: [RINKEBY_DEPLOYER_ADDRESS],
     });
     const signer = await ethers.getSigner(RINKEBY_DEPLOYER_ADDRESS);
-    console.log(signer.address)
-    await createBond(rinkebyFactory, signer, native, borrow);
+    await createBond(signer, native, borrow, rinkebyFactory);
   });
 });
