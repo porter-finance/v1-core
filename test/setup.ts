@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TestERC20, BondFactoryClone } from "../typechain";
 import { getBondContract } from "./utilities";
 
@@ -22,40 +23,56 @@ export const deployNATIVEandREPAY = async () => {
 };
 
 export const createBond = async (
-  factory: BondFactoryClone,
+  owner: SignerWithAddress,
   nativeToken: TestERC20,
   repaymentToken: TestERC20
+  factoryAddress?: string,
 ) => {
   // these could be converted to parameters
   const bondName = "Always be growing";
-  const bondSymbol = "LUG";
+  const bondSymbol = "LEARN";
   const collateralRatio = ethers.utils.parseUnits(".5", 18);
   const convertibilityRatio = ethers.utils.parseUnits(".5", 18);
   const repaymentRatio = ethers.utils.parseUnits("1", 18);
   const maturityDate = Math.round(
     new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-      1000
+    1000
   );
   const maxSupply = ethers.utils.parseUnits("50000000", 18);
 
-  const [owner] = await ethers.getSigners();
+  let factory;
+  if (factoryAddress) {
+    factory = (await ethers.getContractAt(
+      "BondFactoryClone",
+      factoryAddress
+    )) as BondFactoryClone;
+  } else {
+    const BondFactoryClone = await ethers.getContractFactory(
+      "BondFactoryClone"
+    );
+    factory = await BondFactoryClone.connect(owner).deploy();
+  }
   const issuerRole = await factory.ISSUER_ROLE();
-  const grantRoleTx = await factory.grantRole(issuerRole, owner.address);
+  const grantRoleTx = await factory
+    .connect(owner)
+    .grantRole(issuerRole, owner.address);
   await grantRoleTx.wait();
 
   const bond = await getBondContract(
-    factory.createBond(
-      bondName,
-      bondSymbol,
-      owner.address,
-      maturityDate,
-      nativeToken.address,
-      repaymentToken.address,
-      collateralRatio,
-      convertibilityRatio,
-      repaymentRatio,
-      maxSupply
-    )
+    factory
+      .connect(owner)
+      .createBond(
+        bondName,
+        bondSymbol,
+        owner.address,
+        maturityDate,
+        nativeToken.address,
+        repaymentToken.address,
+        collateralRatio,
+        convertibilityRatio,
+        maxSupply
+      )
   );
   return bond;
 };
+
