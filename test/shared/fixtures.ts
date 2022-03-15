@@ -12,7 +12,7 @@ export async function tokenFixture() {
   const repaymentToken = (await RepaymentToken.deploy(
     "Repayment Token",
     "RT",
-    ethers.utils.parseEther("200000000"),
+    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     18
   )) as TestERC20;
 

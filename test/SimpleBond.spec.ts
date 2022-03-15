@@ -467,41 +467,85 @@ describe("SimpleBond", () => {
       });
     });
   });
+  [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24,
+  ].forEach((decimals) =>
+    describe(`${decimals} decimals repayment`, async () => {
+      beforeEach(async () => {
+        bond = await getBondContract(
+          factory.createBond(
+            "SimpleBond",
+            "LUG",
+            owner.address,
+            BondConfig.maturityDate,
+            repaymentToken.address,
+            BondConfig.collateralToken,
+            BondConfig.collateralRatio,
+            BondConfig.convertibilityRatio,
+            utils.parseUnits("1", decimals),
+            BondConfig.maxSupply
+          )
+        );
+        const token = mockUSDCToken.attach(BondConfig.collateralToken);
+        const amountToDeposit = BondConfig.targetBondSupply
+          .mul(BondConfig.collateralRatio)
+          .div(ONE);
+        await token.approve(bond.address, amountToDeposit);
+        await expect(bond.mint(BondConfig.targetBondSupply)).to.not.be.reverted;
+        await repaymentToken.approve(
+          bond.address,
+          BondConfig.targetBondSupply
+            .mul(utils.parseUnits("1", decimals))
+            .div(ONE)
+        );
+      });
+      it("accepts partial repayment", async () => {
+        await (
+          await bond.repay(
+            BondConfig.targetBondSupply
+              .div(2)
+              .mul(utils.parseUnits("1", decimals))
+              .div(ONE)
+          )
+        ).wait();
 
-  describe("repayment", async () => {
-    beforeEach(async () => {
-      const token = mockUSDCToken.attach(BondConfig.collateralToken);
-      const amountToDeposit = BondConfig.targetBondSupply
-        .mul(BondConfig.collateralRatio)
-        .div(utils.parseUnits("1", 18));
-      await token.approve(bond.address, amountToDeposit);
-      await expect(bond.mint(BondConfig.targetBondSupply)).to.not.be.reverted;
-      await repaymentToken.approve(bond.address, BondConfig.targetBondSupply);
-    });
+        await expect(
+          bond.repay(
+            BondConfig.targetBondSupply
+              .div(2)
+              .mul(utils.parseUnits("1", decimals))
+              .div(ONE)
+          )
+        ).to.emit(bond, "RepaymentInFull");
+      });
 
-    it("accepts partial repayment", async () => {
-      await (await bond.repay(BondConfig.targetBondSupply.div(2))).wait();
+      it("accepts repayment", async () => {
+        await expect(
+          bond.repay(
+            BondConfig.targetBondSupply
+              .mul(utils.parseUnits("1", decimals))
+              .div(ONE)
+          )
+        ).to.emit(bond, "RepaymentInFull");
+      });
 
-      await expect(bond.repay(BondConfig.targetBondSupply.div(2))).to.emit(
-        bond,
-        "RepaymentInFull"
-      );
-    });
-
-    it("accepts repayment", async () => {
-      await expect(bond.repay(BondConfig.targetBondSupply)).to.emit(
-        bond,
-        "RepaymentInFull"
-      );
-    });
-
-    it("fails if already repaid", async () => {
-      await bond.repay(BondConfig.targetBondSupply);
-      await expect(bond.repay(BondConfig.targetBondSupply)).to.be.revertedWith(
-        "RepaymentMet"
-      );
-    });
-  });
+      it("fails if already repaid", async () => {
+        await bond.repay(
+          BondConfig.targetBondSupply
+            .mul(utils.parseUnits("1", decimals))
+            .div(ONE)
+        );
+        await expect(
+          bond.repay(
+            BondConfig.targetBondSupply
+              .mul(utils.parseUnits("1", decimals))
+              .div(ONE)
+          )
+        ).to.be.revertedWith("RepaymentMet");
+      });
+    })
+  );
 
   describe("minting", async () => {
     beforeEach(async () => {
