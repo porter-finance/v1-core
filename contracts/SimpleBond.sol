@@ -460,24 +460,21 @@ contract SimpleBond is
   function previewRedeem(uint256 bonds)
     public
     view
-    returns (uint256 repaymentTokenToSend, uint256 collateralTokenToSend)
+    returns (uint256 repaymentTokensToSend, uint256 backingTokensToSend)
   {
     if (block.timestamp < maturityDate) {
       return (0, 0);
     }
-    if (isRepaid) {
-      return (bonds, 0);
-    } else {
-      uint256 repaymentTokensInContract = IERC20(repaymentToken).balanceOf(
-        address(this)
-      );
 
-      // A defaulted bond is redeemable for its portion of repayment tokens posibly deposited and the portion of collateral in the contract.
-      return (
-        ((bonds * ((repaymentTokensInContract * ONE) / repaymentRatio)) /
-          (totalSupply())),
-        ((bonds * ((totalCollateral * ONE) / ONE)) / (totalSupply()))
-      );
+    uint256 repaymentTokensSahre = (bonds *
+      IERC20(repaymentToken).balanceOf(address(this))) / totalSupply();
+
+    if (isRepaid) {
+      return (repaymentTokensSahre, 0);
+    } else {
+      uint256 backingTokensShare = (bonds *
+        IERC20(collateralToken).balanceOf(address(this))) / totalSupply();
+      return (repaymentTokensSahre, backingTokensShare);
     }
   }
 }
