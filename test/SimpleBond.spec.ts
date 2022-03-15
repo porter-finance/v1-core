@@ -18,6 +18,7 @@ const BondStanding = {
   REDEEMED: 3,
 };
 const ONE = utils.parseUnits("1", 18);
+const ZERO = BigNumber.from(0);
 // 3 years from now, in seconds
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
@@ -28,18 +29,21 @@ const BondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
   collateralToken: "",
   collateralRatio: utils.parseUnits("0.5", 18),
-  convertibilityRatio: BigNumber.from(0),
-  repaymentRatio: utils.parseUnits("1", 18),
+  convertibilityRatio: ZERO,
+  repaymentRatio: ONE,
   maturityDate,
   maxSupply: utils.parseUnits("50000000", 18),
 };
-
+const getTargetCollateral = (bondConfig: BondConfigType): BigNumber => {
+  const { targetBondSupply, collateralRatio } = bondConfig;
+  return targetBondSupply.mul(collateralRatio).div(ONE);
+};
 const ConvertibleBondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
   collateralToken: "",
   collateralRatio: utils.parseUnits("0.5", 18),
   convertibilityRatio: utils.parseUnits("0.25", 18),
-  repaymentRatio: utils.parseUnits("1", 18),
+  repaymentRatio: ONE,
   maturityDate,
   maxSupply: utils.parseUnits("50000000", 18),
 };
@@ -203,16 +207,14 @@ describe("SimpleBond", () => {
     describe("non-convertible", async () => {
       beforeEach(async () => {
         const token = mockUSDCToken.attach(BondConfig.collateralToken);
-        const amountToDeposit = BondConfig.targetBondSupply
-          .mul(BondConfig.collateralRatio)
-          .div(utils.parseUnits("1", 18));
+        const amountToDeposit = getTargetCollateral(BondConfig);
         await token.approve(bond.address, amountToDeposit);
         await bond.mint(BondConfig.targetBondSupply);
       });
       [
         {
           sharesToBurn: 0,
-          collateralToReceive: BigNumber.from(0),
+          collateralToReceive: ZERO,
         },
         {
           sharesToBurn: utils.parseUnits("1000", 18),
@@ -260,16 +262,12 @@ describe("SimpleBond", () => {
         {
           sharesToBurn: 0,
           repaymentTokenAmount: BondConfig.targetBondSupply,
-          collateralToReceive: BondConfig.targetBondSupply
-            .mul(BondConfig.collateralRatio)
-            .div(ONE),
+          collateralToReceive: getTargetCollateral(BondConfig),
         },
         {
           sharesToBurn: utils.parseUnits("1000", 18),
           repaymentTokenAmount: BondConfig.targetBondSupply,
-          collateralToReceive: BondConfig.targetBondSupply
-            .mul(BondConfig.collateralRatio)
-            .div(ONE),
+          collateralToReceive: getTargetCollateral(BondConfig),
         },
       ].forEach(
         ({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
@@ -286,16 +284,12 @@ describe("SimpleBond", () => {
         {
           sharesToBurn: 0,
           repaymentTokenAmount: BondConfig.targetBondSupply,
-          collateralToReceive: BondConfig.targetBondSupply
-            .mul(BondConfig.collateralRatio)
-            .div(ONE),
+          collateralToReceive: getTargetCollateral(BondConfig),
         },
         {
           sharesToBurn: 0,
           repaymentTokenAmount: BondConfig.targetBondSupply,
-          collateralToReceive: BondConfig.targetBondSupply
-            .mul(BondConfig.collateralRatio)
-            .div(ONE),
+          collateralToReceive: getTargetCollateral(BondConfig),
         },
       ].forEach(
         ({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
@@ -334,16 +328,14 @@ describe("SimpleBond", () => {
         const token = mockUSDCToken.attach(
           ConvertibleBondConfig.collateralToken
         );
-        const amountToDeposit = ConvertibleBondConfig.targetBondSupply
-          .mul(ConvertibleBondConfig.collateralRatio)
-          .div(utils.parseUnits("1", 18));
+        const amountToDeposit = getTargetCollateral(ConvertibleBondConfig);
         await token.approve(convertibleBond.address, amountToDeposit);
         await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
       });
       [
         {
           sharesToBurn: 0,
-          collateralToReceive: BigNumber.from(0),
+          collateralToReceive: ZERO,
         },
         {
           sharesToBurn: utils.parseUnits("1000", 18),
@@ -398,16 +390,12 @@ describe("SimpleBond", () => {
         {
           sharesToBurn: 0,
           repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply,
-          collateralToReceive: ConvertibleBondConfig.targetBondSupply
-            .mul(ConvertibleBondConfig.collateralRatio)
-            .div(ONE),
+          collateralToReceive: getTargetCollateral(ConvertibleBondConfig),
         },
         {
           sharesToBurn: utils.parseUnits("1000", 18),
           repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply,
-          collateralToReceive: ConvertibleBondConfig.targetBondSupply
-            .mul(ConvertibleBondConfig.collateralRatio)
-            .div(ONE),
+          collateralToReceive: getTargetCollateral(ConvertibleBondConfig),
         },
       ].forEach(
         ({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
@@ -437,9 +425,7 @@ describe("SimpleBond", () => {
         {
           sharesToBurn: 0,
           repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply,
-          collateralToReceive: ConvertibleBondConfig.targetBondSupply
-            .mul(ConvertibleBondConfig.collateralRatio)
-            .div(ONE),
+          collateralToReceive: getTargetCollateral(ConvertibleBondConfig),
         },
       ].forEach(
         ({ sharesToBurn, repaymentTokenAmount, collateralToReceive }) => {
@@ -516,16 +502,12 @@ describe("SimpleBond", () => {
       );
     });
   });
+
   describe("minting", async () => {
     beforeEach(async () => {
       await mockUSDCToken
         .attach(BondConfig.collateralToken)
-        .approve(
-          bond.address,
-          BondConfig.targetBondSupply
-            .mul(BondConfig.collateralRatio)
-            .div(utils.parseUnits("1", 18))
-        );
+        .approve(bond.address, getTargetCollateral(BondConfig));
     });
 
     it("reverts when called by non-issuer", async () => {
@@ -537,7 +519,7 @@ describe("SimpleBond", () => {
     [
       {
         mintAmount: 0,
-        collateralToDeposit: BigNumber.from(0),
+        collateralToDeposit: ZERO,
         description: "zero target",
       },
       {
@@ -556,9 +538,7 @@ describe("SimpleBond", () => {
       },
       {
         mintAmount: BondConfig.targetBondSupply,
-        collateralToDeposit: BondConfig.collateralRatio
-          .mul(BondConfig.targetBondSupply)
-          .div(ONE),
+        collateralToDeposit: getTargetCollateral(BondConfig),
         description: "target",
       },
     ].forEach(({ mintAmount, collateralToDeposit, description }) => {
@@ -589,7 +569,7 @@ describe("SimpleBond", () => {
       sharesToSellToBondHolder = utils.parseUnits("1000", 18);
       const amountToDeposit = BondConfig.targetBondSupply
         .mul(BondConfig.collateralRatio)
-        .div(utils.parseUnits("1", 18));
+        .div(ONE);
       await mockUSDCToken
         .attach(BondConfig.collateralToken)
         .approve(bond.address, amountToDeposit);
@@ -602,12 +582,17 @@ describe("SimpleBond", () => {
       {
         sharesToRedeem: sharesToSellToBondHolder,
         repaymentTokenToSend: sharesToSellToBondHolder,
-        collateralTokenToSend: BigNumber.from(0),
+        collateralTokenToSend: ZERO,
       },
       {
         sharesToRedeem: 0,
-        repaymentTokenToSend: BigNumber.from(0),
-        collateralTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: ZERO,
+        collateralTokenToSend: ZERO,
+      },
+      {
+        sharesToRedeem: utils.parseUnits("333", 18),
+        repaymentTokenToSend: utils.parseUnits("333", 18),
+        collateralTokenToSend: ZERO,
       },
     ].forEach(
       ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
@@ -624,13 +609,13 @@ describe("SimpleBond", () => {
     [
       {
         sharesToRedeem: sharesToSellToBondHolder,
-        repaymentTokenToSend: BigNumber.from(0),
-        collateralTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: ZERO,
+        collateralTokenToSend: ZERO,
       },
       {
         sharesToRedeem: 0,
-        repaymentTokenToSend: BigNumber.from(0),
-        collateralTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: ZERO,
+        collateralTokenToSend: ZERO,
       },
     ].forEach(
       ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
@@ -646,15 +631,15 @@ describe("SimpleBond", () => {
     [
       {
         sharesToRedeem: sharesToSellToBondHolder,
-        repaymentTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: ZERO,
         collateralTokenToSend: sharesToSellToBondHolder
           .mul(BondConfig.collateralRatio)
           .div(ONE),
       },
       {
         sharesToRedeem: 0,
-        repaymentTokenToSend: BigNumber.from(0),
-        collateralTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: ZERO,
+        collateralTokenToSend: ZERO,
       },
     ].forEach(
       ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
@@ -685,8 +670,8 @@ describe("SimpleBond", () => {
       },
       {
         sharesToRedeem: 0,
-        repaymentTokenToSend: BigNumber.from(0),
-        collateralTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: ZERO,
+        collateralTokenToSend: ZERO,
       },
     ].forEach(
       ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
@@ -703,13 +688,13 @@ describe("SimpleBond", () => {
     [
       {
         sharesToRedeem: sharesToSellToBondHolder,
-        repaymentTokenToSend: BigNumber.from(0),
-        collateralTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: ZERO,
+        collateralTokenToSend: ZERO,
       },
       {
         sharesToRedeem: 0,
-        repaymentTokenToSend: BigNumber.from(0),
-        collateralTokenToSend: BigNumber.from(0),
+        repaymentTokenToSend: ZERO,
+        collateralTokenToSend: ZERO,
       },
     ].forEach(
       ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
@@ -770,9 +755,7 @@ describe("SimpleBond", () => {
           .attach(BondConfig.collateralToken)
           .balanceOf(bondHolder.address)
       ).to.be.equal(
-        BondConfig.collateralRatio
-          .mul(sharesToSellToBondHolder)
-          .div(utils.parseUnits("1", 18))
+        BondConfig.collateralRatio.mul(sharesToSellToBondHolder).div(ONE)
       );
     });
   });
@@ -784,9 +767,7 @@ describe("SimpleBond", () => {
         const token = mockUSDCToken.attach(
           ConvertibleBondConfig.collateralToken
         );
-        const amountToDeposit = ConvertibleBondConfig.targetBondSupply
-          .mul(ConvertibleBondConfig.collateralRatio)
-          .div(utils.parseUnits("1", 18));
+        const amountToDeposit = getTargetCollateral(BondConfig);
         await token.approve(convertibleBond.address, amountToDeposit);
         await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
         await convertibleBond.transfer(bondHolder.address, tokensToConvert);
@@ -817,7 +798,7 @@ describe("SimpleBond", () => {
       it("converts bond amount into collateral at convertibilityRatio", async () => {
         const expectedCollateralToWithdraw = tokensToConvert
           .mul(ConvertibleBondConfig.convertibilityRatio)
-          .div(utils.parseUnits("1", 18));
+          .div(ONE);
         await convertibleBond
           .connect(bondHolder)
           .approve(convertibleBond.address, tokensToConvert);
