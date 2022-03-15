@@ -1,12 +1,20 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { deployNATIVEandBORROW, createBond } from "../setup";
-import { BondFactoryClone } from "../../typechain";
+const { RINKEBY_DEPLOYER_ADDRESS } = process.env;
+const rinkebyFactory = "0x69e892D6c419883BFa5Def1FeB01cdf71129573d";
 
 describe("Integration", () => {
-  it.only("creates erc20 tokens and bonds", async () => {
-    const { native, borrow } = await deployNATIVEandBORROW();
-    const { HARDCODED_FACTORY } = process.env
+  if (!RINKEBY_DEPLOYER_ADDRESS)
+    throw "{RINKEBY_DEPLOYER_ADDRESS} env variable is required";
 
-    await createBond(HARDCODED_FACTORY, native, borrow);
+  it("creates erc20 tokens and bonds", async () => {
+    const { native, borrow } = await deployNATIVEandBORROW();
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [RINKEBY_DEPLOYER_ADDRESS],
+    });
+    const signer = await ethers.getSigner(RINKEBY_DEPLOYER_ADDRESS);
+    console.log(signer.address)
+    await createBond(rinkebyFactory, signer, native, borrow);
   });
 });

@@ -9,11 +9,6 @@ import "solidity-coverage"; // adds 'coverage' task
 import "hardhat-deploy"; // runs scripts in the ./deploy folder
 import "@nomiclabs/hardhat-etherscan"; // adds 'verify' task
 
-import {
-  NETWORKS_RPC_URL,
-  buildForkConfig,
-} from './helper-hardhat-config';
-
 dotenv.config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -46,7 +41,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     rinkeby: {
-      url: NETWORKS_RPC_URL['rinkeby'],
+      url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
@@ -54,9 +49,11 @@ const config: HardhatUserConfig = {
       mining: {
         auto: true,
       },
-      forking: buildForkConfig(),
+      forking: {
+        url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        blockNumber: 10333393,
+      },
     },
-
   },
   gasReporter: {
     currency: "USD",
