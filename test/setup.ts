@@ -102,11 +102,11 @@ export const mint = async (
     .connect(owner)
     .grantRole(mintRole, owner.address);
   await grantRoleTx.wait();
-  const tomint = await bond.previewMint(
-    ethers.utils.parseUnits("50000000", 18)
-  );
-  const t = await nativeToken.balanceOf(owner.address);
-  await bond.connect(owner).mint(ethers.utils.parseUnits("50000000", 18));
+
+  const mintTx = await bond
+    .connect(owner)
+    .mint(ethers.utils.parseUnits("50000000", 18));
+  return mintTx.await();
 };
 
 export const initiateAuction = async (
@@ -115,8 +115,6 @@ export const initiateAuction = async (
   bond: SimpleBond,
   borrowToken: TestERC20
 ) => {
-  // 3 years from now, in seconds
-
   const auctioningToken = bond.address;
   const biddingToken = borrowToken.address;
   const orderCancellationEndDate = 0;
