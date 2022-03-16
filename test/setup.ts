@@ -1,8 +1,8 @@
 import { ethers } from "hardhat";
+import { Contract } from 'ethers'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TestERC20, BondFactoryClone, SimpleBond } from "../typechain";
 import { getBondContract } from "./utilities";
-const easyAuction = require('../contracts/external/EasyAuction')
 
 export const deployNATIVEandBORROW = async (owner: SignerWithAddress) => {
   const MockErc20Contract = await ethers.getContractFactory("TestERC20");
@@ -27,7 +27,7 @@ export const createBond = async (
   owner: SignerWithAddress,
   nativeToken: TestERC20,
   borrowToken: TestERC20,
-  factoryAddress?: string,
+  factoryAddress?: string
 ) => {
   // these could be converted to parameters
   const bondName = "Always be growing";
@@ -76,7 +76,10 @@ export const createBond = async (
   return bond;
 };
 
-export const mint = async (owner: SignerWithAddress, nativeToken: TestERC20, bondAddress?: string,
+export const mint = async (
+  owner: SignerWithAddress,
+  nativeToken: TestERC20,
+  bondAddress?: string
 ) => {
   let bond;
   if (bondAddress) {
@@ -85,14 +88,13 @@ export const mint = async (owner: SignerWithAddress, nativeToken: TestERC20, bon
       bondAddress
     )) as SimpleBond;
   } else {
-    const SimpleBond = await ethers.getContractFactory(
-      "SimpleBond"
-    );
+    const SimpleBond = await ethers.getContractFactory("SimpleBond");
     bond = await SimpleBond.connect(owner).deploy();
   }
 
   const approveTx = await nativeToken
-    .connect(owner).approve(bond.address, ethers.constants.MaxUint256)
+    .connect(owner)
+    .approve(bond.address, ethers.constants.MaxUint256);
   await approveTx.wait();
 
   const mintRole = await bond.MINT_ROLE();
@@ -100,36 +102,55 @@ export const mint = async (owner: SignerWithAddress, nativeToken: TestERC20, bon
     .connect(owner)
     .grantRole(mintRole, owner.address);
   await grantRoleTx.wait();
-  const tomint = await bond.previewMint(ethers.utils.parseUnits("50000000", 18));
-  console.log({ tomint: tomint.toString() })
-  const t = await nativeToken.balanceOf(owner.address)
-  console.log({ t })
+  const tomint = await bond.previewMint(
+    ethers.utils.parseUnits("50000000", 18)
+  );
+  const t = await nativeToken.balanceOf(owner.address);
   await bond.connect(owner).mint(ethers.utils.parseUnits("50000000", 18));
+};
 
-}
-
-export const initiateAuction = async (owner: SignerWithAddress, bond: SimpleBond,
-  borrowToken: TestERC20,
+export const initiateAuction = async (
+  auction: Contract,
+  owner: SignerWithAddress,
+  bond: SimpleBond,
+  borrowToken: TestERC20
 ) => {
-  const gnosisAddress = "0xC5992c0e0A3267C7F75493D0F717201E26BE35f7"
-  const auction = (await ethers.getContractAt(
-    easyAuction.abi,
-    gnosisAddress
-  ));
-  const auctioningToken = bond.address
-  const biddingToken = borrowToken.address
-  const orderCancellationEndDate = 0
-  const auctionEndDate = 1640301771
-  const _auctionedSellAmount = await bond.balanceOf(owner.address)
-  const _minBuyAmount = 1000000000000000
-  const minimumBiddingAmountPerOrder = 1000000000000000
-  const minFundingThreshold = 0
-  const isAtomicClosureAllowed = false
-  const accessManagerContract = ""
-  const accessManagerContractData = ""
+  // 3 years from now, in seconds
+
+  const auctioningToken = bond.address;
+  const biddingToken = borrowToken.address;
+  const orderCancellationEndDate = 0;
+  // one day from today
+  const auctionEndDate = Math.round(
+    new Date(new Date().setDate(new Date().getDate() + 1)).getTime() /
+    1000
+  );
+  const _auctionedSellAmount = await bond.balanceOf(owner.address);
+  const _minBuyAmount = 1000000000000000;
+  const minimumBiddingAmountPerOrder = 1000000000000000;
+  const minFundingThreshold = 0;
+  const isAtomicClosureAllowed = false;
+  const accessManagerContract = ethers.constants.AddressZero;
+  const accessManagerContractData = ethers.constants.HashZero;
   const approveTx = await bond
-    .connect(owner).approve(gnosisAddress, ethers.constants.MaxUint256)
+    .connect(owner)
+    .approve(auction.address, ethers.constants.MaxUint256);
   await approveTx.wait();
 
-  auction.connect(owner).initateAuction(auctioningToken, biddingToken, orderCancellationEndDate, auctionEndDate, _auctionedSellAmount, _minBuyAmount, minimumBiddingAmountPerOrder, minFundingThreshold, isAtomicClosureAllowed, accessManagerContract, accessManagerContractData)
-}
+  const initiateAuctionTx = await auction
+    .connect(owner)
+    .initiateAuction(
+      auctioningToken,
+      biddingToken,
+      orderCancellationEndDate,
+      auctionEndDate,
+      _auctionedSellAmount,
+      _minBuyAmount,
+      minimumBiddingAmountPerOrder,
+      minFundingThreshold,
+      isAtomicClosureAllowed,
+      accessManagerContract,
+      accessManagerContractData
+    );
+  return initiateAuctionTx
+};
