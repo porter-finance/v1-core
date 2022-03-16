@@ -16,6 +16,7 @@ describe("Integration", () => {
   if (!RINKEBY_DEPLOYER_ADDRESS)
     throw "{RINKEBY_DEPLOYER_ADDRESS} env variable is required";
   it("creates erc20 tokens and bonds", async () => {
+    console.log("running");
     if (network.name === "hardhat") {
       await network.provider.request({
         method: "hardhat_impersonateAccount",
@@ -24,6 +25,7 @@ describe("Integration", () => {
     }
     const signer = await ethers.getSigner(RINKEBY_DEPLOYER_ADDRESS);
     const { native, borrow } = await deployNATIVEandBORROW(signer);
+    console.log({ native: native.address, borrow: borrow.address });
 
     const bond = (await createBond(
       signer,
@@ -31,12 +33,14 @@ describe("Integration", () => {
       borrow,
       rinkebyFactory
     )) as SimpleBond;
+    console.log({ bond: bond.address });
 
-    await mint(signer, native, bond.address);
+    await mint(signer, native, bond);
+    console.log("minted");
 
     const auction = await ethers.getContractAt(easyAuction.abi, rinkebyGnosis);
 
-    await expect(initiateAuction(auction, signer, bond, borrow)).to.emit(
+    await expect(await initiateAuction(auction, signer, bond, borrow)).to.emit(
       auction,
       "NewAuction"
     );

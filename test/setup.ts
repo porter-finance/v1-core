@@ -19,7 +19,6 @@ export const deployNATIVEandBORROW = async (owner: SignerWithAddress) => {
     ethers.utils.parseUnits("500"),
     18
   )) as TestERC20;
-
   return { native, borrow };
 };
 
@@ -79,19 +78,8 @@ export const createBond = async (
 export const mint = async (
   owner: SignerWithAddress,
   nativeToken: TestERC20,
-  bondAddress?: string
+  bond: SimpleBond
 ) => {
-  let bond;
-  if (bondAddress) {
-    bond = (await ethers.getContractAt(
-      "SimpleBond",
-      bondAddress
-    )) as SimpleBond;
-  } else {
-    const SimpleBond = await ethers.getContractFactory("SimpleBond");
-    bond = await SimpleBond.connect(owner).deploy();
-  }
-
   const approveTx = await nativeToken
     .connect(owner)
     .approve(bond.address, ethers.constants.MaxUint256);
@@ -106,7 +94,7 @@ export const mint = async (
   const mintTx = await bond
     .connect(owner)
     .mint(ethers.utils.parseUnits("50000000", 18));
-  return mintTx.await();
+  return await mintTx.wait();
 };
 
 export const initiateAuction = async (
