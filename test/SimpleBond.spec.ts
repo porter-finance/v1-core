@@ -741,7 +741,7 @@ describe("SimpleBond", () => {
           .div(BondConfig.targetBondSupply),
         backingTokenToSend: sharesToSellToBondHolder
           .mul(
-            // this is the amount of collateral in the contract. can't use await totalCollateral here since we're in the describe. could put in the beforeEach, but i'd rather be explicit here
+            // this is the amount of collateral in the contract. can't use await totalBackingSupply here since we're in the describe. could put in the beforeEach, but i'd rather be explicit here
             BondConfig.targetBondSupply
               .div(2)
               .mul(BondConfig.collateralRatio)
@@ -807,7 +807,7 @@ describe("SimpleBond", () => {
     });
     it("should redeem bond at default for collateral token", async () => {
       const expectedCollateralToReceive = sharesToSellToBondHolder
-        .mul(await bond.totalCollateral())
+        .mul(await bond.totalBackingSupply())
         .div(await bond.totalSupply());
       await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
       const {

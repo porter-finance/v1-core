@@ -163,9 +163,6 @@ contract SimpleBond is
     /// @notice the role ID for mint
     bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
 
-    /// @notice this mapping keeps track of the total collateral in this contract. this amount is used when determining the portion of collateral to return to the bond holders in event of a default
-    uint256 public totalCollateral;
-
     /// @notice the max amount of bonds able to be minted
     uint256 public maxSupply;
 
@@ -239,9 +236,7 @@ contract SimpleBond is
     {
         uint256 collateralToSend = previewWithdraw();
 
-        totalCollateral -= collateralToSend;
-
-        // @audit-ok reentrancy possibility: at the point of this transfer, the caller could attempt to reenter, but the totalCollateral updates beofre reaching this point, and is used in the previewWithdraw method to calculate the amount allowed to transfer out of the contract
+        // @audit-ok reentrancy possibility: at the point of this transfer, the caller could attempt to reenter, but the reentrancy guard prevents it
         IERC20(backingToken).safeTransfer(_msgSender(), collateralToSend);
 
         emit CollateralWithdrawn(_msgSender(), backingToken, collateralToSend);
@@ -266,14 +261,12 @@ contract SimpleBond is
             revert ZeroAmount();
         }
 
-        // @audit-ok reentrancy possibility: totalCollateral is updated after transfer
+        // @audit-ok reentrancy possibility: need reentrancy guard as this point could be reached and exceed the maxSupply
         uint256 collateralDeposited = safeTransferIn(
             IERC20(backingToken),
             _msgSender(),
             collateralToDeposit
         );
-
-        totalCollateral += collateralDeposited;
 
         emit CollateralDeposited(
             _msgSender(),
@@ -299,8 +292,6 @@ contract SimpleBond is
 
         // @audit-ok Reentrancy possibility: the bonds are already burnt - if there weren't enough bonds to burn, an error is thrown
         IERC20(backingToken).safeTransfer(_msgSender(), collateralToSend);
-
-        totalCollateral -= collateralToSend;
 
         emit Converted(_msgSender(), backingToken, bonds, collateralToSend);
     }
@@ -338,17 +329,15 @@ contract SimpleBond is
     /// @notice this function burns bonds in return for the token borrowed against the bond
     /// @param bonds the amount of bonds to redeem and burn
     function redeem(uint256 bonds) external nonReentrant pastMaturity {
-        if (bonds == 0) {
-            revert ZeroAmount();
-        }
-
         // calculate amount before burning as the preview function uses totalSupply.
         (
             uint256 repaymentTokensToSend,
             uint256 backingTokensToSend
         ) = previewRedeem(bonds);
 
-        totalCollateral -= backingTokensToSend;
+        if (repaymentTokensToSend == 0 && backingTokensToSend == 0) {
+            revert ZeroAmount();
+        }
 
         burn(bonds);
 
@@ -431,15 +420,20 @@ contract SimpleBond is
         return bonds.mulDivDown(convertibilityRatio, ONE);
     }
 
+    /// @dev this function calculates the amount of backing tokens that are able to be withdrawn by the issuer. The amount of tokens can increase by bonds being burnt and converted as well as repayment made. Each bond is covered by a certain amount of collateral for backing and conversion. For convertible bonds, the totalSupply of bonds must be covered by the convertibilityRatio. That means even if all of the bonds were covered by repayment, there must still be enough collateral in the contract to cover the outstanding bonds convertibility until the maturity date - at which point all collateral will be able to be withdrawn.
     function previewWithdraw() public view returns (uint256) {
+        // The outstanding bonds already repaid need not be supported by the "backing" collateral
         uint256 tokensCoveredByRepayment = totalRepaymentSupply().mulDivUp(
             ONE,
             repaymentRatio
         );
-        uint256 tokensNotCoveredByRepayment = tokensCoveredByRepayment >
-            totalSupply()
-            ? 0
-            : totalSupply() - tokensCoveredByRepayment;
+        uint256 maxCollateralRequiredForBacking;
+        if (tokensCoveredByRepayment > totalSupply()) {
+            maxCollateralRequiredForBacking = 0;
+        } else {
+            maxCollateralRequiredForBacking = (totalSupply() -
+                tokensCoveredByRepayment).mulDivUp(backingRatio, ONE);
+        }
         // bond is not paid and mature
         // to cover backing ratio = total supply (-bonds burned) * backing ratio
         // to cover convertibility = 0 (bonds cannot be converted)
@@ -457,9 +451,7 @@ contract SimpleBond is
             convertibilityRatio,
             ONE
         );
-        // The outstanding bonds already repaid need not be supported by the "backing" collateral
-        uint256 maxCollateralRequiredForBacking = tokensNotCoveredByRepayment
-            .mulDivUp(backingRatio, ONE);
+
         uint256 totalRequiredCollateral;
         if (!isRepaid) {
             totalRequiredCollateral = maxCollateralRequiredForConvertibility >
@@ -473,35 +465,38 @@ contract SimpleBond is
             totalRequiredCollateral = 0;
         }
 
-        if (totalRequiredCollateral >= totalCollateral) {
+        if (totalRequiredCollateral >= totalBackingSupply()) {
             return 0;
         }
 
-        return totalCollateral - totalRequiredCollateral;
+        return totalBackingSupply() - totalRequiredCollateral;
     }
 
     function previewRedeem(uint256 bonds)
         public
         view
-        returns (uint256 repaymentTokensToSend, uint256 backingTokensToSend)
+        returns (uint256, uint256)
     {
         if (block.timestamp < maturityDate) {
+            // Immature bond redeems for nothing
             return (0, 0);
         }
 
-        uint256 repaymentTokensSahre = bonds.mulDivUp(
+        uint256 repaymentTokensToSend = bonds.mulDivUp(
             totalRepaymentSupply(),
             totalSupply()
         );
 
         if (isRepaid) {
-            return (repaymentTokensSahre, 0);
+            // Mature & repaid bond redeems for repayment tokens
+            return (repaymentTokensToSend, 0);
         } else {
-            uint256 backingTokensShare = bonds.mulDivUp(
+            uint256 backingTokensToSend = bonds.mulDivUp(
                 totalBackingSupply(),
                 totalSupply()
             );
-            return (repaymentTokensSahre, backingTokensShare);
+            // Mature & defaulted bond redeems for repayment & backing tokens
+            return (repaymentTokensToSend, backingTokensToSend);
         }
     }
 }
