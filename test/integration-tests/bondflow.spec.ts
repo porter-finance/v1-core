@@ -16,7 +16,7 @@ describe("Integration", () => {
   if (!RINKEBY_DEPLOYER_ADDRESS)
     throw "{RINKEBY_DEPLOYER_ADDRESS} env variable is required";
   it("creates erc20 tokens and bonds", async () => {
-    if (network.name === 'hardhat') {
+    if (network.name === "hardhat") {
       await network.provider.request({
         method: "hardhat_impersonateAccount",
         params: [RINKEBY_DEPLOYER_ADDRESS],

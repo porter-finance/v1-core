@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { Contract } from 'ethers'
+import { Contract } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TestERC20, BondFactoryClone, SimpleBond } from "../typechain";
 import { getBondContract } from "./utilities";
@@ -36,7 +36,7 @@ export const createBond = async (
   const convertibilityRatio = ethers.utils.parseUnits(".5", 18);
   const maturityDate = Math.round(
     new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-    1000
+      1000
   );
   const maxSupply = ethers.utils.parseUnits("50000000", 18);
 
@@ -122,8 +122,7 @@ export const initiateAuction = async (
   const orderCancellationEndDate = 0;
   // one day from today
   const auctionEndDate = Math.round(
-    new Date(new Date().setDate(new Date().getDate() + 1)).getTime() /
-    1000
+    new Date(new Date().setDate(new Date().getDate() + 1)).getTime() / 1000
   );
   const _auctionedSellAmount = await bond.balanceOf(owner.address);
   const _minBuyAmount = 1000000000000000;
@@ -152,5 +151,5 @@ export const initiateAuction = async (
       accessManagerContract,
       accessManagerContractData
     );
-  return initiateAuctionTx
+  return initiateAuctionTx;
 };
