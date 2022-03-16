@@ -1,6 +1,6 @@
 import { ethers, network } from "hardhat";
 import { expect } from "chai";
-import { SimpleBond } from "../../typechain";
+import { BondFactoryClone, SimpleBond } from "../../typechain";
 import {
   deployNATIVEandBORROW,
   createBond,
@@ -16,7 +16,6 @@ describe("Integration", () => {
   if (!RINKEBY_DEPLOYER_ADDRESS)
     throw "{RINKEBY_DEPLOYER_ADDRESS} env variable is required";
   it("creates erc20 tokens and bonds", async () => {
-    console.log("running");
     if (network.name === "hardhat") {
       await network.provider.request({
         method: "hardhat_impersonateAccount",
@@ -24,15 +23,21 @@ describe("Integration", () => {
       });
     }
     const signer = await ethers.getSigner(RINKEBY_DEPLOYER_ADDRESS);
-    const { native, borrow } = await deployNATIVEandBORROW(signer);
+    const [native, borrow] = await deployNATIVEandBORROW(signer);
     console.log({ native: native.address, borrow: borrow.address });
+
+    const factory = (await ethers.getContractAt(
+      "BondFactoryClone",
+      rinkebyFactory
+    )) as BondFactoryClone;
 
     const bond = (await createBond(
       signer,
       native,
       borrow,
-      rinkebyFactory
+      factory
     )) as SimpleBond;
+
     console.log({ bond: bond.address });
 
     await mint(signer, native, bond);

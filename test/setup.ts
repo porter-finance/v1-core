@@ -6,27 +6,32 @@ import { getBondContract } from "./utilities";
 
 export const deployNATIVEandBORROW = async (owner: SignerWithAddress) => {
   const MockErc20Contract = await ethers.getContractFactory("TestERC20");
+  console.log("factory");
   const native = (await MockErc20Contract.connect(owner).deploy(
     "Native Token",
     "NATIVE",
     ethers.utils.parseUnits("50000000", 20),
     18
   )) as TestERC20;
+  console.log({ native: native.address });
+  await native.deployed();
+  console.log({ native });
 
-  const borrow = (await MockErc20Contract.deploy(
+  const borrow = (await MockErc20Contract.connect(owner).deploy(
     "Borrowing Token",
     "BORROW",
     ethers.utils.parseUnits("500"),
     18
   )) as TestERC20;
-  return { native, borrow };
+  await borrow.deployed();
+  return await Promise.all([native, borrow]);
 };
 
 export const createBond = async (
   owner: SignerWithAddress,
   nativeToken: TestERC20,
   borrowToken: TestERC20,
-  factoryAddress?: string
+  factory: BondFactoryClone
 ) => {
   // these could be converted to parameters
   const bondName = "Always be growing";
@@ -39,18 +44,6 @@ export const createBond = async (
   );
   const maxSupply = ethers.utils.parseUnits("50000000", 18);
 
-  let factory;
-  if (factoryAddress) {
-    factory = (await ethers.getContractAt(
-      "BondFactoryClone",
-      factoryAddress
-    )) as BondFactoryClone;
-  } else {
-    const BondFactoryClone = await ethers.getContractFactory(
-      "BondFactoryClone"
-    );
-    factory = await BondFactoryClone.connect(owner).deploy();
-  }
   const issuerRole = await factory.ISSUER_ROLE();
   const grantRoleTx = await factory
     .connect(owner)
@@ -72,7 +65,7 @@ export const createBond = async (
         maxSupply
       )
   );
-  return bond;
+  return await bond;
 };
 
 export const mint = async (
