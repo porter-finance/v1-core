@@ -2,7 +2,7 @@ import { BigNumber, BigNumberish } from "ethers";
 
 export type BondConfigType = {
   targetBondSupply: BigNumber;
-  collateralToken: string;
+  backingToken: string;
   collateralRatio: BigNumber;
   convertibilityRatio: BigNumber;
   repaymentRatio: BigNumber;

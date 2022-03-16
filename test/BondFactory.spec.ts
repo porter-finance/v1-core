@@ -19,7 +19,7 @@ const TEST_ADDRESSES: [string, string] = [
 
 const BondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
-  collateralToken: "",
+  backingToken: "",
   collateralRatio: BigNumber.from(0),
   convertibilityRatio: BigNumber.from(0),
   maturityDate,
@@ -40,7 +40,7 @@ describe("BondFactory", async () => {
   });
 
   async function createBond(factory: BondFactoryClone) {
-    BondConfig.collateralToken = TEST_ADDRESSES[0];
+    BondConfig.backingToken = TEST_ADDRESSES[0];
     BondConfig.collateralRatio = utils.parseUnits("0.5", 18);
     BondConfig.convertibilityRatio = utils.parseUnits("0.5", 18);
     return factory.createBond(
@@ -49,7 +49,7 @@ describe("BondFactory", async () => {
       owner.address,
       BondConfig.maturityDate,
       TEST_ADDRESSES[0],
-      BondConfig.collateralToken,
+      BondConfig.backingToken,
       BondConfig.collateralRatio,
       BondConfig.convertibilityRatio,
       BondConfig.repaymentRatio,
