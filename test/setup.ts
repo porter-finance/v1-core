@@ -25,8 +25,8 @@ export const deployNATIVEandREPAY = async () => {
 export const createBond = async (
   owner: SignerWithAddress,
   nativeToken: TestERC20,
-  repaymentToken: TestERC20
-  factoryAddress?: string,
+  repaymentToken: TestERC20,
+  factoryAddress?: string
 ) => {
   // these could be converted to parameters
   const bondName = "Always be growing";
@@ -36,7 +36,7 @@ export const createBond = async (
   const repaymentRatio = ethers.utils.parseUnits("1", 18);
   const maturityDate = Math.round(
     new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-    1000
+      1000
   );
   const maxSupply = ethers.utils.parseUnits("50000000", 18);
 
@@ -70,9 +70,9 @@ export const createBond = async (
         repaymentToken.address,
         collateralRatio,
         convertibilityRatio,
+        repaymentRatio,
         maxSupply
       )
   );
   return bond;
 };
-
