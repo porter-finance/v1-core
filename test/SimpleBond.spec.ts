@@ -350,7 +350,7 @@ describe("SimpleBond", () => {
             });
           }
         );
-        it("reverts when called by non-issuer", async () => {
+        it("reverts when called by non-withdrawer", async () => {
           await expect(
             bond.connect(attacker).withdrawCollateral()
           ).to.be.revertedWith(
@@ -499,7 +499,7 @@ describe("SimpleBond", () => {
             });
           }
         );
-        it("reverts when called by non-issuer", async () => {
+        it("reverts when called by non-withdrawer", async () => {
           await expect(
             bond.connect(attacker).withdrawCollateral()
           ).to.be.revertedWith(
@@ -593,7 +593,7 @@ describe("SimpleBond", () => {
         .approve(bond.address, getTargetCollateral(BondConfig));
     });
 
-    it("reverts when called by non-issuer", async () => {
+    it("reverts when called by non-minter", async () => {
       await expect(bond.connect(attacker).mint(0)).to.be.revertedWith(
         `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${mintRole}`
       );
