@@ -15,7 +15,6 @@ export const deployNATIVEandBORROW = async (owner: SignerWithAddress) => {
   )) as TestERC20;
   console.log({ native: native.address });
   await native.deployed();
-  console.log({ native });
 
   const borrow = (await MockErc20Contract.connect(owner).deploy(
     "Borrowing Token",
