@@ -46,6 +46,7 @@ export const getBondContract = async (
   tx: Promise<any>
 ): Promise<SimpleBond> => {
   const [owner] = await ethers.getSigners();
+
   const [newBondAddress] = await getEventArgumentsFromTransaction(
     await tx,
     "BondCreated"

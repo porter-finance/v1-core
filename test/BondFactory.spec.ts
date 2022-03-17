@@ -1,8 +1,8 @@
 import { BigNumber, utils } from "ethers";
 import { expect } from "chai";
-import { BondFactoryClone } from "../typechain";
+import { BondFactoryClone, TestERC20 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { bondFactoryFixture } from "./shared/fixtures";
+import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
 import { BondConfigType } from "./interfaces";
 
 const { ethers } = require("hardhat");
@@ -12,18 +12,11 @@ const maturityDate = Math.round(
     1000
 );
 
-const TEST_ADDRESSES: [string, string] = [
-  "0x1000000000000000000000000000000000000000",
-  "0x2000000000000000000000000000000000000000",
-];
-
 const BondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
-  backingToken: "",
   collateralRatio: BigNumber.from(0),
   convertibilityRatio: BigNumber.from(0),
   maturityDate,
-  repaymentRatio: utils.parseUnits("1", 18),
   maxSupply: utils.parseUnits("50000000", 18),
 };
 
@@ -31,16 +24,20 @@ describe("BondFactory", async () => {
   let factory: BondFactoryClone;
   let owner: SignerWithAddress;
   let user: SignerWithAddress;
+  let backingToken: TestERC20;
+  let repaymentToken: TestERC20;
   let ISSUER_ROLE: any;
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
     ({ factory } = await bondFactoryFixture());
+    ({ backingToken, repaymentToken } = await (
+      await tokenFixture([18])
+    ).tokens[0]);
     ISSUER_ROLE = await factory.ISSUER_ROLE();
   });
 
   async function createBond(factory: BondFactoryClone) {
-    BondConfig.backingToken = TEST_ADDRESSES[0];
     BondConfig.collateralRatio = utils.parseUnits("0.5", 18);
     BondConfig.convertibilityRatio = utils.parseUnits("0.5", 18);
     return factory.createBond(
@@ -48,11 +45,10 @@ describe("BondFactory", async () => {
       "LUG",
       owner.address,
       BondConfig.maturityDate,
-      TEST_ADDRESSES[0],
-      BondConfig.backingToken,
+      repaymentToken.address,
+      backingToken.address,
       BondConfig.collateralRatio,
       BondConfig.convertibilityRatio,
-      BondConfig.repaymentRatio,
       BondConfig.maxSupply
     );
   }
