@@ -19,19 +19,28 @@ const BondStanding = {
 };
 const ONE = utils.parseUnits("1", 18);
 const ZERO = BigNumber.from(0);
-const DECIMALS_TO_TEST = [1, 6, 18, 20, 24];
+
+// Used throughout tests to use multiple instances of different-decimal tokens
+const DECIMALS_TO_TEST = [0, 6, 8, 18];
 // 3 years from now, in seconds
 const maturityDate = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
     1000
 );
 
+// The config objects are used as anchors to test against - these values will not change
+// and will usually be used to create bonds
 const BondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
-  collateralToken: "",
   collateralRatio: utils.parseUnits("0.5", 18),
   convertibilityRatio: ZERO,
-  repaymentRatio: ONE,
+  maturityDate,
+  maxSupply: utils.parseUnits("50000000", 18),
+};
+const ConvertibleBondConfig: BondConfigType = {
+  targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
+  collateralRatio: utils.parseUnits("0.5", 18),
+  convertibilityRatio: utils.parseUnits("0.25", 18),
   maturityDate,
   maxSupply: utils.parseUnits("50000000", 18),
 };
@@ -39,123 +48,111 @@ const getTargetCollateral = (bondConfig: BondConfigType): BigNumber => {
   const { targetBondSupply, collateralRatio } = bondConfig;
   return targetBondSupply.mul(collateralRatio).div(ONE);
 };
-const ConvertibleBondConfig: BondConfigType = {
-  targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
-  collateralToken: "",
-  collateralRatio: utils.parseUnits("0.5", 18),
-  convertibilityRatio: utils.parseUnits("0.25", 18),
-  repaymentRatio: ONE,
-  maturityDate,
-  maxSupply: utils.parseUnits("50000000", 18),
-};
 
 describe("SimpleBond", () => {
+  // bond instances that are used and overwritten throughout testing
   let bond: SimpleBond;
   let convertibleBond: SimpleBond;
+  // owner deploys and is the "issuer"
   let owner: SignerWithAddress;
+  // bondHolder is one who has the bonds and will redeem or convert them
   let bondHolder: SignerWithAddress;
+  // attacker is trying to break the contract
   let attacker: SignerWithAddress;
-  let nativeToken: TestERC20;
+  // tokens used throughout testing and are also overwritten (different decimal versions)
+  let backingToken: TestERC20;
   let attackingToken: TestERC20;
-  let mockUSDCToken: TestERC20;
   let repaymentToken: TestERC20;
+  // our factory contract that deploys bonds
   let factory: BondFactoryClone;
+  // roles used with access control
   let withdrawRole: BytesLike;
   let mintRole: BytesLike;
+  // this is a list of bonds created with the specific decimal tokens
   let bonds: {
+    decimals: number;
     bond: SimpleBond;
     convertibleBond: SimpleBond;
-    decimals: number;
+    attackingToken: TestERC20;
+    repaymentToken: TestERC20;
+    backingToken: TestERC20;
   }[];
-  const getBond = ({
-    convertible,
-    decimals,
-  }: {
-    convertible: boolean;
-    decimals: number;
-  }): SimpleBond => {
+  // function to retrieve the bonds and tokens by decimal used
+  const getBond = ({ decimals }: { decimals: number }) => {
     const foundBond = bonds.find((bond) => bond.decimals === decimals);
     if (!foundBond) {
-      throw new Error(
-        `No bond found for ${decimals} ${convertible ? "" : "non-"}convertible`
-      );
+      throw new Error(`No bond found for ${decimals}`);
     }
-    if (convertible) {
-      return foundBond.convertibleBond;
-    }
-    return foundBond.bond;
+    return foundBond;
   };
-  // no args because of gh issue:
-  // https://github.com/nomiclabs/hardhat/issues/849#issuecomment-860576796
+  // the waffle fixture which creates the factory, tokens, bonds, and saves the state
+  // of the blockchain to speed up the re-execution of every test since this "resets"
+  // the state on the main beforeEach
   async function fixture() {
     const { factory } = await bondFactoryFixture();
     const issuerRole = await factory.ISSUER_ROLE();
 
     await (await factory.grantRole(issuerRole, owner.address)).wait();
 
-    const { nativeToken, attackingToken, mockUSDCToken, repaymentToken } =
-      await tokenFixture();
-    BondConfig.collateralToken = nativeToken.address;
-    ConvertibleBondConfig.collateralToken = mockUSDCToken.address;
+    const { tokens } = await tokenFixture(DECIMALS_TO_TEST);
     // create convertible and non convertible bonds to use for testing with different decimals
     const bonds = await Promise.all(
       DECIMALS_TO_TEST.map(async (decimals: number) => {
-        return {
-          decimals,
-          convertibleBond: await getBondContract(
-            factory.createBond(
-              "SimpleBond",
-              "LUG",
-              owner.address,
-              ConvertibleBondConfig.maturityDate,
-              repaymentToken.address,
-              ConvertibleBondConfig.collateralToken,
-              ConvertibleBondConfig.collateralRatio,
-              ConvertibleBondConfig.convertibilityRatio,
-              utils.parseUnits("1", decimals),
-              BondConfig.maxSupply
-            )
-          ),
-          bond: await getBondContract(
-            factory.createBond(
-              "SimpleBond",
-              "LUG",
-              owner.address,
-              BondConfig.maturityDate,
-              repaymentToken.address,
-              BondConfig.collateralToken,
-              BondConfig.collateralRatio,
-              BondConfig.convertibilityRatio,
-              utils.parseUnits("1", decimals),
-              BondConfig.maxSupply
-            )
-          ),
-        };
+        // get the corresponding tokens for the decimal specified to use in the new bonds
+        const token = tokens.find((token) => token.decimals === decimals);
+        if (token) {
+          const { attackingToken, repaymentToken, backingToken } = token;
+          return {
+            decimals,
+            attackingToken,
+            repaymentToken,
+            backingToken,
+            convertibleBond: await getBondContract(
+              factory.createBond(
+                "SimpleBond",
+                "LUG",
+                owner.address,
+                ConvertibleBondConfig.maturityDate,
+                repaymentToken.address,
+                backingToken.address,
+                ConvertibleBondConfig.collateralRatio,
+                ConvertibleBondConfig.convertibilityRatio,
+                BondConfig.maxSupply
+              )
+            ),
+            bond: await getBondContract(
+              factory.createBond(
+                "SimpleBond",
+                "LUG",
+                owner.address,
+                BondConfig.maturityDate,
+                repaymentToken.address,
+                backingToken.address,
+                BondConfig.collateralRatio,
+                BondConfig.convertibilityRatio,
+                BondConfig.maxSupply
+              )
+            ),
+          };
+        }
       })
     );
     return {
       bonds,
-      nativeToken,
-      attackingToken,
-      mockUSDCToken,
-      repaymentToken,
       factory,
     };
   }
 
   beforeEach(async () => {
+    // the signers are assigned here and used throughout the tests
     [owner, bondHolder, attacker] = await ethers.getSigners();
-    ({
-      bonds,
-      nativeToken,
-      attackingToken,
-      mockUSDCToken,
-      repaymentToken,
-      factory,
-    } = await loadFixture(fixture));
+    // this is the bonds used in the getBond function
+    ({ bonds, factory } = await loadFixture(fixture));
+    // this is the "deault" bond with 18 decimals that is used unless overwritten
+    // typically overwritten by another getBond in a beforeEach
+    ({ bond, convertibleBond, backingToken, attackingToken, repaymentToken } =
+      getBond({ decimals: 18 }));
 
-    bond = getBond({ convertible: false, decimals: 18 });
-    convertibleBond = getBond({ convertible: true, decimals: 18 });
     withdrawRole = await bond.WITHDRAW_ROLE();
     mintRole = await bond.MINT_ROLE();
   });
@@ -168,13 +165,35 @@ describe("SimpleBond", () => {
           owner.address,
           BondConfig.maturityDate,
           repaymentToken.address,
-          BondConfig.collateralToken,
+          backingToken.address,
           BondConfig.convertibilityRatio, // these are swapped
           BondConfig.collateralRatio, // these are swapped
-          BondConfig.repaymentRatio,
           BondConfig.maxSupply
         )
       ).to.be.revertedWith("BackingRatioLessThanConvertibilityRatio");
+    });
+    it("should revert on too big of a token", async () => {
+      const tokens = (await tokenFixture([20])).tokens.find(
+        (token) => token.decimals === 20
+      );
+      if (tokens) {
+        const { repaymentToken } = tokens;
+        await expect(
+          factory.createBond(
+            "SimpleBond",
+            "LUG",
+            owner.address,
+            BondConfig.maturityDate,
+            repaymentToken.address,
+            backingToken.address,
+            BondConfig.collateralRatio,
+            BondConfig.convertibilityRatio,
+            BondConfig.maxSupply
+          )
+        ).to.be.revertedWith("TokenOverflow");
+      } else {
+        throw new Error("Token not found!");
+      }
     });
   });
 
@@ -210,9 +229,7 @@ describe("SimpleBond", () => {
 
     it("should return public parameters", async () => {
       expect(await bond.maturityDate()).to.be.equal(BondConfig.maturityDate);
-      expect(await bond.collateralToken()).to.be.equal(
-        BondConfig.collateralToken
-      );
+      expect(await bond.backingToken()).to.be.equal(backingToken.address);
       expect(await bond.backingRatio()).to.be.equal(BondConfig.collateralRatio);
       expect(await bond.convertibilityRatio()).to.be.equal(0);
 
@@ -226,22 +243,18 @@ describe("SimpleBond", () => {
   });
 
   describe("withdrawCollateral", async () => {
-    // Withdraw function will transfer all allowed collateral out of the contract
-    // Burn shares and withdraw
-    // Do not burn shares and withdraw
-    // Excess collateral will be available to withdraw when bonds are burned
-    // Excess collateral will be available to withdraw when repayment token is partially repaid
-    // Excess collateral will be available to withdraw when repayment token is fully repaid
-    // Excess collateral will be available to withdraw when maturity is reached
-
+    // here the decimals list is used - testing each of the following with different bonds which include tokens with varying decimals used
     DECIMALS_TO_TEST.forEach((decimals) => {
       describe(`non-convertible ${decimals} decimals`, async () => {
         beforeEach(async () => {
-          bond = getBond({
-            convertible: false,
-            decimals,
-          });
-          const token = mockUSDCToken.attach(BondConfig.collateralToken);
+          ({
+            bond,
+            convertibleBond,
+            backingToken,
+            attackingToken,
+            repaymentToken,
+          } = getBond({ decimals }));
+          const token = backingToken.attach(backingToken.address);
           const amountToDeposit = getTargetCollateral(BondConfig);
           await token.approve(bond.address, amountToDeposit);
           await bond.mint(BondConfig.targetBondSupply);
@@ -373,15 +386,16 @@ describe("SimpleBond", () => {
       });
     });
     DECIMALS_TO_TEST.forEach((decimals) => {
-      describe(`non-convertible ${decimals} decimals`, async () => {
+      describe(`convertible ${decimals} decimals`, async () => {
         beforeEach(async () => {
-          bond = getBond({
-            convertible: false,
-            decimals,
-          });
-          const token = mockUSDCToken.attach(
-            ConvertibleBondConfig.collateralToken
-          );
+          ({
+            bond,
+            convertibleBond,
+            backingToken,
+            attackingToken,
+            repaymentToken,
+          } = getBond({ decimals }));
+          const token = backingToken.attach(backingToken.address);
           const amountToDeposit = getTargetCollateral(ConvertibleBondConfig);
           await token.approve(convertibleBond.address, amountToDeposit);
           await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
@@ -410,7 +424,7 @@ describe("SimpleBond", () => {
         [
           {
             sharesToBurn: 0,
-            repaymentTokenAmount: utils.parseUnits("1000", 18),
+            repaymentTokenAmount: utils.parseUnits("1000", decimals),
             collateralToReceive: utils
               .parseUnits("1000", 18)
               .mul(ConvertibleBondConfig.collateralRatio)
@@ -418,7 +432,7 @@ describe("SimpleBond", () => {
           },
           {
             sharesToBurn: utils.parseUnits("1000", 18),
-            repaymentTokenAmount: utils.parseUnits("1000", 18),
+            repaymentTokenAmount: utils.parseUnits("1000", decimals),
             collateralToReceive: utils
               .parseUnits("2000", 18)
               .mul(ConvertibleBondConfig.collateralRatio)
@@ -443,12 +457,16 @@ describe("SimpleBond", () => {
         [
           {
             sharesToBurn: 0,
-            repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply,
+            repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply
+              .mul(utils.parseUnits("1", decimals))
+              .div(ONE),
             collateralToReceive: getTargetCollateral(ConvertibleBondConfig),
           },
           {
             sharesToBurn: utils.parseUnits("1000", 18),
-            repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply,
+            repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply
+              .mul(utils.parseUnits("1", decimals))
+              .div(ONE),
             collateralToReceive: getTargetCollateral(ConvertibleBondConfig),
           },
         ].forEach(
@@ -470,7 +488,10 @@ describe("SimpleBond", () => {
         [
           {
             sharesToBurn: 0,
-            repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply.div(4),
+            repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply
+              .div(4)
+              .mul(utils.parseUnits("1", decimals))
+              .div(ONE),
             collateralToReceive: ConvertibleBondConfig.targetBondSupply
               .div(4)
               .mul(ConvertibleBondConfig.collateralRatio)
@@ -478,7 +499,9 @@ describe("SimpleBond", () => {
           },
           {
             sharesToBurn: 0,
-            repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply,
+            repaymentTokenAmount: ConvertibleBondConfig.targetBondSupply
+              .mul(utils.parseUnits("1", decimals))
+              .div(ONE),
             collateralToReceive: getTargetCollateral(ConvertibleBondConfig),
           },
         ].forEach(
@@ -525,12 +548,17 @@ describe("SimpleBond", () => {
   DECIMALS_TO_TEST.forEach((decimals) =>
     describe(`${decimals} decimals repayment`, async () => {
       beforeEach(async () => {
-        bond = getBond({ convertible: false, decimals });
-        const token = mockUSDCToken.attach(BondConfig.collateralToken);
+        ({
+          bond,
+          convertibleBond,
+          backingToken,
+          attackingToken,
+          repaymentToken,
+        } = getBond({ decimals }));
         const amountToDeposit = BondConfig.targetBondSupply
           .mul(BondConfig.collateralRatio)
           .div(ONE);
-        await token.approve(bond.address, amountToDeposit);
+        await backingToken.approve(bond.address, amountToDeposit);
         await expect(bond.mint(BondConfig.targetBondSupply)).to.not.be.reverted;
         await repaymentToken.approve(
           bond.address,
@@ -588,8 +616,8 @@ describe("SimpleBond", () => {
 
   describe("minting", async () => {
     beforeEach(async () => {
-      await mockUSDCToken
-        .attach(BondConfig.collateralToken)
+      await backingToken
+        .attach(backingToken.address)
         .approve(bond.address, getTargetCollateral(BondConfig));
     });
 
@@ -653,8 +681,8 @@ describe("SimpleBond", () => {
       const amountToDeposit = BondConfig.targetBondSupply
         .mul(BondConfig.collateralRatio)
         .div(ONE);
-      await mockUSDCToken
-        .attach(BondConfig.collateralToken)
+      await backingToken
+        .attach(backingToken.address)
         .approve(bond.address, amountToDeposit);
       await bond.mint(BondConfig.targetBondSupply);
       await bond.transfer(bondHolder.address, sharesToSellToBondHolder);
@@ -665,26 +693,26 @@ describe("SimpleBond", () => {
       {
         sharesToRedeem: sharesToSellToBondHolder,
         repaymentTokenToSend: sharesToSellToBondHolder,
-        collateralTokenToSend: ZERO,
+        backingTokenToSend: ZERO,
       },
       {
         sharesToRedeem: 0,
         repaymentTokenToSend: ZERO,
-        collateralTokenToSend: ZERO,
+        backingTokenToSend: ZERO,
       },
       {
         sharesToRedeem: utils.parseUnits("333", 18),
         repaymentTokenToSend: utils.parseUnits("333", 18),
-        collateralTokenToSend: ZERO,
+        backingTokenToSend: ZERO,
       },
     ].forEach(
-      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
+      ({ sharesToRedeem, repaymentTokenToSend, backingTokenToSend }) => {
         it("Bond is repaid & past maturity = Withdraw of repayment token", async () => {
           await bond.repay(BondConfig.targetBondSupply);
           await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, backingTokenToSend]);
         });
       }
     );
@@ -693,20 +721,20 @@ describe("SimpleBond", () => {
       {
         sharesToRedeem: sharesToSellToBondHolder,
         repaymentTokenToSend: ZERO,
-        collateralTokenToSend: ZERO,
+        backingTokenToSend: ZERO,
       },
       {
         sharesToRedeem: 0,
         repaymentTokenToSend: ZERO,
-        collateralTokenToSend: ZERO,
+        backingTokenToSend: ZERO,
       },
     ].forEach(
-      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
+      ({ sharesToRedeem, repaymentTokenToSend, backingTokenToSend }) => {
         it("Bond is repaid & not past maturity = No withdraw", async () => {
           await bond.repay(BondConfig.targetBondSupply);
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, backingTokenToSend]);
         });
       }
     );
@@ -715,22 +743,22 @@ describe("SimpleBond", () => {
       {
         sharesToRedeem: sharesToSellToBondHolder,
         repaymentTokenToSend: ZERO,
-        collateralTokenToSend: sharesToSellToBondHolder
+        backingTokenToSend: sharesToSellToBondHolder
           .mul(BondConfig.collateralRatio)
           .div(ONE),
       },
       {
         sharesToRedeem: 0,
         repaymentTokenToSend: ZERO,
-        collateralTokenToSend: ZERO,
+        backingTokenToSend: ZERO,
       },
     ].forEach(
-      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
+      ({ sharesToRedeem, repaymentTokenToSend, backingTokenToSend }) => {
         it("Bond is not repaid & past maturity = Withdraw of collateral", async () => {
           await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, backingTokenToSend]);
         });
       }
     );
@@ -741,7 +769,7 @@ describe("SimpleBond", () => {
         repaymentTokenToSend: sharesToSellToBondHolder
           .mul(BondConfig.targetBondSupply.div(2))
           .div(BondConfig.targetBondSupply),
-        collateralTokenToSend: sharesToSellToBondHolder
+        backingTokenToSend: sharesToSellToBondHolder
           .mul(
             // this is the amount of collateral in the contract. can't use await totalCollateral here since we're in the describe. could put in the beforeEach, but i'd rather be explicit here
             BondConfig.targetBondSupply
@@ -754,16 +782,16 @@ describe("SimpleBond", () => {
       {
         sharesToRedeem: 0,
         repaymentTokenToSend: ZERO,
-        collateralTokenToSend: ZERO,
+        backingTokenToSend: ZERO,
       },
     ].forEach(
-      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
+      ({ sharesToRedeem, repaymentTokenToSend, backingTokenToSend }) => {
         it("Bond is partially repaid & past maturity = Withdraw of collateral & repayment token", async () => {
           await bond.repay(BondConfig.targetBondSupply.div(2));
           await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, backingTokenToSend]);
         });
       }
     );
@@ -772,19 +800,19 @@ describe("SimpleBond", () => {
       {
         sharesToRedeem: sharesToSellToBondHolder,
         repaymentTokenToSend: ZERO,
-        collateralTokenToSend: ZERO,
+        backingTokenToSend: ZERO,
       },
       {
         sharesToRedeem: 0,
         repaymentTokenToSend: ZERO,
-        collateralTokenToSend: ZERO,
+        backingTokenToSend: ZERO,
       },
     ].forEach(
-      ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
+      ({ sharesToRedeem, repaymentTokenToSend, backingTokenToSend }) => {
         it("Bond is not repaid & not past maturity = No withdraw", async () => {
           expect(
             await bond.connect(bondHolder).previewRedeem(sharesToRedeem)
-          ).to.deep.equal([repaymentTokenToSend, collateralTokenToSend]);
+          ).to.deep.equal([repaymentTokenToSend, backingTokenToSend]);
         });
       }
     );
@@ -807,7 +835,7 @@ describe("SimpleBond", () => {
         sharesToSellToBondHolder
       );
     });
-    it("should redeem bond at default for collateral token", async () => {
+    it("should redeem bond at default for backing token", async () => {
       const expectedCollateralToReceive = sharesToSellToBondHolder
         .mul(await bond.totalCollateral())
         .div(await bond.totalSupply());
@@ -815,7 +843,7 @@ describe("SimpleBond", () => {
       const {
         receiver,
         repaymentToken,
-        collateralToken,
+        backingToken: convertedBackingToken,
         amountOfBondsRedeemed,
         amountOfRepaymentTokensReceived,
         amountOfCollateralReceived,
@@ -824,18 +852,18 @@ describe("SimpleBond", () => {
         "Redeem"
       );
       expect(receiver).to.equal(bondHolder.address);
-      expect(collateralToken).to.equal(BondConfig.collateralToken);
+      expect(convertedBackingToken).to.equal(backingToken.address);
       expect(amountOfBondsRedeemed).to.equal(sharesToSellToBondHolder);
       expect(amountOfRepaymentTokensReceived).to.equal(0);
       expect(amountOfCollateralReceived).to.equal(expectedCollateralToReceive);
 
       expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
       expect(
-        await mockUSDCToken.attach(repaymentToken).balanceOf(bondHolder.address)
+        await backingToken.attach(repaymentToken).balanceOf(bondHolder.address)
       ).to.be.equal(0);
       expect(
-        await mockUSDCToken
-          .attach(BondConfig.collateralToken)
+        await backingToken
+          .attach(backingToken.address)
           .balanceOf(bondHolder.address)
       ).to.be.equal(
         BondConfig.collateralRatio.mul(sharesToSellToBondHolder).div(ONE)
@@ -847,9 +875,7 @@ describe("SimpleBond", () => {
     describe("convertible bonds", async () => {
       const tokensToConvert = ConvertibleBondConfig.targetBondSupply;
       beforeEach(async () => {
-        const token = mockUSDCToken.attach(
-          ConvertibleBondConfig.collateralToken
-        );
+        const token = backingToken.attach(backingToken.address);
         const amountToDeposit = getTargetCollateral(BondConfig);
         await token.approve(convertibleBond.address, amountToDeposit);
         await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
@@ -887,7 +913,7 @@ describe("SimpleBond", () => {
           .approve(convertibleBond.address, tokensToConvert);
         const {
           convertorAddress,
-          collateralToken,
+          backingToken: convertedBackingToken,
           amountOfBondsConverted,
           amountOfCollateralReceived,
         } = await getEventArgumentsFromTransaction(
@@ -895,7 +921,7 @@ describe("SimpleBond", () => {
           "Converted"
         );
         expect(convertorAddress).to.equal(bondHolder.address);
-        expect(collateralToken).to.equal(ConvertibleBondConfig.collateralToken);
+        expect(convertedBackingToken).to.equal(backingToken.address);
         expect(amountOfBondsConverted).to.equal(tokensToConvert);
         expect(amountOfCollateralReceived).to.equal(
           expectedCollateralToWithdraw
@@ -924,7 +950,7 @@ describe("SimpleBond", () => {
       await expect(bond.sweep(repaymentToken.address)).to.be.revertedWith(
         "SweepDisallowedForToken"
       );
-      await expect(bond.sweep(nativeToken.address)).to.be.revertedWith(
+      await expect(bond.sweep(backingToken.address)).to.be.revertedWith(
         "SweepDisallowedForToken"
       );
     });

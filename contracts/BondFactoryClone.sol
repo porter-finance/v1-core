@@ -22,9 +22,8 @@ contract BondFactoryClone is AccessControl {
         address owner,
         uint256 maturityDate,
         address repaymentToken,
-        address collateralToken,
+        address backingToken,
         uint256 backingRatio,
-        uint256 repaymentRatio,
         uint256 convertibilityRatio
     );
 
@@ -65,7 +64,7 @@ contract BondFactoryClone is AccessControl {
     /// @param _symbol Ticker symbol for the bond
     /// @param _owner Owner of the bond
     /// @param _maturityDate Timestamp of when the bond matures
-    /// @param _collateralToken Address of the collateral to use for the bond
+    /// @param _backingToken Address of the collateral to use for the bond
     /// @param _backingRatio Ratio of bond:token to be used
     /// @param _repaymentToken Address of the token being repayed at maturity
     /// @param _convertibilityRatio Ratio of bond:token that the bond can be converted into
@@ -77,10 +76,9 @@ contract BondFactoryClone is AccessControl {
         address _owner,
         uint256 _maturityDate,
         address _repaymentToken,
-        address _collateralToken,
+        address _backingToken,
         uint256 _backingRatio,
         uint256 _convertibilityRatio,
-        uint256 _repaymentRatio,
         uint256 _maxSupply
     ) external onlyIssuer returns (address clone) {
         clone = Clones.clone(tokenImplementation);
@@ -90,10 +88,9 @@ contract BondFactoryClone is AccessControl {
             _owner,
             _maturityDate,
             _repaymentToken,
-            _collateralToken,
+            _backingToken,
             _backingRatio,
             _convertibilityRatio,
-            _repaymentRatio,
             _maxSupply
         );
         emit BondCreated(
@@ -103,9 +100,8 @@ contract BondFactoryClone is AccessControl {
             _owner,
             _maturityDate,
             _repaymentToken,
-            _collateralToken,
+            _backingToken,
             _backingRatio,
-            _repaymentRatio,
             _convertibilityRatio
         );
     }
