@@ -386,7 +386,7 @@ contract SimpleBond is
         ) {
             revert SweepDisallowedForToken();
         }
-        token.transfer(msg.sender, token.balanceOf(address(this)));
+        token.safeTransfer(msg.sender, token.balanceOf(address(this)));
     }
 
     /// @notice this function returns the balance of this contract before and after a transfer into it
