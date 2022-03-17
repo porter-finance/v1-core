@@ -178,8 +178,8 @@ contract SimpleBond is
 
     /// @notice this function is called one time during initial bond creation and sets up the configuration for the bond
     /// @dev New bond contract deployed via clone
-    /// @param _name passed into the ERC20 token
-    /// @param _symbol passed into the ERC20 token
+    /// @param _bondName passed into the ERC20 token
+    /// @param _bondSymbol passed into the ERC20 token
     /// @param _owner ownership of this contract transferred to this address
     /// @param _maturityDate the timestamp at which the bond will mature
     /// @param _borrowingToken the ERC20 token address the non-defaulted bond will be redeemable for at maturity
@@ -187,8 +187,8 @@ contract SimpleBond is
     /// @param _backingRatio the amount of tokens per bond needed
     /// @param _convertibilityRatio the amount of tokens per bond a convertible bond can be converted for
     function initialize(
-        string memory _name,
-        string memory _symbol,
+        string memory _bondName,
+        string memory _bondSymbol,
         address _owner,
         uint256 _maturityDate,
         address _borrowingToken,
@@ -207,7 +207,7 @@ contract SimpleBond is
             revert InvalidMaturityDate();
         }
 
-        __ERC20_init(_name, _symbol);
+        __ERC20_init(_bondName, _bondSymbol);
         __ERC20Burnable_init();
 
         maturityDate = _maturityDate;
