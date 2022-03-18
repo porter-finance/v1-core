@@ -1,6 +1,6 @@
 import { ethers, network } from "hardhat";
 import { expect } from "chai";
-import { BondFactoryClone, SimpleBond } from "../../typechain";
+import { BondFactory, Bond } from "../../typechain";
 import {
   deployNATIVEandREPAY,
   createBond,
@@ -27,16 +27,11 @@ describe("Integration", () => {
     console.log({ native: native.address, repay: repay.address });
 
     const factory = (await ethers.getContractAt(
-      "BondFactoryClone",
+      "BondFactory",
       rinkebyFactory
-    )) as BondFactoryClone;
+    )) as BondFactory;
 
-    const bond = (await createBond(
-      signer,
-      native,
-      repay,
-      factory
-    )) as SimpleBond;
+    const bond = (await createBond(signer, native, repay, factory)) as Bond;
 
     console.log({ bond: bond.address });
 

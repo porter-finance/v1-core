@@ -1,6 +1,6 @@
 import { BigNumber, utils } from "ethers";
 import { expect } from "chai";
-import { BondFactoryClone, TestERC20 } from "../typechain";
+import { BondFactory, TestERC20 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
 import { BondConfigType } from "./interfaces";
@@ -21,7 +21,7 @@ const BondConfig: BondConfigType = {
 };
 
 describe("BondFactory", async () => {
-  let factory: BondFactoryClone;
+  let factory: BondFactory;
   let owner: SignerWithAddress;
   let user: SignerWithAddress;
   let backingToken: TestERC20;
@@ -37,11 +37,11 @@ describe("BondFactory", async () => {
     ISSUER_ROLE = await factory.ISSUER_ROLE();
   });
 
-  async function createBond(factory: BondFactoryClone) {
+  async function createBond(factory: BondFactory) {
     BondConfig.collateralRatio = utils.parseUnits("0.5", 18);
     BondConfig.convertibilityRatio = utils.parseUnits("0.5", 18);
     return factory.createBond(
-      "SimpleBond",
+      "Bond",
       "LUG",
       owner.address,
       BondConfig.maturityDate,

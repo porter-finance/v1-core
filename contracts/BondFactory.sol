@@ -2,7 +2,7 @@
 pragma solidity 0.8.9;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./SimpleBond.sol";
+import "./Bond.sol";
 
 /** 
     @title Bond Factory

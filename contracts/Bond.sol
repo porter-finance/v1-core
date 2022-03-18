@@ -273,15 +273,15 @@ contract Bond is
     /// @dev the lower of outstandingAmount and amount is chosen to prevent overpayment
     /// @param amount the number of repayment tokens to repay
     function repay(uint256 amount) external nonReentrant notPastMaturity {
-        if (_isRepaid()) {
+        if (_isFullyPaid()) {
             revert RepaymentMet();
         }
         if (amount == 0) {
             revert ZeroAmount();
         }
 
-        // @audit-ok Re-entrancy possibility: this is a transfer into the contract - _isRepaid() is updated after transfer
-        // I'm not sure how we can fix this here. We could check that_upscale(totalRepaymentSupply() + amount) >= totalSupply() but
+        // @audit-ok Re-entrancy possibility: this is a transfer into the contract - _isFullyPaid() is updated after transfer
+        // I'm not sure how we can fix this here. We could check that_upscale(totalPaid() + amount) >= totalSupply() but
         // that would break in the case of a token taking a fee.
         // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
         // if reentrency is exploited here what can they do? Just repay over the maximum amount?
@@ -290,7 +290,7 @@ contract Bond is
             _msgSender(),
             amount
         );
-        if (_isRepaid()) {
+        if (_isFullyPaid()) {
             emit RepaymentInFull(_msgSender(), amountRepaid);
         } else {
             emit RepaymentDeposited(_msgSender(), amountRepaid);
@@ -402,7 +402,7 @@ contract Bond is
 
     /// @dev this function calculates the amount of backing tokens that are able to be withdrawn by the issuer. The amount of tokens can increase by bonds being burnt and converted as well as repayment made. Each bond is covered by a certain amount of collateral for backing and conversion. For convertible bonds, the totalSupply of bonds must be covered by the convertibilityRatio. That means even if all of the bonds were covered by repayment, there must still be enough collateral in the contract to cover the outstanding bonds convertibility until the maturity date - at which point all collateral will be able to be withdrawn.
     function previewWithdraw() public view returns (uint256) {
-        uint256 tokensCoveredByRepayment = _upscale(totalRepaymentSupply());
+        uint256 tokensCoveredByRepayment = _upscale(totalPaid());
         uint256 maxCollateralRequiredForBacking;
         if (tokensCoveredByRepayment > totalSupply()) {
             maxCollateralRequiredForBacking = 0;
@@ -435,7 +435,7 @@ contract Bond is
     */
 
         uint256 totalRequiredCollateral;
-        if (!_isRepaid()) {
+        if (!_isFullyPaid()) {
             totalRequiredCollateral = maxCollateralRequiredForConvertibility >
                 maxCollateralRequiredForBacking
                 ? maxCollateralRequiredForConvertibility
@@ -447,11 +447,11 @@ contract Bond is
             totalRequiredCollateral = 0;
         }
 
-        if (totalRequiredCollateral >= totalBackingSupply()) {
+        if (totalRequiredCollateral >= totalCollateral()) {
             return 0;
         }
 
-        return totalBackingSupply() - totalRequiredCollateral;
+        return totalCollateral() - totalRequiredCollateral;
     }
 
     function previewRedeemAtMaturity(uint256 bonds)
@@ -459,12 +459,12 @@ contract Bond is
         view
         returns (uint256, uint256)
     {
-        uint256 repaidAmount = _upscale(totalRepaymentSupply());
+        uint256 repaidAmount = _upscale(totalPaid());
         if (repaidAmount > totalSupply()) {
             repaidAmount = totalSupply();
         }
         uint256 repaymentTokensToSend = bonds.mulDivUp(
-            totalRepaymentSupply(),
+            totalPaid(),
             totalSupply()
         );
 
@@ -478,7 +478,7 @@ contract Bond is
     }
 
     function _isFullyPaid() public view returns (bool) {
-        return _upscale(totalRepaymentSupply()) >= totalSupply();
+        return _upscale(totalPaid()) >= totalSupply();
     }
 
     function _isMature() public view returns (bool) {

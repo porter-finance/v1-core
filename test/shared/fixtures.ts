@@ -1,9 +1,9 @@
 import { ethers } from "hardhat";
-import { BondFactoryClone, ERC20, TestERC20 } from "../../typechain";
+import { BondFactory, ERC20, TestERC20 } from "../../typechain";
 
 export async function bondFactoryFixture() {
-  const BondFactoryClone = await ethers.getContractFactory("BondFactoryClone");
-  const factory = (await BondFactoryClone.deploy()) as BondFactoryClone;
+  const BondFactory = await ethers.getContractFactory("BondFactory");
+  const factory = (await BondFactory.deploy()) as BondFactory;
   return { factory };
 }
 

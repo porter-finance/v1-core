@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { Contract } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TestERC20, BondFactoryClone, SimpleBond } from "../typechain";
+import { TestERC20, BondFactory, Bond } from "../typechain";
 import { getBondContract } from "./utilities";
 
 export const deployNATIVEandREPAY = async (owner: SignerWithAddress) => {
@@ -30,7 +30,7 @@ export const createBond = async (
   owner: SignerWithAddress,
   nativeToken: TestERC20,
   repaymentToken: TestERC20,
-  factory: BondFactoryClone
+  factory: BondFactory
 ) => {
   // these could be converted to parameters
   const bondName = "Always be growing";
@@ -70,7 +70,7 @@ export const createBond = async (
 export const mint = async (
   owner: SignerWithAddress,
   nativeToken: TestERC20,
-  bond: SimpleBond
+  bond: Bond
 ) => {
   const approveTx = await nativeToken
     .connect(owner)
@@ -92,7 +92,7 @@ export const mint = async (
 export const initiateAuction = async (
   auction: Contract,
   owner: SignerWithAddress,
-  bond: SimpleBond,
+  bond: Bond,
   borrowToken: TestERC20
 ) => {
   const auctioningToken = bond.address;

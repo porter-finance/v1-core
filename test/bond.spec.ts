@@ -1,6 +1,6 @@
 import { BigNumber, utils, BytesLike } from "ethers";
-import { expect, util } from "chai";
-import { TestERC20, SimpleBond, BondFactoryClone } from "../typechain";
+import { expect } from "chai";
+import { TestERC20, Bond, BondFactory } from "../typechain";
 import { getBondContract, getEventArgumentsFromTransaction } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
@@ -11,12 +11,6 @@ import { BondConfigType } from "./interfaces";
 const { ethers, waffle } = require("hardhat");
 const { loadFixture } = waffle;
 
-const BondStanding = {
-  GOOD: 0,
-  DEFAULTED: 1,
-  PAID: 2,
-  REDEEMED: 3,
-};
 const ONE = utils.parseUnits("1", 18);
 const ZERO = BigNumber.from(0);
 
@@ -49,11 +43,11 @@ const getTargetCollateral = (bondConfig: BondConfigType): BigNumber => {
   return targetBondSupply.mul(collateralRatio).div(ONE);
 };
 
-describe("SimpleBond", () => {
+describe("Bond", () => {
   // bond instances that are used and overwritten throughout testing
-  let bond: SimpleBond;
-  let convertibleBond: SimpleBond;
-  let uncollateralizedBond: SimpleBond;
+  let bond: Bond;
+  let convertibleBond: Bond;
+  let uncollateralizedBond: Bond;
   // owner deploys and is the "issuer"
   let owner: SignerWithAddress;
   // bondHolder is one who has the bonds and will redeem or convert them
@@ -65,16 +59,16 @@ describe("SimpleBond", () => {
   let attackingToken: TestERC20;
   let repaymentToken: TestERC20;
   // our factory contract that deploys bonds
-  let factory: BondFactoryClone;
+  let factory: BondFactory;
   // roles used with access control
   let withdrawRole: BytesLike;
   let mintRole: BytesLike;
   // this is a list of bonds created with the specific decimal tokens
   let bonds: {
     decimals: number;
-    bond: SimpleBond;
-    convertibleBond: SimpleBond;
-    uncollateralizedBond: SimpleBond;
+    bond: Bond;
+    convertibleBond: Bond;
+    uncollateralizedBond: Bond;
     attackingToken: TestERC20;
     repaymentToken: TestERC20;
     backingToken: TestERC20;
@@ -111,7 +105,7 @@ describe("SimpleBond", () => {
             backingToken,
             convertibleBond: await getBondContract(
               factory.createBond(
-                "SimpleBond",
+                "Bond",
                 "LUG",
                 owner.address,
                 ConvertibleBondConfig.maturityDate,
@@ -124,7 +118,7 @@ describe("SimpleBond", () => {
             ),
             bond: await getBondContract(
               factory.createBond(
-                "SimpleBond",
+                "Bond",
                 "LUG",
                 owner.address,
                 BondConfig.maturityDate,
@@ -137,7 +131,7 @@ describe("SimpleBond", () => {
             ),
             uncollateralizedBond: await getBondContract(
               factory.createBond(
-                "SimpleBond",
+                "Bond",
                 "LUG",
                 owner.address,
                 BondConfig.maturityDate,
@@ -181,7 +175,7 @@ describe("SimpleBond", () => {
     it("should revert on less collateral than convertible", async () => {
       await expect(
         factory.createBond(
-          "SimpleBond",
+          "Bond",
           "LUG",
           owner.address,
           BondConfig.maturityDate,
@@ -201,7 +195,7 @@ describe("SimpleBond", () => {
         const { repaymentToken } = tokens;
         await expect(
           factory.createBond(
-            "SimpleBond",
+            "Bond",
             "LUG",
             owner.address,
             BondConfig.maturityDate,
@@ -258,7 +252,7 @@ describe("SimpleBond", () => {
     });
 
     it("should have predefined ERC20 attributes", async () => {
-      expect(await bond.name()).to.be.equal("SimpleBond");
+      expect(await bond.name()).to.be.equal("Bond");
       expect(await bond.symbol()).to.be.equal("LUG");
     });
   });
@@ -809,7 +803,7 @@ describe("SimpleBond", () => {
   );
   DECIMALS_TO_TEST.forEach((decimals) =>
     describe(`redemption ${decimals}`, async () => {
-      const totalRepaymentToken = BondConfig.targetBondSupply
+      const totalPaid = BondConfig.targetBondSupply
         .mul(utils.parseUnits("1", decimals))
         .div(ONE);
       // Bond holder will have their bonds and the contract will be able to accept deposits of repayment token
@@ -851,7 +845,7 @@ describe("SimpleBond", () => {
       ].forEach(
         ({ sharesToRedeem, repaymentTokenToSend, backingTokenToSend }) => {
           it("Bond is repaid & past maturity = Withdraw of repayment token", async () => {
-            await bond.repay(totalRepaymentToken);
+            await bond.repay(totalPaid);
             await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
 
             const [repaymentToken, backingToken] = await bond
@@ -859,30 +853,6 @@ describe("SimpleBond", () => {
               .previewRedeemAtMaturity(sharesToRedeem);
             expect(repaymentToken).to.equal(repaymentTokenToSend);
             expect(backingToken).to.equal(backingTokenToSend);
-          });
-        }
-      );
-
-      [
-        {
-          sharesToRedeem: utils.parseUnits("1000", 18),
-          repaymentTokenToSend: ZERO,
-          backingTokenToSend: ZERO,
-        },
-        {
-          sharesToRedeem: 0,
-          repaymentTokenToSend: ZERO,
-          backingTokenToSend: ZERO,
-        },
-      ].forEach(
-        ({ sharesToRedeem, repaymentTokenToSend, backingTokenToSend }) => {
-          it("Bond is repaid & not past maturity = No withdraw", async () => {
-            await bond.repay(totalRepaymentToken);
-            const [repaymentTokens, backingTokens] = await bond
-              .connect(bondHolder)
-              .previewRedeemAtMaturity(sharesToRedeem);
-            expect(repaymentTokens).to.equal(repaymentTokenToSend);
-            expect(backingTokens).to.equal(backingTokenToSend);
           });
         }
       );
@@ -963,7 +933,6 @@ describe("SimpleBond", () => {
         );
         // Fast forward to expire
         await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
-        expect(await bond.state()).to.eq(BondStanding.PAID);
         await bond
           .connect(bondHolder)
           .approve(bond.address, utils.parseUnits("4000", 18));
@@ -980,7 +949,7 @@ describe("SimpleBond", () => {
       it("should redeem bond at default for backing token", async () => {
         const expectedCollateralToReceive = utils
           .parseUnits("4000", 18)
-          .mul(await bond.totalBackingSupply())
+          .mul(await bond.totalCollateral())
           .div(await bond.totalSupply());
         await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
         const {
