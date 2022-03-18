@@ -9,11 +9,11 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 
-/// @title SimpleBond
+/// @title Bond
 /// @notice A custom ERC20 token that can be used to issue bonds.
 /// @notice The contract handles issuance, conversion, and redemption of bonds.
 /// @dev External calls to tokens used for backing and repayment are used throughout to transfer and check balances
-contract SimpleBond is
+contract Bond is
     Initializable,
     ERC20Upgradeable,
     AccessControlUpgradeable,
@@ -22,19 +22,6 @@ contract SimpleBond is
 {
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
-
-    /// @notice this would go into default if maturityDate passes and the loan contract has not been paid back
-    /// @notice to be set from the auction
-    enum BondStanding {
-        // the auction completed
-        GOOD,
-        // when maturity date passes and its unpaid
-        DEFAULTED,
-        // after bond repayment token is repaid
-        PAID,
-        // when something goes wrong and this contract becomes nullified
-        NULL
-    }
 
     /// @notice emitted when a collateral is deposited for a bond
     /// @param collateralDepositor the address of the caller of the deposit
@@ -141,7 +128,7 @@ contract SimpleBond is
     /// @notice The address of the ERC20 token this bond will be redeemable for at maturity
     address public repaymentToken;
 
-    /// @notice the addresses of the ERC20 token backing the bond which can be converted into before maturity or, in the case of a default, redeemable for at maturity
+    /// @notice the addresses of the ERC20 token backing the bond which can be converted into before maturity or, in the case of a not fully paid bond, redeemable for at maturity
     address public backingToken;
 
     /// @notice the ratio of ERC20 tokens backing the bonds
@@ -160,25 +147,13 @@ contract SimpleBond is
     /// @notice the max amount of bonds able to be minted
     uint256 public maxSupply;
 
-    function state() external view returns (BondStanding newStanding) {
-        if (!_isMature() && !_isRepaid() && totalSupply() > 0) {
-            newStanding = BondStanding.GOOD;
-        } else if (_isMature() && !_isRepaid()) {
-            newStanding = BondStanding.DEFAULTED;
-        } else if (_isRepaid()) {
-            newStanding = BondStanding.PAID;
-        } else {
-            newStanding = BondStanding.NULL;
-        }
-    }
-
     /// @notice this function is called one time during initial bond creation and sets up the configuration for the bond
     /// @dev New bond contract deployed via clone
     /// @param bondName passed into the ERC20 token
     /// @param bondSymbol passed into the ERC20 token
     /// @param owner ownership of this contract transferred to this address
     /// @param _maturityDate the timestamp at which the bond will mature
-    /// @param _repaymentToken the ERC20 token address the non-defaulted bond will be redeemable for at maturity
+    /// @param _repaymentToken the ERC20 token address the bond will be redeemable for at maturity
     /// @param _backingToken the ERC20 token address for the bond
     /// @param _backingRatio the amount of tokens per bond needed
     /// @param _convertibilityRatio the amount of tokens per bond a convertible bond can be converted for
@@ -400,11 +375,11 @@ contract SimpleBond is
         return balanceAfter - balanceBefore;
     }
 
-    function totalRepaymentSupply() public view returns (uint256) {
+    function totalPaid() public view returns (uint256) {
         return IERC20Metadata(repaymentToken).balanceOf(address(this));
     }
 
-    function totalBackingSupply() public view returns (uint256) {
+    function totalCollateral() public view returns (uint256) {
         return IERC20Metadata(backingToken).balanceOf(address(this));
     }
 
@@ -502,7 +477,7 @@ contract SimpleBond is
         return (repaymentTokensToSend, backingTokensToSend);
     }
 
-    function _isRepaid() public view returns (bool) {
+    function _isFullyPaid() public view returns (bool) {
         return _upscale(totalRepaymentSupply()) >= totalSupply();
     }
 
