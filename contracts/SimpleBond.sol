@@ -338,7 +338,7 @@ contract SimpleBond is
         (
             uint256 repaymentTokensToSend,
             uint256 backingTokensToSend
-        ) = previewRedeem(bonds);
+        ) = previewRedeemAtMaturity(bonds);
 
         if (repaymentTokensToSend == 0 && backingTokensToSend == 0) {
             revert ZeroAmount();
@@ -509,7 +509,7 @@ contract SimpleBond is
         return totalBackingSupply() - totalRequiredCollateral;
     }
 
-    function previewRedeem(uint256 bonds)
+    function previewRedeemAtMaturity(uint256 bonds)
         public
         view
         returns (uint256, uint256)
