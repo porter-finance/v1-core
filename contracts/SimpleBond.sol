@@ -444,21 +444,6 @@ contract SimpleBond is
         return amount.mulDivUp(repaymentScalingFactor, ONE);
     }
 
-    /// @dev this function takes the amount of repaymentTokens and scales to bond tokens rounding down
-    function _upscaleDown(uint256 amount) internal view returns (uint256) {
-        return amount.mulDivDown(repaymentScalingFactor, ONE);
-    }
-
-    /// @dev this function takes the amount of bondTokens and scales to repayment tokens rounding up
-    function _downscale(uint256 amount) internal view returns (uint256) {
-        return amount.mulDivUp(ONE, repaymentScalingFactor);
-    }
-
-    /// @dev this function takes the amount of bondTokens and scales to repayment tokens rounding down
-    function _downscaleDown(uint256 amount) internal view returns (uint256) {
-        return amount.mulDivDown(ONE, repaymentScalingFactor);
-    }
-
     /// @notice preview the amount of backing token required to mint the number of bond tokens
     /// @dev this function rounds up the amount of required backing for the number of bonds to mint
     /// @param bonds the amount of desired bonds to mint
