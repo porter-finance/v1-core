@@ -234,7 +234,6 @@ contract SimpleBond is
     {
         uint256 collateralToSend = previewWithdraw();
 
-        // @audit-ok reentrancy possibility: at the point of this transfer, the caller could attempt to reenter, but the totalCollateral updates beofre reaching this point, and is used in the previewWithdraw method to calculate the amount allowed to transfer out of the contract
         IERC20Metadata(backingToken).safeTransfer(
             _msgSender(),
             collateralToSend
