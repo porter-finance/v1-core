@@ -163,9 +163,6 @@ contract SimpleBond is
     /// @notice the role ID for mint
     bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
 
-    /// @notice this mapping keeps track of the total collateral in this contract. this amount is used when determining the portion of collateral to return to the bond holders in event of a default
-    uint256 public totalCollateral;
-
     /// @notice the max amount of bonds able to be minted
     uint256 public maxSupply;
 
