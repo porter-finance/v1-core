@@ -9,7 +9,7 @@ contract TestERC20 is ERC20 {
     constructor(
         string memory _tokenName,
         string memory _tokenSymbol,
-        uint96 _mintAmount,
+        uint256 _mintAmount,
         uint8 decimals_
     ) ERC20(_tokenName, _tokenSymbol) {
         _mint(msg.sender, _mintAmount);
