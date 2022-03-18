@@ -117,7 +117,7 @@ contract SimpleBond is
 
     /// @dev used to confirm the bond has matured
     modifier pastMaturity() {
-        if (block.timestamp < maturityDate) {
+        if (!_isMature()) {
             revert BondNotYetMatured();
         }
         _;
@@ -125,7 +125,7 @@ contract SimpleBond is
 
     /// @dev used to confirm the bond has not yet matured
     modifier notPastMaturity() {
-        if (block.timestamp >= maturityDate) {
+        if (_isMature()) {
             revert BondPastMaturity();
         }
         _;
@@ -141,9 +141,6 @@ contract SimpleBond is
     /// @notice The address of the ERC20 token this bond will be redeemable for at maturity
     address public repaymentToken;
 
-    /// @notice this flag is set after the issuer has paid back the full amount of repayment token needed to cover the outstanding bonds
-    bool internal isRepaid;
-
     /// @notice the addresses of the ERC20 token backing the bond which can be converted into before maturity or, in the case of a default, redeemable for at maturity
     address public backingToken;
 
@@ -153,9 +150,6 @@ contract SimpleBond is
     /// @notice the ratio of ERC20 tokens the bonds will convert into before maturity
     /// @dev if this ratio is 0, the bond is not convertible.
     uint256 public convertibilityRatio;
-
-    /// @notice The ratio at which the repayment token's decimals deviate from the 18 decimal bond. 1e18 for a 1:1 ratio
-    uint256 public repaymentScalingFactor;
 
     /// @notice the role ID for withdrawCollateral
     bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
@@ -167,11 +161,11 @@ contract SimpleBond is
     uint256 public maxSupply;
 
     function state() external view returns (BondStanding newStanding) {
-        if (block.timestamp < maturityDate && !isRepaid && totalSupply() > 0) {
+        if (!_isMature() && !_isRepaid() && totalSupply() > 0) {
             newStanding = BondStanding.GOOD;
-        } else if (block.timestamp >= maturityDate && !isRepaid) {
+        } else if (_isMature() && !_isRepaid()) {
             newStanding = BondStanding.DEFAULTED;
-        } else if (isRepaid) {
+        } else if (_isRepaid()) {
             newStanding = BondStanding.PAID;
         } else {
             newStanding = BondStanding.NULL;
@@ -217,8 +211,9 @@ contract SimpleBond is
         backingToken = _backingToken;
         backingRatio = _backingRatio;
         convertibilityRatio = _convertibilityRatio;
-        repaymentScalingFactor = _computeScalingFactor(repaymentToken);
         maxSupply = _maxSupply;
+
+        _computeScalingFactor(repaymentToken);
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
@@ -303,14 +298,14 @@ contract SimpleBond is
     /// @dev the lower of outstandingAmount and amount is chosen to prevent overpayment
     /// @param amount the number of repayment tokens to repay
     function repay(uint256 amount) external nonReentrant notPastMaturity {
-        if (isRepaid) {
+        if (_isRepaid()) {
             revert RepaymentMet();
         }
         if (amount == 0) {
             revert ZeroAmount();
         }
 
-        // @audit-ok Re-entrancy possibility: this is a transfer into the contract - isRepaid is updated after transfer
+        // @audit-ok Re-entrancy possibility: this is a transfer into the contract - _isRepaid() is updated after transfer
         // I'm not sure how we can fix this here. We could check that_upscale(totalRepaymentSupply() + amount) >= totalSupply() but
         // that would break in the case of a token taking a fee.
         // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
@@ -320,11 +315,7 @@ contract SimpleBond is
             _msgSender(),
             amount
         );
-        if (
-            // @audit-ok Re-entrancy possibility: isRepaid is updated after balance check
-            _upscale(totalRepaymentSupply()) >= totalSupply()
-        ) {
-            isRepaid = true;
+        if (_isRepaid()) {
             emit RepaymentInFull(_msgSender(), amountRepaid);
         } else {
             emit RepaymentDeposited(_msgSender(), amountRepaid);
@@ -417,30 +408,9 @@ contract SimpleBond is
         return IERC20Metadata(backingToken).balanceOf(address(this));
     }
 
-    /// @dev uses the decimals on the token to return a scale factor for the passed in token
-    function _computeScalingFactor(address token)
-        internal
-        view
-        returns (uint256)
-    {
-        if (address(token) == address(this)) {
-            return ONE;
-        }
-
-        // Tokens that don't implement the `decimals` method are not supported.
-        uint256 tokenDecimals = IERC20Metadata(token).decimals();
-
-        // Tokens with more than 18 decimals are not supported.
-        if (tokenDecimals > 18) {
-            revert TokenOverflow();
-        }
-        uint256 decimalsDifference = 18 - tokenDecimals;
-        return ONE * 10**decimalsDifference;
-    }
-
     /// @dev this function takes the amount of repaymentTokens and scales to bond tokens rounding up
     function _upscale(uint256 amount) internal view returns (uint256) {
-        return amount.mulDivUp(repaymentScalingFactor, ONE);
+        return amount.mulDivUp(_computeScalingFactor(repaymentToken), ONE);
     }
 
     /// @notice preview the amount of backing token required to mint the number of bond tokens
@@ -490,7 +460,7 @@ contract SimpleBond is
     */
 
         uint256 totalRequiredCollateral;
-        if (!isRepaid) {
+        if (!_isRepaid()) {
             totalRequiredCollateral = maxCollateralRequiredForConvertibility >
                 maxCollateralRequiredForBacking
                 ? maxCollateralRequiredForConvertibility
@@ -530,5 +500,34 @@ contract SimpleBond is
         );
 
         return (repaymentTokensToSend, backingTokensToSend);
+    }
+
+    function _isRepaid() public view returns (bool) {
+        return _upscale(totalRepaymentSupply()) >= totalSupply();
+    }
+
+    function _isMature() public view returns (bool) {
+        return block.timestamp >= maturityDate;
+    }
+
+    /// @dev uses the decimals on the token to return a scale factor for the passed in token
+    function _computeScalingFactor(address token)
+        internal
+        view
+        returns (uint256)
+    {
+        if (address(token) == address(this)) {
+            return ONE;
+        }
+
+        // Tokens that don't implement the `decimals` method are not supported.
+        uint256 tokenDecimals = IERC20Metadata(token).decimals();
+
+        // Tokens with more than 18 decimals are not supported.
+        if (tokenDecimals > 18) {
+            revert TokenOverflow();
+        }
+        uint256 decimalsDifference = 18 - tokenDecimals;
+        return ONE * 10**decimalsDifference;
     }
 }
