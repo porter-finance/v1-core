@@ -439,16 +439,30 @@ contract SimpleBond is
         return ONE * 10**decimalsDifference;
     }
 
-    /// @dev this function takes the amount of repaymentTokens and scales to bond tokens
+    /// @dev this function takes the amount of repaymentTokens and scales to bond tokens rounding up
     function _upscale(uint256 amount) internal view returns (uint256) {
-        return (amount * repaymentScalingFactor) / ONE;
+        return amount.mulDivUp(repaymentScalingFactor, ONE);
     }
 
-    /// @dev this function takes the amount of bondTokens and scales to repayment tokens
+    /// @dev this function takes the amount of repaymentTokens and scales to bond tokens rounding down
+    function _upscaleDown(uint256 amount) internal view returns (uint256) {
+        return amount.mulDivDown(repaymentScalingFactor, ONE);
+    }
+
+    /// @dev this function takes the amount of bondTokens and scales to repayment tokens rounding up
     function _downscale(uint256 amount) internal view returns (uint256) {
-        return (amount * ONE) / repaymentScalingFactor;
+        return amount.mulDivUp(ONE, repaymentScalingFactor);
     }
 
+    /// @dev this function takes the amount of bondTokens and scales to repayment tokens rounding down
+    function _downscaleDown(uint256 amount) internal view returns (uint256) {
+        return amount.mulDivDown(ONE, repaymentScalingFactor);
+    }
+
+    /// @notice preview the amount of backing token required to mint the number of bond tokens
+    /// @dev this function rounds up the amount of required backing for the number of bonds to mint
+    /// @param bonds the amount of desired bonds to mint
+    /// @return amount of backing required to mint the amount of bonds
     function previewMint(uint256 bonds) public view returns (uint256) {
         return bonds.mulDivUp(backingRatio, ONE);
     }
@@ -471,19 +485,26 @@ contract SimpleBond is
             convertibilityRatio,
             ONE
         );
-        // bond is not paid and mature
-        // to cover backing ratio = total supply (-bonds burned) * backing ratio
-        // to cover convertibility = 0 (bonds cannot be converted)
-        // bond is not paid and not mature:
-        // to cover backing ratio = total supply (-bonds burned) * backing ratio
-        // to cover convertibility = total supply (-bonds burned) * convertibility ratio
-        // bond is paid and not mature
-        // to cover backing ratio = 0 (bonds need not be backed by collateral)
-        // to cover convertibility ratio = total supply (- bonds burned) * collateral ratio
-        // bond is paid and mature
-        // to cover backing ratio = 0
-        // to cover convertibility ratio = 0
-        // All outstanding bonds must be covered by the convertibility ratio
+        /* 
+     NOTE: "total uncovered supply" is the tokens that are not covered by the
+     paid back repayment token.
+
+     There are the following scenarios:
+     bond is NOT paid AND NOT mature:
+     to cover backing ratio = total uncovered supply * backing ratio
+     to cover convertibility = total supply * convertibility ratio
+     bond is NOT paid AND mature
+     to cover backing ratio = total uncovered supply * backing ratio
+     to cover convertibility = 0 (bonds cannot be converted)
+     bond IS paid AND NOT mature
+     to cover backing ratio = 0 (bonds need not be backed by collateral)
+     to cover convertibility ratio = total supply * collateral ratio
+     bond IS paid AND mature
+     to cover backing ratio = 0
+     to cover convertibility ratio = 0
+     All outstanding bonds must be covered by the convertibility ratio
+    */
+
         uint256 totalRequiredCollateral;
         if (!isRepaid) {
             totalRequiredCollateral = maxCollateralRequiredForConvertibility >
@@ -514,21 +535,21 @@ contract SimpleBond is
             return (0, 0);
         }
 
+        uint256 repaidAmount = _upscale(totalRepaymentSupply());
+        if (repaidAmount > totalSupply()) {
+            repaidAmount = totalSupply();
+        }
         uint256 repaymentTokensToSend = bonds.mulDivUp(
             totalRepaymentSupply(),
             totalSupply()
         );
 
-        if (isRepaid) {
-            // Mature & repaid bond redeems for repayment tokens
-            return (repaymentTokensToSend, 0);
-        } else {
-            uint256 backingTokensToSend = bonds.mulDivUp(
-                totalBackingSupply(),
-                totalSupply()
-            );
-            // Mature & defaulted bond redeems for repayment & backing tokens
-            return (repaymentTokensToSend, backingTokensToSend);
-        }
+        uint256 nonRepaidAmount = totalSupply() - repaidAmount;
+        uint256 backingTokensToSend = backingRatio.mulDivDown(
+            bonds.mulDivDown(nonRepaidAmount, totalSupply()),
+            ONE
+        );
+
+        return (repaymentTokensToSend, backingTokensToSend);
     }
 }
