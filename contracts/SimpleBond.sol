@@ -514,11 +514,6 @@ contract SimpleBond is
         view
         returns (uint256, uint256)
     {
-        if (block.timestamp < maturityDate) {
-            // Immature bond redeems for nothing
-            return (0, 0);
-        }
-
         uint256 repaidAmount = _upscale(totalRepaymentSupply());
         if (repaidAmount > totalSupply()) {
             repaidAmount = totalSupply();
