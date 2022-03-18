@@ -180,18 +180,18 @@ contract SimpleBond is
 
     /// @notice this function is called one time during initial bond creation and sets up the configuration for the bond
     /// @dev New bond contract deployed via clone
-    /// @param _bondName passed into the ERC20 token
-    /// @param _bondSymbol passed into the ERC20 token
-    /// @param _owner ownership of this contract transferred to this address
+    /// @param bondName passed into the ERC20 token
+    /// @param bondSymbol passed into the ERC20 token
+    /// @param owner ownership of this contract transferred to this address
     /// @param _maturityDate the timestamp at which the bond will mature
     /// @param _repaymentToken the ERC20 token address the non-defaulted bond will be redeemable for at maturity
     /// @param _backingToken the ERC20 token address for the bond
     /// @param _backingRatio the amount of tokens per bond needed
     /// @param _convertibilityRatio the amount of tokens per bond a convertible bond can be converted for
     function initialize(
-        string memory _bondName,
-        string memory _bondSymbol,
-        address _owner,
+        string memory bondName,
+        string memory bondSymbol,
+        address owner,
         uint256 _maturityDate,
         address _repaymentToken,
         address _backingToken,
@@ -209,7 +209,7 @@ contract SimpleBond is
             revert InvalidMaturityDate();
         }
 
-        __ERC20_init(_bondName, _bondSymbol);
+        __ERC20_init(bondName, bondSymbol);
         __ERC20Burnable_init();
 
         maturityDate = _maturityDate;
@@ -220,9 +220,9 @@ contract SimpleBond is
         repaymentScalingFactor = _computeScalingFactor(repaymentToken);
         maxSupply = _maxSupply;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, _owner);
-        _grantRole(WITHDRAW_ROLE, _owner);
-        _grantRole(MINT_ROLE, _owner);
+        _grantRole(DEFAULT_ADMIN_ROLE, owner);
+        _grantRole(WITHDRAW_ROLE, owner);
+        _grantRole(MINT_ROLE, owner);
     }
 
     /// @notice Withdraw collateral from bond contract
