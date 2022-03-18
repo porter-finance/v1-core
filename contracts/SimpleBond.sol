@@ -265,7 +265,10 @@ contract SimpleBond is
             revert ZeroAmount();
         }
 
-        // @audit-ok reentrancy possibility: totalCollateral is updated after transfer
+        _mint(_msgSender(), bonds);
+
+        emit Mint(_msgSender(), bonds);
+
         uint256 collateralDeposited = safeTransferIn(
             IERC20Metadata(backingToken),
             _msgSender(),
@@ -277,10 +280,6 @@ contract SimpleBond is
             backingToken,
             collateralDeposited
         );
-
-        _mint(_msgSender(), bonds);
-
-        emit Mint(_msgSender(), bonds);
     }
 
     /// @notice Bond holder can convert their bond to underlying collateral
@@ -316,6 +315,10 @@ contract SimpleBond is
         }
 
         // @audit-ok Re-entrancy possibility: this is a transfer into the contract - isRepaid is updated after transfer
+        // I'm not sure how we can fix this here. We could check that_upscale(totalRepaymentSupply() + amount) >= totalSupply() but
+        // that would break in the case of a token taking a fee.
+        // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
+        // if reentrency is exploited here what can they do? Just repay over the maximum amount?
         uint256 amountRepaid = safeTransferIn(
             IERC20Metadata(repaymentToken),
             _msgSender(),
