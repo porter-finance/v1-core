@@ -36,7 +36,7 @@ export const createBond = async (
   const bondName = "Always be growing";
   const bondSymbol = "LEARN";
   const collateralRatio = ethers.utils.parseUnits(".5", 18);
-  const convertibilityRatio = ethers.utils.parseUnits(".5", 18);
+  const convertibleRatio = ethers.utils.parseUnits(".5", 18);
   const maturityDate = Math.round(
     new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
       1000
@@ -60,7 +60,7 @@ export const createBond = async (
         repaymentToken.address,
         nativeToken.address,
         collateralRatio,
-        convertibilityRatio,
+        convertibleRatio,
         maxSupply
       )
   );

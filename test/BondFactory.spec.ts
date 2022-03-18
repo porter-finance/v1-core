@@ -15,7 +15,7 @@ const maturityDate = Math.round(
 const BondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
   collateralRatio: BigNumber.from(0),
-  convertibilityRatio: BigNumber.from(0),
+  convertibleRatio: BigNumber.from(0),
   maturityDate,
   maxSupply: utils.parseUnits("50000000", 18),
 };
@@ -39,7 +39,7 @@ describe("BondFactory", async () => {
 
   async function createBond(factory: BondFactory) {
     BondConfig.collateralRatio = utils.parseUnits("0.5", 18);
-    BondConfig.convertibilityRatio = utils.parseUnits("0.5", 18);
+    BondConfig.convertibleRatio = utils.parseUnits("0.5", 18);
     return factory.createBond(
       "Bond",
       "LUG",
@@ -48,7 +48,7 @@ describe("BondFactory", async () => {
       repaymentToken.address,
       collateralToken.address,
       BondConfig.collateralRatio,
-      BondConfig.convertibilityRatio,
+      BondConfig.convertibleRatio,
       BondConfig.maxSupply
     );
   }

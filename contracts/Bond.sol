@@ -87,7 +87,7 @@ contract Bond is
 
     // Initialization
     error InvalidMaturityDate();
-    error CollateralRatioLessThanConvertibilityRatio();
+    error CollateralRatioLessThanConvertibleRatio();
 
     // Minting
     error BondSupplyExceeded();
@@ -136,7 +136,7 @@ contract Bond is
 
     /// @notice the ratio of ERC20 tokens the bonds will convert into before maturity with 18 decimals
     /// @dev if this ratio is 0, the bond is not convertible.
-    uint256 public convertibilityRatio;
+    uint256 public convertibleRatio;
 
     /// @notice the role ID for withdrawCollateral
     bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
@@ -156,7 +156,7 @@ contract Bond is
     /// @param _repaymentToken the ERC20 token address the bond will be redeemable for at maturity
     /// @param _collateralToken the ERC20 token address for the bond
     /// @param _collateralRatio the amount of tokens per bond needed
-    /// @param _convertibilityRatio the amount of tokens per bond a convertible bond can be converted for
+    /// @param _convertibleRatio the amount of tokens per bond a convertible bond can be converted for
     function initialize(
         string memory bondName,
         string memory bondSymbol,
@@ -165,11 +165,11 @@ contract Bond is
         address _repaymentToken,
         address _collateralToken,
         uint256 _collateralRatio,
-        uint256 _convertibilityRatio,
+        uint256 _convertibleRatio,
         uint256 _maxSupply
     ) external initializer {
-        if (_collateralRatio < _convertibilityRatio) {
-            revert CollateralRatioLessThanConvertibilityRatio();
+        if (_collateralRatio < _convertibleRatio) {
+            revert CollateralRatioLessThanConvertibleRatio();
         }
         if (
             _maturityDate <= block.timestamp ||
@@ -185,7 +185,7 @@ contract Bond is
         repaymentToken = _repaymentToken;
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
-        convertibilityRatio = _convertibilityRatio;
+        convertibleRatio = _convertibleRatio;
         maxSupply = _maxSupply;
 
         _computeScalingFactor(repaymentToken);
@@ -254,7 +254,7 @@ contract Bond is
 
     /// @notice Bond holder can convert their bond to underlying collateral
     /// @notice The bond must be convertible and not past maturity
-    /// @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibility ratio
+    /// @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
     function convert(uint256 bonds) external notPastMaturity nonReentrant {
         uint256 collateralToSend = previewConvert(bonds);
         if (collateralToSend == 0) {
@@ -401,33 +401,33 @@ contract Bond is
     }
 
     function previewConvert(uint256 bonds) public view returns (uint256) {
-        return bonds.mulDivDown(convertibilityRatio, ONE);
+        return bonds.mulDivDown(convertibleRatio, ONE);
     }
 
     /** 
         @dev this function calculates the amount of collateral tokens that are able to be withdrawn by the issuer.
         The amount of tokens can increase by bonds being burnt and converted as well as repayment made.
-        Each bond is covered by a certain amount of collateral to fulfill collateralRatio and convertibilityRatio.
-        For convertible bonds, the totalSupply of bonds must be covered by the convertibilityRatio.
+        Each bond is covered by a certain amount of collateral to fulfill collateralRatio and convertibleRatio.
+        For convertible bonds, the totalSupply of bonds must be covered by the convertibleRatio.
         That means even if all of the bonds were covered by repayment, there must still be enough collateral
-        in the contract to cover the outstanding bonds convertibility until the maturity date -
+        in the contract to cover the outstanding bonds convertible until the maturity date -
         at which point all collateral will be able to be withdrawn.
 
         There are the following scenarios:
         "total uncovered supply" is the tokens that are not covered by the amount repaid.
             bond is NOT paid AND NOT mature:
                 to cover collateralRatio = total uncovered supply * collateralRatio
-                to cover convertibility = total supply * convertibility ratio
+                to cover convertibleRatio = total supply * convertibleRatio
             bond is NOT paid AND mature
                 to cover collateralRatio = total uncovered supply * collateralRatio
-                to cover convertibility = 0 (bonds cannot be converted)
+                to cover convertibleRatio = 0 (bonds cannot be converted)
             bond IS paid AND NOT mature
                 to cover collateralRatio = 0 (bonds need not be backed by collateral)
-                to cover convertibility ratio = total supply * collateral ratio
+                to cover convertibleRatio = total supply * collateral ratio
             bond IS paid AND mature
                 to cover collateralRatio = 0
-                to cover convertibility ratio = 0
-            All outstanding bonds must be covered by the convertibility ratio
+                to cover convertibleRatio = 0
+            All outstanding bonds must be covered by the convertibleRatio
      */
     function previewWithdraw() public view returns (uint256) {
         uint256 tokensCoveredByRepayment = _upscale(totalPaid());
@@ -439,7 +439,7 @@ contract Bond is
                 tokensCoveredByRepayment).mulDivUp(collateralRatio, ONE);
         }
         uint256 convertibleTokensRequired = totalSupply().mulDivUp(
-            convertibilityRatio,
+            convertibleRatio,
             ONE
         );
 

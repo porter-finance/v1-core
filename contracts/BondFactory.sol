@@ -29,7 +29,7 @@ contract BondFactory is AccessControl {
         address indexed repaymentToken,
         address indexed collateralToken,
         uint256 collateralRatio,
-        uint256 convertibilityRatio,
+        uint256 convertibleRatio,
         uint256 maxSupply
     );
 
@@ -77,7 +77,7 @@ contract BondFactory is AccessControl {
         @param collateralToken Address of the collateral to use for the bond
         @param collateralRatio Ratio of bond: collateral token
         @param repaymentToken Address of the token being paid
-        @param convertibilityRatio Ratio of bond:token that the bond can be converted into
+        @param convertibleRatio Ratio of bond:token that the bond can be converted into
         @param maxSupply Max amount of tokens able to mint
         @dev This uses a clone to save on deployment costs https://github.com/porter-finance/v1-core/issues/15 
             which adds a slight overhead everytime users interact with the bonds - but saves 10x the gas during deployment

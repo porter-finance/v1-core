@@ -27,14 +27,14 @@ const maturityDate = Math.round(
 const BondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
   collateralRatio: utils.parseUnits("0.5", 18),
-  convertibilityRatio: ZERO,
+  convertibleRatio: ZERO,
   maturityDate,
   maxSupply: utils.parseUnits("50000000", 18),
 };
 const ConvertibleBondConfig: BondConfigType = {
   targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
   collateralRatio: utils.parseUnits("0.5", 18),
-  convertibilityRatio: utils.parseUnits("0.25", 18),
+  convertibleRatio: utils.parseUnits("0.25", 18),
   maturityDate,
   maxSupply: utils.parseUnits("50000000", 18),
 };
@@ -112,7 +112,7 @@ describe("Bond", () => {
                 repaymentToken.address,
                 collateralToken.address,
                 ConvertibleBondConfig.collateralRatio,
-                ConvertibleBondConfig.convertibilityRatio,
+                ConvertibleBondConfig.convertibleRatio,
                 BondConfig.maxSupply
               )
             ),
@@ -125,7 +125,7 @@ describe("Bond", () => {
                 repaymentToken.address,
                 collateralToken.address,
                 BondConfig.collateralRatio,
-                BondConfig.convertibilityRatio,
+                BondConfig.convertibleRatio,
                 BondConfig.maxSupply
               )
             ),
@@ -181,11 +181,11 @@ describe("Bond", () => {
           BondConfig.maturityDate,
           repaymentToken.address,
           collateralToken.address,
-          BondConfig.convertibilityRatio, // these are swapped
+          BondConfig.convertibleRatio, // these are swapped
           BondConfig.collateralRatio, // these are swapped
           BondConfig.maxSupply
         )
-      ).to.be.revertedWith("CollateralRatioLessThanConvertibilityRatio");
+      ).to.be.revertedWith("CollateralRatioLessThanConvertibleRatio");
     });
     it("should revert on too big of a token", async () => {
       const tokens = (await tokenFixture([20])).tokens.find(
@@ -202,7 +202,7 @@ describe("Bond", () => {
             repaymentToken.address,
             collateralToken.address,
             BondConfig.collateralRatio,
-            BondConfig.convertibilityRatio,
+            BondConfig.convertibleRatio,
             BondConfig.maxSupply
           )
         ).to.be.revertedWith("TokenOverflow");
@@ -248,7 +248,7 @@ describe("Bond", () => {
       expect(await bond.collateralRatio()).to.be.equal(
         BondConfig.collateralRatio
       );
-      expect(await bond.convertibilityRatio()).to.be.equal(0);
+      expect(await bond.convertibleRatio()).to.be.equal(0);
 
       expect(await bond.repaymentToken()).to.be.equal(repaymentToken.address);
     });
@@ -1008,14 +1008,14 @@ describe("Bond", () => {
         },
         {
           convertAmount: BondConfig.targetBondSupply,
-          assetsToReceive: BondConfig.convertibilityRatio
+          assetsToReceive: BondConfig.convertibleRatio
             .mul(BondConfig.targetBondSupply)
             .div(ONE),
           description: "target converted",
         },
         {
           convertAmount: BondConfig.targetBondSupply.div(2),
-          assetsToReceive: BondConfig.convertibilityRatio
+          assetsToReceive: BondConfig.convertibleRatio
             .mul(BondConfig.targetBondSupply.div(2))
             .div(ONE),
           description: "double target converted",
@@ -1027,9 +1027,9 @@ describe("Bond", () => {
           );
         });
       });
-      it("converts bond amount into collateral at convertibilityRatio", async () => {
+      it("converts bond amount into collateral at convertibleRatio", async () => {
         const expectedCollateralToWithdraw = tokensToConvert
-          .mul(ConvertibleBondConfig.convertibilityRatio)
+          .mul(ConvertibleBondConfig.convertibleRatio)
           .div(ONE);
         await convertibleBond
           .connect(bondHolder)
