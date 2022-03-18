@@ -28,12 +28,15 @@ contract BondFactory is AccessControl {
         uint256 maturityDate,
         address indexed repaymentToken,
         address indexed collateralToken,
-        uint256 backingRatio,
-        uint256 convertibilityRatio
+        uint256 collateralRatio,
+        uint256 convertibilityRatio,
+        uint256 maxSupply
     );
 
-    /// @notice Emitted when the allow list is toggled on or off
-    /// @param isAllowListEnabled the new state of the allow list
+    /**
+        @notice Emitted when the allow list is toggled on or off
+        @param isAllowListEnabled the new state of the allow list
+    */
     event AllowListEnabled(bool isAllowListEnabled);
 
     /// @dev If allow list is enabled, only allow listed issuers are able to call functions
@@ -52,9 +55,11 @@ contract BondFactory is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    /// @notice Turns the allow list on or off
-    /// @param _isAllowListEnabled If the allow list should be enabled or not
-    /// @dev Must be called by the current owner
+    /**
+        @notice Turns the allow list on or off
+        @param _isAllowListEnabled If the allow list should be enabled or not
+        @dev Must be called by the current owner
+    */
     function setIsAllowListEnabled(bool _isAllowListEnabled)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -63,25 +68,29 @@ contract BondFactory is AccessControl {
         emit AllowListEnabled(isAllowListEnabled);
     }
 
-    /// @notice Creates a bond
-    /// @param name Name of the bond
-    /// @param symbol Ticker symbol for the bond
-    /// @param owner Owner of the bond
-    /// @param maturityDate Timestamp of when the bond matures
-    /// @param collateralToken Address of the collateral to use for the bond
-    /// @param backingRatio Ratio of bond: collateral token
-    /// @param repaymentToken Address of the token being paid
-    /// @param convertibilityRatio Ratio of bond:token that the bond can be converted into
-    /// @dev This uses a clone to save on deployment costs https://github.com/porter-finance/v1-core/issues/15 which adds a slight overhead everytime users interact with the bonds - but saves 10x the gas during deployment
+    /**
+        @notice Creates a bond
+        @param name Name of the bond
+        @param symbol Ticker symbol for the bond
+        @param owner Owner of the bond
+        @param maturityDate Timestamp of when the bond matures
+        @param collateralToken Address of the collateral to use for the bond
+        @param collateralRatio Ratio of bond: collateral token
+        @param repaymentToken Address of the token being paid
+        @param convertibilityRatio Ratio of bond:token that the bond can be converted into
+        @param maxSupply Max amount of tokens able to mint
+        @dev This uses a clone to save on deployment costs https://github.com/porter-finance/v1-core/issues/15 
+            which adds a slight overhead everytime users interact with the bonds - but saves 10x the gas during deployment
+    */
     function createBond(
         string memory name,
         string memory symbol,
         address owner,
         uint256 maturityDate,
         address repaymentToken,
-        address collateralToken, // todo collateralToken
-        uint256 backingRatio, // collateralRatio
-        uint256 convertibilityRatio, // todo convertibleRatio - convertibleToken
+        address collateralToken,
+        uint256 collateralRatio,
+        uint256 convertibleRatio,
         uint256 maxSupply
     ) external onlyIssuer returns (address clone) {
         clone = Clones.clone(tokenImplementation);
@@ -92,8 +101,8 @@ contract BondFactory is AccessControl {
             maturityDate,
             repaymentToken,
             collateralToken,
-            backingRatio,
-            convertibilityRatio,
+            collateralRatio,
+            convertibleRatio,
             maxSupply
         );
         emit BondCreated(
@@ -104,8 +113,9 @@ contract BondFactory is AccessControl {
             maturityDate,
             repaymentToken,
             collateralToken,
-            backingRatio,
-            convertibilityRatio
+            collateralRatio,
+            convertibleRatio,
+            maxSupply
         );
     }
 }

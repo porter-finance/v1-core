@@ -29,9 +29,9 @@ export async function tokenFixture(decimals: number[]) {
         decimals
       )) as TestERC20;
 
-      const BackingToken = await ethers.getContractFactory("TestERC20");
-      const backingToken = (await BackingToken.deploy(
-        "Backing Token",
+      const CollateralToken = await ethers.getContractFactory("TestERC20");
+      const collateralToken = (await CollateralToken.deploy(
+        "Collateral Token",
         "BT",
         ethers.constants.MaxUint256,
         decimals
@@ -40,7 +40,7 @@ export async function tokenFixture(decimals: number[]) {
       return {
         repaymentToken,
         attackingToken,
-        backingToken,
+        collateralToken,
         decimals,
       };
     })

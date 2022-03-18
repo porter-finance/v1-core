@@ -55,7 +55,7 @@ describe("Bond", () => {
   // attacker is trying to break the contract
   let attacker: SignerWithAddress;
   // tokens used throughout testing and are also overwritten (different decimal versions)
-  let backingToken: TestERC20;
+  let collateralToken: TestERC20;
   let attackingToken: TestERC20;
   let repaymentToken: TestERC20;
   // our factory contract that deploys bonds
@@ -71,7 +71,7 @@ describe("Bond", () => {
     uncollateralizedBond: Bond;
     attackingToken: TestERC20;
     repaymentToken: TestERC20;
-    backingToken: TestERC20;
+    collateralToken: TestERC20;
   }[];
   // function to retrieve the bonds and tokens by decimal used
   const getBond = ({ decimals }: { decimals: number }) => {
@@ -97,12 +97,12 @@ describe("Bond", () => {
         // get the corresponding tokens for the decimal specified to use in the new bonds
         const token = tokens.find((token) => token.decimals === decimals);
         if (token) {
-          const { attackingToken, repaymentToken, backingToken } = token;
+          const { attackingToken, repaymentToken, collateralToken } = token;
           return {
             decimals,
             attackingToken,
             repaymentToken,
-            backingToken,
+            collateralToken,
             convertibleBond: await getBondContract(
               factory.createBond(
                 "Bond",
@@ -110,7 +110,7 @@ describe("Bond", () => {
                 owner.address,
                 ConvertibleBondConfig.maturityDate,
                 repaymentToken.address,
-                backingToken.address,
+                collateralToken.address,
                 ConvertibleBondConfig.collateralRatio,
                 ConvertibleBondConfig.convertibilityRatio,
                 BondConfig.maxSupply
@@ -123,7 +123,7 @@ describe("Bond", () => {
                 owner.address,
                 BondConfig.maturityDate,
                 repaymentToken.address,
-                backingToken.address,
+                collateralToken.address,
                 BondConfig.collateralRatio,
                 BondConfig.convertibilityRatio,
                 BondConfig.maxSupply
@@ -136,7 +136,7 @@ describe("Bond", () => {
                 owner.address,
                 BondConfig.maturityDate,
                 repaymentToken.address,
-                backingToken.address,
+                collateralToken.address,
                 BigNumber.from(0),
                 BigNumber.from(0),
                 BondConfig.maxSupply
@@ -163,7 +163,7 @@ describe("Bond", () => {
       bond,
       convertibleBond,
       uncollateralizedBond,
-      backingToken,
+      collateralToken,
       attackingToken,
       repaymentToken,
     } = getBond({ decimals: 18 }));
@@ -180,12 +180,12 @@ describe("Bond", () => {
           owner.address,
           BondConfig.maturityDate,
           repaymentToken.address,
-          backingToken.address,
+          collateralToken.address,
           BondConfig.convertibilityRatio, // these are swapped
           BondConfig.collateralRatio, // these are swapped
           BondConfig.maxSupply
         )
-      ).to.be.revertedWith("BackingRatioLessThanConvertibilityRatio");
+      ).to.be.revertedWith("CollateralRatioLessThanConvertibilityRatio");
     });
     it("should revert on too big of a token", async () => {
       const tokens = (await tokenFixture([20])).tokens.find(
@@ -200,7 +200,7 @@ describe("Bond", () => {
             owner.address,
             BondConfig.maturityDate,
             repaymentToken.address,
-            backingToken.address,
+            collateralToken.address,
             BondConfig.collateralRatio,
             BondConfig.convertibilityRatio,
             BondConfig.maxSupply
@@ -244,8 +244,10 @@ describe("Bond", () => {
 
     it("should return public parameters", async () => {
       expect(await bond.maturityDate()).to.be.equal(BondConfig.maturityDate);
-      expect(await bond.backingToken()).to.be.equal(backingToken.address);
-      expect(await bond.backingRatio()).to.be.equal(BondConfig.collateralRatio);
+      expect(await bond.collateralToken()).to.be.equal(collateralToken.address);
+      expect(await bond.collateralRatio()).to.be.equal(
+        BondConfig.collateralRatio
+      );
       expect(await bond.convertibilityRatio()).to.be.equal(0);
 
       expect(await bond.repaymentToken()).to.be.equal(repaymentToken.address);
@@ -265,11 +267,11 @@ describe("Bond", () => {
           ({
             bond,
             convertibleBond,
-            backingToken,
+            collateralToken,
             attackingToken,
             repaymentToken,
           } = getBond({ decimals }));
-          const token = backingToken.attach(backingToken.address);
+          const token = collateralToken.attach(collateralToken.address);
           const amountToDeposit = getTargetCollateral(BondConfig);
           await token.approve(bond.address, amountToDeposit);
           await bond.mint(BondConfig.targetBondSupply);
@@ -427,11 +429,11 @@ describe("Bond", () => {
           ({
             bond,
             convertibleBond,
-            backingToken,
+            collateralToken,
             attackingToken,
             repaymentToken,
           } = getBond({ decimals }));
-          const token = backingToken.attach(backingToken.address);
+          const token = collateralToken.attach(collateralToken.address);
           const amountToDeposit = getTargetCollateral(ConvertibleBondConfig);
           await token.approve(convertibleBond.address, amountToDeposit);
           await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
@@ -587,14 +589,14 @@ describe("Bond", () => {
         ({
           bond,
           convertibleBond,
-          backingToken,
+          collateralToken,
           attackingToken,
           repaymentToken,
         } = getBond({ decimals }));
         const amountToDeposit = BondConfig.targetBondSupply
           .mul(BondConfig.collateralRatio)
           .div(ONE);
-        await backingToken.approve(bond.address, amountToDeposit);
+        await collateralToken.approve(bond.address, amountToDeposit);
         await expect(bond.mint(BondConfig.targetBondSupply)).to.not.be.reverted;
         await repaymentToken.approve(
           bond.address,
@@ -661,12 +663,12 @@ describe("Bond", () => {
         ({
           bond,
           convertibleBond,
-          backingToken,
+          collateralToken,
           attackingToken,
           repaymentToken,
         } = getBond({ decimals }));
-        await backingToken
-          .attach(backingToken.address)
+        await collateralToken
+          .attach(collateralToken.address)
           .approve(bond.address, getTargetCollateral(BondConfig));
       });
 
@@ -783,7 +785,7 @@ describe("Bond", () => {
         it(`mints up to collateral depositted ${description}`, async () => {
           await expect(bond.mint(mintAmount)).to.not.be.reverted;
           expect(await bond.totalSupply()).to.equal(mintAmount);
-          expect(await backingToken.balanceOf(bond.address)).to.be.equal(
+          expect(await collateralToken.balanceOf(bond.address)).to.be.equal(
             collateralToDeposit
           );
         });
@@ -811,15 +813,15 @@ describe("Bond", () => {
         ({
           bond,
           convertibleBond,
-          backingToken,
+          collateralToken,
           attackingToken,
           repaymentToken,
         } = getBond({ decimals }));
         const amountToDeposit = BondConfig.targetBondSupply
           .mul(BondConfig.collateralRatio)
           .div(ONE);
-        await backingToken
-          .attach(backingToken.address)
+        await collateralToken
+          .attach(collateralToken.address)
           .approve(bond.address, amountToDeposit);
         await bond.mint(BondConfig.targetBondSupply);
         await bond.transfer(bondHolder.address, utils.parseUnits("4000", 18));
@@ -830,29 +832,29 @@ describe("Bond", () => {
         {
           sharesToRedeem: utils.parseUnits("1000", 18),
           repaymentTokenToSend: utils.parseUnits("1000", decimals),
-          backingTokenToSend: ZERO,
+          collateralTokenToSend: ZERO,
         },
         {
           sharesToRedeem: 0,
           repaymentTokenToSend: ZERO,
-          backingTokenToSend: ZERO,
+          collateralTokenToSend: ZERO,
         },
         {
           sharesToRedeem: utils.parseUnits("333", 18),
           repaymentTokenToSend: utils.parseUnits("333", decimals),
-          backingTokenToSend: ZERO,
+          collateralTokenToSend: ZERO,
         },
       ].forEach(
-        ({ sharesToRedeem, repaymentTokenToSend, backingTokenToSend }) => {
+        ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
           it("Bond is repaid & past maturity = Withdraw of repayment token", async () => {
             await bond.repay(totalPaid);
             await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
 
-            const [repaymentToken, backingToken] = await bond
+            const [repaymentToken, collateralToken] = await bond
               .connect(bondHolder)
               .previewRedeemAtMaturity(sharesToRedeem);
             expect(repaymentToken).to.equal(repaymentTokenToSend);
-            expect(backingToken).to.equal(backingTokenToSend);
+            expect(collateralToken).to.equal(collateralTokenToSend);
           });
         }
       );
@@ -861,7 +863,7 @@ describe("Bond", () => {
         {
           sharesToRedeem: utils.parseUnits("1000", 18),
           repaymentTokenToSend: ZERO,
-          backingTokenToSend: utils
+          collateralTokenToSend: utils
             .parseUnits("1000", 18)
             .mul(BondConfig.collateralRatio)
             .div(ONE),
@@ -869,17 +871,17 @@ describe("Bond", () => {
         {
           sharesToRedeem: 0,
           repaymentTokenToSend: ZERO,
-          backingTokenToSend: ZERO,
+          collateralTokenToSend: ZERO,
         },
       ].forEach(
-        ({ sharesToRedeem, repaymentTokenToSend, backingTokenToSend }) => {
+        ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
           it("Bond is not repaid & past maturity = Withdraw of collateral", async () => {
             await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
-            const [repaymentTokens, backingTokens] = await bond
+            const [repaymentTokens, collateralTokens] = await bond
               .connect(bondHolder)
               .previewRedeemAtMaturity(sharesToRedeem);
             expect(repaymentTokens).to.equal(repaymentTokenToSend);
-            expect(backingTokens).to.equal(backingTokenToSend);
+            expect(collateralTokens).to.equal(collateralTokenToSend);
           });
         }
       );
@@ -899,9 +901,9 @@ describe("Bond", () => {
             .div(BondConfig.targetBondSupply)
             .mul(utils.parseUnits("4000", decimals)) // then multiply that by the repayment amount
             .div(ONE),
-          backingTokenToSend: BondConfig.targetBondSupply // here we get the total supply minus the repaid tokens
+          collateralTokenToSend: BondConfig.targetBondSupply // here we get the total supply minus the repaid tokens
             .sub(utils.parseUnits("4000", 18))
-            .mul(BondConfig.collateralRatio) // multipy by the collateral ratio to get the amount of backing tokens to send
+            .mul(BondConfig.collateralRatio) // multipy by the collateral ratio to get the amount of collateral tokens to send
             .div(ONE)
             .mul(utils.parseUnits("4000", 18)) // and then use our portion of the total amount of tokens to get how many owed
             .div(BondConfig.targetBondSupply),
@@ -911,16 +913,16 @@ describe("Bond", () => {
           tokensToRepay,
           sharesToRedeem,
           repaymentTokenToSend,
-          backingTokenToSend,
+          collateralTokenToSend,
         }) => {
           it("Bond is partially repaid & past maturity = Withdraw of collateral & repayment token", async () => {
             await bond.repay(tokensToRepay);
             await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
-            const [repaymentTokens, backingTokens] = await bond
+            const [repaymentTokens, collateralTokens] = await bond
               .connect(bondHolder)
               .previewRedeemAtMaturity(sharesToRedeem);
             expect(repaymentTokens).to.equal(repaymentTokenToSend);
-            expect(backingTokens).to.equal(backingTokenToSend);
+            expect(collateralTokens).to.equal(collateralTokenToSend);
           });
         }
       );
@@ -946,7 +948,7 @@ describe("Bond", () => {
           utils.parseUnits("4000", decimals)
         );
       });
-      it("should redeem bond at default for backing token", async () => {
+      it("should redeem bond at default for collateral token", async () => {
         const expectedCollateralToReceive = utils
           .parseUnits("4000", 18)
           .mul(await bond.totalCollateral())
@@ -955,7 +957,7 @@ describe("Bond", () => {
         const {
           receiver,
           repaymentToken,
-          backingToken: convertedBackingToken,
+          collateralToken: convertedcollateralToken,
           amountOfBondsRedeemed,
           amountOfRepaymentTokensReceived,
           amountOfCollateralReceived,
@@ -964,7 +966,7 @@ describe("Bond", () => {
           "Redeem"
         );
         expect(receiver).to.equal(bondHolder.address);
-        expect(convertedBackingToken).to.equal(backingToken.address);
+        expect(convertedcollateralToken).to.equal(collateralToken.address);
         expect(amountOfBondsRedeemed).to.equal(utils.parseUnits("4000", 18));
         expect(amountOfRepaymentTokensReceived).to.equal(0);
         expect(amountOfCollateralReceived).to.equal(
@@ -973,13 +975,13 @@ describe("Bond", () => {
 
         expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
         expect(
-          await backingToken
+          await collateralToken
             .attach(repaymentToken)
             .balanceOf(bondHolder.address)
         ).to.be.equal(0);
         expect(
-          await backingToken
-            .attach(backingToken.address)
+          await collateralToken
+            .attach(collateralToken.address)
             .balanceOf(bondHolder.address)
         ).to.be.equal(
           BondConfig.collateralRatio.mul(utils.parseUnits("4000", 18)).div(ONE)
@@ -992,7 +994,7 @@ describe("Bond", () => {
     describe("convertible bonds", async () => {
       const tokensToConvert = ConvertibleBondConfig.targetBondSupply;
       beforeEach(async () => {
-        const token = backingToken.attach(backingToken.address);
+        const token = collateralToken.attach(collateralToken.address);
         const amountToDeposit = getTargetCollateral(BondConfig);
         await token.approve(convertibleBond.address, amountToDeposit);
         await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
@@ -1034,7 +1036,7 @@ describe("Bond", () => {
           .approve(convertibleBond.address, tokensToConvert);
         const {
           convertorAddress,
-          backingToken: convertedBackingToken,
+          collateralToken: convertedcollateralToken,
           amountOfBondsConverted,
           amountOfCollateralReceived,
         } = await getEventArgumentsFromTransaction(
@@ -1042,7 +1044,7 @@ describe("Bond", () => {
           "Converted"
         );
         expect(convertorAddress).to.equal(bondHolder.address);
-        expect(convertedBackingToken).to.equal(backingToken.address);
+        expect(convertedcollateralToken).to.equal(collateralToken.address);
         expect(amountOfBondsConverted).to.equal(tokensToConvert);
         expect(amountOfCollateralReceived).to.equal(
           expectedCollateralToWithdraw
@@ -1071,7 +1073,7 @@ describe("Bond", () => {
       await expect(bond.sweep(repaymentToken.address)).to.be.revertedWith(
         "SweepDisallowedForToken"
       );
-      await expect(bond.sweep(backingToken.address)).to.be.revertedWith(
+      await expect(bond.sweep(collateralToken.address)).to.be.revertedWith(
         "SweepDisallowedForToken"
       );
     });
