@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: AGPL
 pragma solidity 0.8.9;
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {ERC20BurnableUpgradeable, ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 
-/// @title Bond
-/// @notice A custom ERC20 token that can be used to issue bonds.
-/// @notice The contract handles issuance, conversion, and redemption of bonds.
-/// @dev External calls to tokens used for collateral and repayment are used throughout to transfer and check balances
+/**
+    @title Bond
+    @author Porter Finance
+    @notice A custom ERC20 token that can be used to issue bonds.
+    @notice The contract handles issuance, conversion, and redemption of bonds.
+    @dev External calls to tokens used for collateral and repayment are used throughout to transfer and check balances
+*/
 contract Bond is
     Initializable,
     ERC20Upgradeable,
@@ -23,140 +27,176 @@ contract Bond is
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
-    /// @notice emitted when a collateral is deposited for a bond
-    /// @param collateralDepositor the address of the caller of the deposit
-    /// @param collateralToken the address of the collateral
-    /// @param amount the number of the tokens being deposited
-    event CollateralDeposited(
-        address indexed collateralDepositor,
-        address indexed collateralToken,
-        uint256 amount
-    );
-
-    /// @notice emitted when a bond's issuer withdraws collateral
-    /// @param collateralWithdrawer the address withdrawing collateral
-    /// @param collateralToken the address of the ERC20 token
-    /// @param amount the number of the tokens withdrawn
-    event CollateralWithdrawn(
-        address indexed collateralWithdrawer,
-        address indexed collateralToken,
-        uint256 amount
-    );
-
-    /// @notice emitted when a portion of the bond's principal is paid back
-    /// @param repaymentDepositor the address depositing repayment
-    /// @param amount the amount of repayment deposited
-    event RepaymentDeposited(
-        address indexed repaymentDepositor,
-        uint256 amount
-    );
-
-    /// @notice emitted when all of the bond's principal is paid back
-    /// @param repaymentDepositor the address depositing repayment
-    /// @param amount the amount deposited to fully repay the bond
-    event RepaymentInFull(address indexed repaymentDepositor, uint256 amount);
-
-    /// @notice emitted when bond tokens are converted by a borrower
-    /// @param convertorAddress the address converting their tokens
-    /// @param collateralToken the address of the collateral received
-    /// @param amountOfBondsConverted the number of burnt bonds
-    /// @param amountOfCollateralReceived the number of collateral tokens received
-    event Converted(
-        address indexed convertorAddress,
-        address indexed collateralToken,
-        uint256 amountOfBondsConverted,
-        uint256 amountOfCollateralReceived
-    );
-
-    /// @notice emitted when a bond is redeemed
-    event Redeem(
-        address indexed receiver,
-        address indexed repaymentToken,
-        address indexed collateralToken,
-        uint256 amountOfBondsRedeemed,
-        uint256 amountOfRepaymentTokensReceived,
-        uint256 amountOfCollateralReceived
-    );
-
-    /// @notice emitted when bonds are minted
-    event Mint(address indexed receiver, uint256 amountOfBondsMinted);
-
-    // modifiers
-    error BondPastMaturity();
-    error BondNotYetMatured();
-
-    // Initialization
-    error InvalidMaturityDate();
-    error CollateralRatioLessThanConvertibleRatio();
-
-    // Minting
-    error BondSupplyExceeded();
-
-    // Repayment
-    error RepaymentMet();
-
-    // Sweep
-    error SweepDisallowedForToken();
-
-    // Helper
-    error ZeroAmount();
-    error TokenOverflow();
-
-    /// @dev used to confirm the bond has matured
-    modifier pastMaturity() {
-        if (!_isMature()) {
-            revert BondNotYetMatured();
-        }
-        _;
-    }
-
-    /// @dev used to confirm the bond has not yet matured
-    modifier notPastMaturity() {
-        if (_isMature()) {
-            revert BondPastMaturity();
-        }
-        _;
-    }
-
-    uint256 internal constant ONE = 1e18;
-
-    /// @notice A date in the future set at bond creation at which the bond will mature.
-    /// @notice Before this date, a bond token can be converted if convertible, but cannot be redeemed.
-    /// @notice After this date, a bond token can be redeemed for the repayment token.
+    /**
+        @notice A date in the future set at bond creation at which the bond will mature.
+            Before this date, a bond token can be converted if convertible, but cannot be redeemed.
+            After this date, a bond token can be redeemed for the repayment token, but cannot be converted.
+    */
     uint256 public maturityDate;
 
     /// @notice The address of the ERC20 token this bond will be redeemable for at maturity
     address public repaymentToken;
 
-    /// @notice the address of the ERC20 collateral token
+    /// @notice the address of the ERC20 token used as collateral backing the bond
     address public collateralToken;
 
-    /// @notice the ratio of collateral tokens per bond with 18 decimals
+    /**
+        @notice the ratio of collateral tokens per bond with
+        @dev this amount is expressed as a deviation from 1-to-1 (equal to 1e18)
+    */
     uint256 public collateralRatio;
 
-    /// @notice the ratio of ERC20 tokens the bonds will convert into before maturity with 18 decimals
-    /// @dev if this ratio is 0, the bond is not convertible.
+    /**
+        @notice the ratio of ERC20 tokens the bonds will convert into
+        @dev this amount is expressed as a deviation from 1-to-1 (equal to 1e18)
+             if this ratio is 0, the bond is not convertible.
+             after maturity, the bond is not convertible.
+    */
     uint256 public convertibleRatio;
 
-    /// @notice the role ID for withdrawCollateral
-    bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
-
-    /// @notice the role ID for mint
-    bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
-
-    /// @notice the max amount of bonds able to be minted
+    /**
+        @notice the max amount of bonds able to be minted and cannot be changed
+        @dev checked in the `mint` function to limit `totalSupply` exceeding this number
+    */
     uint256 public maxSupply;
 
-    /// @notice this function is called one time during initial bond creation and sets up the configuration for the bond
-    /// @dev New bond contract deployed via clone
-    /// @param bondName passed into the ERC20 token
-    /// @param bondSymbol passed into the ERC20 token
-    /// @param owner ownership of this contract transferred to this address
-    /// @param _maturityDate the timestamp at which the bond will mature
-    /// @param _repaymentToken the ERC20 token address the bond will be redeemable for at maturity
-    /// @param _collateralToken the ERC20 token address for the bond
-    /// @param _collateralRatio the amount of tokens per bond needed
-    /// @param _convertibleRatio the amount of tokens per bond a convertible bond can be converted for
+    /**
+        @notice this role permits the withdraw of collateral from the contract
+        @dev this is assigned to owner in `initialize`
+            the owner can assign other addresses with this role to enable their withdraw
+    */
+    bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
+
+    /**
+        @notice this role permits the minting of bonds
+        @dev this is assigned to owner in `initialize`
+            the owner can assign other addresses with this role to enable their minting
+    */
+    bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
+
+    uint256 internal constant ONE = 1e18;
+
+    /**
+        @notice emitted when a collateral is deposited for a bond
+        @param from the address depositing collateral
+        @param token the address of the collateral token
+        @param amount the number of the tokens deposited
+    */
+    event CollateralDeposit(
+        address indexed from,
+        address indexed token,
+        uint256 amount
+    );
+
+    /**
+        @notice emitted when bonds are minted
+        @param from the address minting
+        @param amount the amount of bonds minted
+    */
+    event Mint(address indexed from, uint256 amount);
+
+    /**
+        @notice emitted when bond tokens are converted by a borrower
+        @param from the address converting their tokens
+        @param collateralToken the address of the collateral received
+        @param amountOfBondsConverted the number of burnt bonds
+        @param amountOfCollateralTokens the number of collateral tokens received
+    */
+    event Convert(
+        address indexed from,
+        address indexed collateralToken,
+        uint256 amountOfBondsConverted,
+        uint256 amountOfCollateralTokens
+    );
+
+    /**
+        @notice emitted when a bond's issuer withdraws collateral
+        @param from the address withdrawing collateral
+        @param token the address of the collateral token
+        @param amount the number of the tokens withdrawn
+    */
+    event CollateralWithdraw(
+        address indexed from,
+        address indexed token,
+        uint256 amount
+    );
+
+    /**
+        @notice emitted when a portion of the bond's principal is paid
+        @param from the address depositing repayment
+        @param amount the amount of repayment deposited
+    */
+    event Payment(address indexed from, uint256 amount);
+
+    /**
+        @notice emitted when all of the bond's principal is paid back
+        @param from the address depositing repayment
+        @param amount the amount deposited to fully repay the bond
+    */
+    event PaymentInFull(address indexed from, uint256 amount);
+
+    /**
+        @notice emitted when a bond is redeemed
+        @param from the bond holder whose bonds are burnt
+        @param repaymentToken the address of the repayment token
+        @param collateralToken the address of the collateral token
+        @param amountOfBondsRedeemed the amount of bonds burned for redemption
+        @param amountOfRepaymentTokensReceived the amount of repayment tokens
+        @param amountOfCollateralTokens the amount of collateral tokens
+    */
+    event Redeem(
+        address indexed from,
+        address indexed repaymentToken,
+        address indexed collateralToken,
+        uint256 amountOfBondsRedeemed,
+        uint256 amountOfRepaymentTokensReceived,
+        uint256 amountOfCollateralTokens
+    );
+
+    /// @notice operation restricted because the bond has matured
+    error BondPastMaturity();
+    /// @notice operation restricted because the bond is not yet mature
+    error BondNotYetMatured();
+
+    /// @notice maturity date is not valid
+    error InvalidMaturityDate();
+    /// @notice collateralRatio must be greater than convertibleRatio
+    error CollateralRatioLessThanConvertibleRatio();
+
+    /// @notice attempted to mint bonds that would exceeded maxSupply
+    error BondSupplyExceeded();
+
+    /// @notice attempted to pay after payment was met
+    error PaymentMet();
+
+    /// @notice attempted to sweep a token used in the contract
+    error SweepDisallowedForToken();
+
+    /// @notice attempted to perform an action that would do nothing
+    error ZeroAmount();
+    /// @notice unexpected amount returned on external token transfer
+    error TokenOverflow();
+
+    /// @dev used to confirm the bond has not yet matured
+    modifier notPastMaturity() {
+        if (isMature()) {
+            revert BondPastMaturity();
+        }
+        _;
+    }
+
+    /**
+        @notice this function is called one time during initial bond creation and sets up the configuration for the bond
+        @dev New bond contract deployed via clone
+        @param bondName passed into the ERC20 token
+        @param bondSymbol passed into the ERC20 token
+        @param owner ownership of this contract transferred to this address
+        @param _maturityDate the timestamp at which the bond will mature
+        @param _repaymentToken the ERC20 token address the bond will be redeemable for at maturity
+        @param _collateralToken the ERC20 token address for the bond
+        @param _collateralRatio the amount of tokens per bond needed
+        @param _convertibleRatio the amount of tokens per bond a convertible bond can be converted for
+    */
     function initialize(
         string memory bondName,
         string memory bondSymbol,
@@ -195,41 +235,19 @@ contract Bond is
         _grantRole(MINT_ROLE, owner);
     }
 
-    /// @notice Withdraw collateral from bond contract
-    /// @notice The amount of collateral available to be withdrawn depends on the collateralRatio
-    function withdrawCollateral()
-        external
-        nonReentrant
-        onlyRole(WITHDRAW_ROLE)
-    {
-        uint256 collateralToSend = previewWithdraw();
-
-        IERC20Metadata(collateralToken).safeTransfer(
-            _msgSender(),
-            collateralToSend
-        );
-
-        emit CollateralWithdrawn(
-            _msgSender(),
-            collateralToken,
-            collateralToSend
-        );
-    }
-
-    /// @notice mints the amount of specified bonds by transferring in collateral
-    /// @dev CollateralDeposited + Mint events are both emitted. bonds to mint is bounded by maxSupply
-    /// @param bonds the amount of bonds to mint
-    function mint(uint256 bonds)
-        external
-        onlyRole(MINT_ROLE)
-        nonReentrant
-        notPastMaturity
-    {
-        if (bonds > maxSupply - totalSupply()) {
+    /**
+        @notice mints the amount of specified bonds by transferring in collateral
+        @dev CollateralDeposit + Mint events are both emitted. bonds to mint is bounded by maxSupply
+        @param bonds the amount of bonds to mint
+    */
+    function mint(uint256 bonds) external onlyRole(MINT_ROLE) nonReentrant {
+        if (totalSupply() + bonds > maxSupply) {
             revert BondSupplyExceeded();
         }
 
-        uint256 collateralToDeposit = previewMint(bonds);
+        uint256 collateralToDeposit = isMature()
+            ? 0
+            : previewMintBeforeMaturity(bonds);
 
         if (collateralToDeposit == 0) {
             revert ZeroAmount();
@@ -239,24 +257,28 @@ contract Bond is
 
         emit Mint(_msgSender(), bonds);
 
-        uint256 collateralDeposited = safeTransferIn(
+        uint256 collateralDeposited = _safeTransferIn(
             IERC20Metadata(collateralToken),
             _msgSender(),
             collateralToDeposit
         );
 
-        emit CollateralDeposited(
+        emit CollateralDeposit(
             _msgSender(),
             collateralToken,
             collateralDeposited
         );
     }
 
-    /// @notice Bond holder can convert their bond to underlying collateral
-    /// @notice The bond must be convertible and not past maturity
-    /// @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
-    function convert(uint256 bonds) external notPastMaturity nonReentrant {
-        uint256 collateralToSend = previewConvert(bonds);
+    /**
+        @notice Bond holder can convert their bond to underlying collateral
+            The bond must be convertible and not past maturity
+        @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
+    */
+    function convert(uint256 bonds) external nonReentrant {
+        uint256 collateralToSend = isMature()
+            ? 0
+            : previewConvertBeforeMaturity(bonds);
         if (collateralToSend == 0) {
             revert ZeroAmount();
         }
@@ -269,46 +291,73 @@ contract Bond is
             collateralToSend
         );
 
-        emit Converted(_msgSender(), collateralToken, bonds, collateralToSend);
+        emit Convert(_msgSender(), collateralToken, bonds, collateralToSend);
     }
 
-    /// @notice allows the issuer to repay the bond by depositing repayment token
-    /// @dev emits RepaymentInFull if the full balance has been repaid, RepaymentDeposited otherwise
-    /// @dev the lower of outstandingAmount and amount is chosen to prevent overpayment
-    /// @param amount the number of repayment tokens to repay
-    function repay(uint256 amount) external nonReentrant notPastMaturity {
-        if (_isFullyPaid()) {
-            revert RepaymentMet();
+    /**
+        @notice Withdraw collateral from bond contract
+            the amount of collateral available to be withdrawn depends on the collateralRatio
+    */
+    function withdrawCollateral()
+        external
+        nonReentrant
+        onlyRole(WITHDRAW_ROLE)
+    {
+        uint256 collateralToSend = previewWithdraw();
+
+        IERC20Metadata(collateralToken).safeTransfer(
+            _msgSender(),
+            collateralToSend
+        );
+
+        emit CollateralWithdraw(
+            _msgSender(),
+            collateralToken,
+            collateralToSend
+        );
+    }
+
+    /**
+        @notice allows the issuer to pay the bond by depositing repayment token
+        @dev emits PaymentInFull if the full balance has been repaid, PaymentDeposited otherwise
+            the lower of outstandingAmount and amount is chosen to prevent overpayment
+        @param amount the number of repayment tokens to pay
+    */
+    function pay(uint256 amount) external nonReentrant notPastMaturity {
+        if (isFullyPaid()) {
+            revert PaymentMet();
         }
         if (amount == 0) {
             revert ZeroAmount();
         }
 
-        // @audit-ok Re-entrancy possibility: this is a transfer into the contract - _isFullyPaid() is updated after transfer
-        // I'm not sure how we can fix this here. We could check that_upscale(totalPaid() + amount) >= totalSupply() but
+        // @audit-info
+        // I'm not sure how we can fix this here. We could check that _upscale(totalPaid() + amount) >= totalSupply() but
         // that would break in the case of a token taking a fee.
         // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
-        // if reentrency is exploited here what can they do? Just repay over the maximum amount?
-        uint256 amountRepaid = safeTransferIn(
+        // if reentrency is exploited here what can they do? Just pay over the maximum amount?
+        uint256 amountRepaid = _safeTransferIn(
             IERC20Metadata(repaymentToken),
             _msgSender(),
             amount
         );
-        if (_isFullyPaid()) {
-            emit RepaymentInFull(_msgSender(), amountRepaid);
+        if (isFullyPaid()) {
+            emit PaymentInFull(_msgSender(), amountRepaid);
         } else {
-            emit RepaymentDeposited(_msgSender(), amountRepaid);
+            emit Payment(_msgSender(), amountRepaid);
         }
     }
 
-    /// @notice this function burns bonds in return for the token borrowed against the bond
-    /// @param bonds the amount of bonds to redeem and burn
-    function redeem(uint256 bonds) external nonReentrant pastMaturity {
+    /**
+        @notice this function burns bonds in return for the token borrowed against the bond
+        @param bonds the amount of bonds to redeem and burn
+    */
+    function redeem(uint256 bonds) external nonReentrant {
         // calculate amount before burning as the preview function uses totalSupply.
         (
             uint256 repaymentTokensToSend,
             uint256 collateralTokensToSend
-        ) = previewRedeemAtMaturity(bonds);
+        ) = isMature() ? previewRedeemAtMaturity(bonds) : (0, 0);
 
         if (repaymentTokensToSend == 0 && collateralTokensToSend == 0) {
             revert ZeroAmount();
@@ -340,9 +389,11 @@ contract Bond is
         );
     }
 
-    /// @notice sends tokens to the issuer that were sent to this contract
-    /// @dev collateral, repayment, and the bond itself cannot be swept
-    /// @param token send the entire token balance of this address to the owner
+    /**
+        @notice sends tokens to the issuer that were sent to this contract
+        @dev collateral, repayment, and the bond itself cannot be swept
+        @param token send the entire token balance of this address to the owner
+    */
     function sweep(IERC20Metadata token)
         external
         nonReentrant
@@ -358,54 +409,38 @@ contract Bond is
         token.safeTransfer(msg.sender, token.balanceOf(address(this)));
     }
 
-    /// @notice this function returns the balance of this contract before and after a transfer into it
-    /// @dev safeTransferFrom is used to revert on any non-success return from the transfer
-    /// @dev the actual delta of tokens is returned to keep accurate balance in the case where the token has a fee
-    /// @param token the ERC20 token being transferred from
-    /// @param from the sender
-    /// @param value the total number of tokens being transferred
-    function safeTransferIn(
-        IERC20Metadata token,
-        address from,
-        uint256 value
-    ) private returns (uint256) {
-        uint256 balanceBefore = token.balanceOf(address(this));
-        token.safeTransferFrom(from, address(this), value);
-
-        uint256 balanceAfter = token.balanceOf(address(this));
-        if (balanceAfter < balanceBefore) {
-            revert TokenOverflow();
-        }
-        return balanceAfter - balanceBefore;
-    }
-
-    function totalPaid() public view returns (uint256) {
-        return IERC20Metadata(repaymentToken).balanceOf(address(this));
-    }
-
-    function totalCollateral() public view returns (uint256) {
-        return IERC20Metadata(collateralToken).balanceOf(address(this));
-    }
-
-    /// @dev this function takes the amount of repaymentTokens and scales to bond tokens rounding up
-    function _upscale(uint256 amount) internal view returns (uint256) {
-        return amount.mulDivUp(_computeScalingFactor(repaymentToken), ONE);
-    }
-
-    /// @notice preview the amount of collateral tokens required to mint the number of bond tokens
-    /// @dev this function rounds up the amount of required collateral for the number of bonds to mint
-    /// @param bonds the amount of desired bonds to mint
-    /// @return amount of collateral required to mint the amount of bonds
-    function previewMint(uint256 bonds) public view returns (uint256) {
+    /**
+        @notice preview the amount of collateral tokens required to mint the given bond tokens
+        @dev this function rounds up the amount of required collateral for the number of bonds to mint
+        @param bonds the amount of desired bonds to mint
+        @return amount of collateral required
+    */
+    function previewMintBeforeMaturity(uint256 bonds)
+        public
+        view
+        returns (uint256)
+    {
         return bonds.mulDivUp(collateralRatio, ONE);
     }
 
-    function previewConvert(uint256 bonds) public view returns (uint256) {
+    /**
+      @notice the amount of collateral the given bonds would convert into if able
+      @dev this function rounds down the number of returned collateral
+      @param bonds the amount of bonds that would be burnt to convert into collateral
+      @return amount of collateral received
+    */
+    function previewConvertBeforeMaturity(uint256 bonds)
+        public
+        view
+        returns (uint256)
+    {
         return bonds.mulDivDown(convertibleRatio, ONE);
     }
 
     /** 
-        @dev this function calculates the amount of collateral tokens that are able to be withdrawn by the issuer.
+        @notice the amount of collateral that the issuer would be able to 
+            withdraw from the contract
+        @dev this function calculates the amount of collateral tokens thatare able to be withdrawn by the issuer.
         The amount of tokens can increase by bonds being burnt and converted as well as repayment made.
         Each bond is covered by a certain amount of collateral to fulfill collateralRatio and convertibleRatio.
         For convertible bonds, the totalSupply of bonds must be covered by the convertibleRatio.
@@ -428,6 +463,7 @@ contract Bond is
                 to cover collateralRatio = 0
                 to cover convertibleRatio = 0
             All outstanding bonds must be covered by the convertibleRatio
+        @return the amount of collateral received
      */
     function previewWithdraw() public view returns (uint256) {
         uint256 tokensCoveredByRepayment = _upscale(totalPaid());
@@ -444,7 +480,7 @@ contract Bond is
         );
 
         uint256 totalRequiredCollateral;
-        if (!_isFullyPaid()) {
+        if (!isFullyPaid()) {
             totalRequiredCollateral = convertibleTokensRequired >
                 collateralTokensRequired
                 ? convertibleTokensRequired
@@ -463,6 +499,13 @@ contract Bond is
         return totalCollateral() - totalRequiredCollateral;
     }
 
+    /**
+        @notice the amount of collateral and repayment tokens
+            the bonds would redeem for at maturity
+        @param bonds the amount of bonds to burn and redeem for tokens
+        @return the amount of repayment tokens to receive
+        @return the amount of collateral tokens to receive
+    */
     function previewRedeemAtMaturity(uint256 bonds)
         public
         view
@@ -486,15 +529,69 @@ contract Bond is
         return (repaymentTokensToSend, collateralTokensToSend);
     }
 
-    function _isFullyPaid() public view returns (bool) {
+    /**
+        @notice gets the external balance of the ERC20 repayment token
+        @return the amount of repaymentTokens in the contract
+    */
+    function totalPaid() public view returns (uint256) {
+        return IERC20Metadata(repaymentToken).balanceOf(address(this));
+    }
+
+    /**
+        @notice gets the external balance of the ERC20 collateral token
+        @return the amount of collateralTokens in the contract
+    */
+    function totalCollateral() public view returns (uint256) {
+        return IERC20Metadata(collateralToken).balanceOf(address(this));
+    }
+
+    /**
+        @notice checks if the balance of repayment token covers the bond supply
+        @dev upscaling the token amount as there could be differing decimals
+        @return whether or not the bond is fully paid
+    */
+    function isFullyPaid() public view returns (bool) {
         return _upscale(totalPaid()) >= totalSupply();
     }
 
-    function _isMature() public view returns (bool) {
+    /**
+        @notice checks if the maturity date has passed (including current block timestamp)
+        @return whether or not the bond has reached the maturity date
+    */
+    function isMature() public view returns (bool) {
         return block.timestamp >= maturityDate;
     }
 
-    /// @dev uses the decimals on the token to return a scale factor for the passed in token
+    /**
+        @dev returns the balance of this contract before and after a transfer into it
+            safeTransferFrom is used to revert on any non-success return from the transfer
+            the actual delta of tokens is returned to keep accurate balance in the case where the token has a fee
+        @param token the ERC20 token being transferred from
+        @param from the sender
+        @param value the total number of tokens being transferred
+    */
+    function _safeTransferIn(
+        IERC20Metadata token,
+        address from,
+        uint256 value
+    ) internal returns (uint256) {
+        uint256 balanceBefore = token.balanceOf(address(this));
+        token.safeTransferFrom(from, address(this), value);
+
+        uint256 balanceAfter = token.balanceOf(address(this));
+        if (balanceAfter < balanceBefore) {
+            revert TokenOverflow();
+        }
+        return balanceAfter - balanceBefore;
+    }
+
+    /**
+        @dev uses the decimals on the token to return a scale factor for the passed in token
+            tokens that don't implement the `decimals` method are not supported.
+            tokens with more than 18 decimals are not supported
+        @param token the ERC20 token to compute
+        @return scaler above a 1e18 base (1e<decimals> * 1e18)
+    */
     function _computeScalingFactor(address token)
         internal
         view
@@ -504,14 +601,20 @@ contract Bond is
             return ONE;
         }
 
-        // Tokens that don't implement the `decimals` method are not supported.
         uint256 tokenDecimals = IERC20Metadata(token).decimals();
 
-        // Tokens with more than 18 decimals are not supported.
         if (tokenDecimals > 18) {
             revert TokenOverflow();
         }
         uint256 decimalsDifference = 18 - tokenDecimals;
         return ONE * 10**decimalsDifference;
+    }
+
+    /**
+        @dev this function takes the amount of repaymentTokens and scales to bond tokens rounding up
+            this is needed because the repaymentToken can have different decimals
+    */
+    function _upscale(uint256 amount) internal view returns (uint256) {
+        return amount.mulDivUp(_computeScalingFactor(repaymentToken), ONE);
     }
 }

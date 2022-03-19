@@ -1,24 +1,37 @@
 // SPDX-License-Identifier: AGPL
 pragma solidity 0.8.9;
-import "@openzeppelin/contracts/proxy/Clones.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+
 import "./Bond.sol";
 
 /** 
     @title Bond Factory
     @author Porter Finance
     @notice This factory contract issues new bond contracts
-    @dev This uses a cloneFactory to save on gas costs during deployment https://docs.openzeppelin.com/contracts/4.x/api/proxy#Clones
+    @dev This uses a cloneFactory to save on gas costs during deployment
+        see https://docs.openzeppelin.com/contracts/4.x/api/proxy#Clones
 */
 contract BondFactory is AccessControl {
-    address public immutable tokenImplementation;
-    bool public isAllowListEnabled = true;
+    /// @notice the role required to issue bonds
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
+
+    address public immutable tokenImplementation;
+
+    /// @notice when enabled, issuance is restricted to those with the ISSUER_ROLE
+    bool public isAllowListEnabled = true;
+
+    /**
+        @notice Emitted when the allow list is toggled on or off
+        @param isAllowListEnabled the new state of the allow list
+    */
+    event AllowListEnabled(bool isAllowListEnabled);
 
     /**
         @notice Emitted when a new bond is created
         @param newBond The address of the newley deployed bond
-        note: inherit the rest of the paramters from createBond
+        Inherit createBond
     */
     event BondCreated(
         address newBond,
@@ -32,12 +45,6 @@ contract BondFactory is AccessControl {
         uint256 convertibleRatio,
         uint256 maxSupply
     );
-
-    /**
-        @notice Emitted when the allow list is toggled on or off
-        @param isAllowListEnabled the new state of the allow list
-    */
-    event AllowListEnabled(bool isAllowListEnabled);
 
     /// @dev If allow list is enabled, only allow listed issuers are able to call functions
     modifier onlyIssuer() {

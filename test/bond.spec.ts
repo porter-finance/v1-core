@@ -338,7 +338,7 @@ describe("Bond", () => {
           ({ repaymentTokenAmount, collateralToReceive, description }) => {
             it(`Excess collateral will be available to withdraw ${description} when repayment token is partially repaid`, async () => {
               await repaymentToken.approve(bond.address, repaymentTokenAmount);
-              await (await bond.repay(repaymentTokenAmount)).wait();
+              await (await bond.pay(repaymentTokenAmount)).wait();
               expect(await bond.previewWithdraw()).to.equal(
                 collateralToReceive
               );
@@ -366,7 +366,7 @@ describe("Bond", () => {
             it("Excess collateral will be available to withdraw when repayment token is fully repaid", async () => {
               await (await bond.burn(sharesToBurn)).wait();
               await repaymentToken.approve(bond.address, repaymentTokenAmount);
-              await (await bond.repay(repaymentTokenAmount)).wait();
+              await (await bond.pay(repaymentTokenAmount)).wait();
               expect(await bond.previewWithdraw()).to.equal(
                 collateralToReceive
               );
@@ -394,7 +394,7 @@ describe("Bond", () => {
             it("Excess collateral will be available to withdraw when maturity is reached", async () => {
               await (await bond.burn(sharesToBurn)).wait();
               await repaymentToken.approve(bond.address, repaymentTokenAmount);
-              await (await bond.repay(repaymentTokenAmount)).wait();
+              await (await bond.pay(repaymentTokenAmount)).wait();
               expect(await bond.previewWithdraw()).to.equal(
                 collateralToReceive
               );
@@ -484,7 +484,7 @@ describe("Bond", () => {
                 convertibleBond.address,
                 repaymentTokenAmount
               );
-              await (await convertibleBond.repay(repaymentTokenAmount)).wait();
+              await (await convertibleBond.pay(repaymentTokenAmount)).wait();
               expect(await convertibleBond.previewWithdraw()).to.equal(
                 collateralToReceive
               );
@@ -515,7 +515,7 @@ describe("Bond", () => {
                 convertibleBond.address,
                 repaymentTokenAmount
               );
-              await (await convertibleBond.repay(repaymentTokenAmount)).wait();
+              await (await convertibleBond.pay(repaymentTokenAmount)).wait();
               expect(await convertibleBond.previewWithdraw()).to.equal(
                 collateralToReceive
               );
@@ -550,7 +550,7 @@ describe("Bond", () => {
                 convertibleBond.address,
                 repaymentTokenAmount
               );
-              await (await convertibleBond.repay(repaymentTokenAmount)).wait();
+              await (await convertibleBond.pay(repaymentTokenAmount)).wait();
               await ethers.provider.send("evm_mine", [
                 ConvertibleBondConfig.maturityDate,
               ]);
@@ -612,12 +612,9 @@ describe("Bond", () => {
           .mul(utils.parseUnits("1", decimals))
           .div(ONE);
 
-        await (await bond.repay(BigNumber.from(1))).wait();
-        await (await bond.repay(halfSupplyMinusOne)).wait();
-        await expect(bond.repay(halfSupplyMinusOne)).to.emit(
-          bond,
-          "RepaymentDeposited"
-        );
+        await (await bond.pay(BigNumber.from(1))).wait();
+        await (await bond.pay(halfSupplyMinusOne)).wait();
+        await expect(bond.pay(halfSupplyMinusOne)).to.emit(bond, "Payment");
       });
 
       it("accepts full repayment in steps", async () => {
@@ -625,35 +622,35 @@ describe("Bond", () => {
           .div(3)
           .mul(utils.parseUnits("1", decimals))
           .div(ONE);
-        await (await bond.repay(thirdSupply)).wait();
-        await (await bond.repay(thirdSupply)).wait();
-        await (await bond.repay(thirdSupply)).wait();
-        await expect(bond.repay(2)).to.emit(bond, "RepaymentInFull");
+        await (await bond.pay(thirdSupply)).wait();
+        await (await bond.pay(thirdSupply)).wait();
+        await (await bond.pay(thirdSupply)).wait();
+        await expect(bond.pay(2)).to.emit(bond, "PaymentInFull");
       });
 
       it("accepts repayment", async () => {
         await expect(
-          bond.repay(
+          bond.pay(
             BondConfig.targetBondSupply
               .mul(utils.parseUnits("1", decimals))
               .div(ONE)
           )
-        ).to.emit(bond, "RepaymentInFull");
+        ).to.emit(bond, "PaymentInFull");
       });
 
       it("fails if already repaid", async () => {
-        await bond.repay(
+        await bond.pay(
           BondConfig.targetBondSupply
             .mul(utils.parseUnits("1", decimals))
             .div(ONE)
         );
         await expect(
-          bond.repay(
+          bond.pay(
             BondConfig.targetBondSupply
               .mul(utils.parseUnits("1", decimals))
               .div(ONE)
           )
-        ).to.be.revertedWith("RepaymentMet");
+        ).to.be.revertedWith("PaymentMet");
       });
     })
   );
@@ -713,7 +710,7 @@ describe("Bond", () => {
         },
       ].forEach(({ mintAmount, collateralToDeposit, description }) => {
         it(`previews mint ${description}`, async () => {
-          expect(await bond.previewMint(mintAmount)).to.equal(
+          expect(await bond.previewMintBeforeMaturity(mintAmount)).to.equal(
             collateralToDeposit
           );
         });
@@ -748,13 +745,13 @@ describe("Bond", () => {
         },
       ].forEach(({ mintAmount, collateralToDeposit, description }) => {
         it(`previews mint fails ${description}`, async () => {
-          expect(await bond.previewMint(mintAmount)).to.not.equal(
+          expect(await bond.previewMintBeforeMaturity(mintAmount)).to.not.equal(
             collateralToDeposit
           );
         });
       });
       it(`previews mint zero target`, async () => {
-        expect(await bond.previewMint(ZERO)).to.equal(ZERO);
+        expect(await bond.previewMintBeforeMaturity(ZERO)).to.equal(ZERO);
       });
       [
         {
@@ -778,7 +775,7 @@ describe("Bond", () => {
         },
       ].forEach(({ mintAmount, collateralToDeposit, description }) => {
         it(`previews mint ${description}`, async () => {
-          expect(await bond.previewMint(mintAmount)).to.equal(
+          expect(await bond.previewMintBeforeMaturity(mintAmount)).to.equal(
             collateralToDeposit
           );
         });
@@ -847,7 +844,7 @@ describe("Bond", () => {
       ].forEach(
         ({ sharesToRedeem, repaymentTokenToSend, collateralTokenToSend }) => {
           it("Bond is repaid & past maturity = Withdraw of repayment token", async () => {
-            await bond.repay(totalPaid);
+            await bond.pay(totalPaid);
             await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
 
             const [repaymentToken, collateralToken] = await bond
@@ -916,7 +913,7 @@ describe("Bond", () => {
           collateralTokenToSend,
         }) => {
           it("Bond is partially repaid & past maturity = Withdraw of collateral & repayment token", async () => {
-            await bond.repay(tokensToRepay);
+            await bond.pay(tokensToRepay);
             await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
             const [repaymentTokens, collateralTokens] = await bond
               .connect(bondHolder)
@@ -928,7 +925,7 @@ describe("Bond", () => {
       );
 
       it("should redeem bond at maturity for repayment token", async () => {
-        await bond.repay(
+        await bond.pay(
           BondConfig.targetBondSupply
             .mul(utils.parseUnits("1", decimals))
             .div(ONE)
@@ -955,23 +952,21 @@ describe("Bond", () => {
           .div(await bond.totalSupply());
         await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
         const {
-          receiver,
+          from,
           repaymentToken,
           collateralToken: convertedcollateralToken,
           amountOfBondsRedeemed,
           amountOfRepaymentTokensReceived,
-          amountOfCollateralReceived,
+          amountOfCollateralTokens,
         } = await getEventArgumentsFromTransaction(
           await bond.connect(bondHolder).redeem(utils.parseUnits("4000", 18)),
           "Redeem"
         );
-        expect(receiver).to.equal(bondHolder.address);
+        expect(from).to.equal(bondHolder.address);
         expect(convertedcollateralToken).to.equal(collateralToken.address);
         expect(amountOfBondsRedeemed).to.equal(utils.parseUnits("4000", 18));
         expect(amountOfRepaymentTokensReceived).to.equal(0);
-        expect(amountOfCollateralReceived).to.equal(
-          expectedCollateralToReceive
-        );
+        expect(amountOfCollateralTokens).to.equal(expectedCollateralToReceive);
 
         expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
         expect(
@@ -1022,9 +1017,9 @@ describe("Bond", () => {
         },
       ].forEach(({ convertAmount, assetsToReceive, description }) => {
         it(`previews convert ${description}`, async () => {
-          expect(await bond.previewConvert(convertAmount)).to.equal(
-            assetsToReceive
-          );
+          expect(
+            await bond.previewConvertBeforeMaturity(convertAmount)
+          ).to.equal(assetsToReceive);
         });
       });
       it("converts bond amount into collateral at convertibleRatio", async () => {
@@ -1035,20 +1030,18 @@ describe("Bond", () => {
           .connect(bondHolder)
           .approve(convertibleBond.address, tokensToConvert);
         const {
-          convertorAddress,
+          from,
           collateralToken: convertedcollateralToken,
           amountOfBondsConverted,
-          amountOfCollateralReceived,
+          amountOfCollateralTokens,
         } = await getEventArgumentsFromTransaction(
           await convertibleBond.connect(bondHolder).convert(tokensToConvert),
-          "Converted"
+          "Convert"
         );
-        expect(convertorAddress).to.equal(bondHolder.address);
+        expect(from).to.equal(bondHolder.address);
         expect(convertedcollateralToken).to.equal(collateralToken.address);
         expect(amountOfBondsConverted).to.equal(tokensToConvert);
-        expect(amountOfCollateralReceived).to.equal(
-          expectedCollateralToWithdraw
-        );
+        expect(amountOfCollateralTokens).to.equal(expectedCollateralToWithdraw);
       });
     });
     describe("non-convertible bonds", async () => {
