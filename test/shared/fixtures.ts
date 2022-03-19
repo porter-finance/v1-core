@@ -12,9 +12,9 @@ export async function tokenFixture(decimals: number[]) {
   const decimalsToCreate = Array.from(new Set([18].concat(decimals)));
   const tokens = await Promise.all(
     decimalsToCreate.map(async (decimals) => {
-      const RepaymentToken = await ethers.getContractFactory("TestERC20");
-      const repaymentToken = (await RepaymentToken.deploy(
-        "Repayment Token",
+      const PaymentToken = await ethers.getContractFactory("TestERC20");
+      const paymentToken = (await PaymentToken.deploy(
+        "Payment Token",
         "RT",
         ethers.constants.MaxUint256,
         decimals
@@ -38,7 +38,7 @@ export async function tokenFixture(decimals: number[]) {
       )) as TestERC20;
 
       return {
-        repaymentToken,
+        paymentToken,
         attackingToken,
         collateralToken,
         decimals,

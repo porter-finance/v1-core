@@ -2,7 +2,7 @@ import { ethers, network } from "hardhat";
 import { expect } from "chai";
 import { BondFactory, Bond } from "../../typechain";
 import {
-  deployNATIVEandREPAY,
+  deployNativeAndPayment,
   createBond,
   mint,
   initiateAuction,
@@ -23,15 +23,15 @@ describe("Integration", () => {
       });
     }
     const signer = await ethers.getSigner(RINKEBY_DEPLOYER_ADDRESS);
-    const [native, repay] = await deployNATIVEandREPAY(signer);
-    console.log({ native: native.address, repay: repay.address });
+    const [native, payment] = await deployNativeAndPayment(signer);
+    console.log({ native: native.address, payment: payment.address });
 
     const factory = (await ethers.getContractAt(
       "BondFactory",
       rinkebyFactory
     )) as BondFactory;
 
-    const bond = (await createBond(signer, native, repay, factory)) as Bond;
+    const bond = (await createBond(signer, native, payment, factory)) as Bond;
 
     console.log({ bond: bond.address });
 
@@ -40,7 +40,7 @@ describe("Integration", () => {
 
     const auction = await ethers.getContractAt(easyAuction.abi, rinkebyGnosis);
 
-    await expect(await initiateAuction(auction, signer, bond, repay)).to.emit(
+    await expect(await initiateAuction(auction, signer, bond, payment)).to.emit(
       auction,
       "NewAuction"
     );

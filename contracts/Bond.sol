@@ -15,7 +15,7 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
     @author Porter Finance
     @notice A custom ERC20 token that can be used to issue bonds.
     @notice The contract handles issuance, conversion, and redemption of bonds.
-    @dev External calls to tokens used for collateral and repayment are used throughout to transfer and check balances
+    @dev External calls to tokens used for collateral and payment are used throughout to transfer and check balances
 */
 contract Bond is
     Initializable,
@@ -30,12 +30,12 @@ contract Bond is
     /**
         @notice A date in the future set at bond creation at which the bond will mature.
             Before this date, a bond token can be converted if convertible, but cannot be redeemed.
-            After this date, a bond token can be redeemed for the repayment token, but cannot be converted.
+            After this date, a bond token can be redeemed for the payment token, but cannot be converted.
     */
     uint256 public maturityDate;
 
     /// @notice The address of the ERC20 token this bond will be redeemable for at maturity
-    address public repaymentToken;
+    address public paymentToken;
 
     /// @notice the address of the ERC20 token used as collateral backing the bond
     address public collateralToken;
@@ -123,33 +123,33 @@ contract Bond is
 
     /**
         @notice emitted when a portion of the bond's principal is paid
-        @param from the address depositing repayment
-        @param amount the amount of repayment deposited
+        @param from the address depositing payment
+        @param amount the amount of payment deposited
     */
     event Payment(address indexed from, uint256 amount);
 
     /**
         @notice emitted when all of the bond's principal is paid back
-        @param from the address depositing repayment
-        @param amount the amount deposited to fully repay the bond
+        @param from the address depositing payment
+        @param amount the amount deposited to fully pay the bond
     */
     event PaymentInFull(address indexed from, uint256 amount);
 
     /**
         @notice emitted when a bond is redeemed
         @param from the bond holder whose bonds are burnt
-        @param repaymentToken the address of the repayment token
+        @param paymentToken the address of the payment token
         @param collateralToken the address of the collateral token
         @param amountOfBondsRedeemed the amount of bonds burned for redemption
-        @param amountOfRepaymentTokensReceived the amount of repayment tokens
+        @param amountOfPaymentTokensReceived the amount of payment tokens
         @param amountOfCollateralTokens the amount of collateral tokens
     */
     event Redeem(
         address indexed from,
-        address indexed repaymentToken,
+        address indexed paymentToken,
         address indexed collateralToken,
         uint256 amountOfBondsRedeemed,
-        uint256 amountOfRepaymentTokensReceived,
+        uint256 amountOfPaymentTokensReceived,
         uint256 amountOfCollateralTokens
     );
 
@@ -192,7 +192,7 @@ contract Bond is
         @param bondSymbol passed into the ERC20 token
         @param owner ownership of this contract transferred to this address
         @param _maturityDate the timestamp at which the bond will mature
-        @param _repaymentToken the ERC20 token address the bond will be redeemable for at maturity
+        @param _paymentToken the ERC20 token address the bond will be redeemable for at maturity
         @param _collateralToken the ERC20 token address for the bond
         @param _collateralRatio the amount of tokens per bond needed
         @param _convertibleRatio the amount of tokens per bond a convertible bond can be converted for
@@ -202,7 +202,7 @@ contract Bond is
         string memory bondSymbol,
         address owner,
         uint256 _maturityDate,
-        address _repaymentToken,
+        address _paymentToken,
         address _collateralToken,
         uint256 _collateralRatio,
         uint256 _convertibleRatio,
@@ -222,13 +222,13 @@ contract Bond is
         __ERC20Burnable_init();
 
         maturityDate = _maturityDate;
-        repaymentToken = _repaymentToken;
+        paymentToken = _paymentToken;
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
         maxSupply = _maxSupply;
 
-        _computeScalingFactor(repaymentToken);
+        _computeScalingFactor(paymentToken);
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
@@ -318,10 +318,10 @@ contract Bond is
     }
 
     /**
-        @notice allows the issuer to pay the bond by depositing repayment token
+        @notice allows the issuer to pay the bond by depositing payment token
         @dev emits PaymentInFull if the full balance has been repaid, PaymentDeposited otherwise
             the lower of outstandingAmount and amount is chosen to prevent overpayment
-        @param amount the number of repayment tokens to pay
+        @param amount the number of payment tokens to pay
     */
     function pay(uint256 amount) external nonReentrant notPastMaturity {
         if (isFullyPaid()) {
@@ -337,7 +337,7 @@ contract Bond is
         // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
         // if reentrency is exploited here what can they do? Just pay over the maximum amount?
         uint256 amountRepaid = _safeTransferIn(
-            IERC20Metadata(repaymentToken),
+            IERC20Metadata(paymentToken),
             _msgSender(),
             amount
         );
@@ -355,21 +355,21 @@ contract Bond is
     function redeem(uint256 bonds) external nonReentrant {
         // calculate amount before burning as the preview function uses totalSupply.
         (
-            uint256 repaymentTokensToSend,
+            uint256 paymentTokensToSend,
             uint256 collateralTokensToSend
         ) = isMature() ? previewRedeemAtMaturity(bonds) : (0, 0);
 
-        if (repaymentTokensToSend == 0 && collateralTokensToSend == 0) {
+        if (paymentTokensToSend == 0 && collateralTokensToSend == 0) {
             revert ZeroAmount();
         }
 
         burn(bonds);
 
         // @audit-ok reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
-        if (repaymentTokensToSend > 0) {
-            IERC20Metadata(repaymentToken).safeTransfer(
+        if (paymentTokensToSend > 0) {
+            IERC20Metadata(paymentToken).safeTransfer(
                 _msgSender(),
-                repaymentTokensToSend
+                paymentTokensToSend
             );
         }
         if (collateralTokensToSend > 0) {
@@ -381,17 +381,17 @@ contract Bond is
         }
         emit Redeem(
             _msgSender(),
-            repaymentToken,
+            paymentToken,
             collateralToken,
             bonds,
-            repaymentTokensToSend,
+            paymentTokensToSend,
             collateralTokensToSend
         );
     }
 
     /**
         @notice sends tokens to the issuer that were sent to this contract
-        @dev collateral, repayment, and the bond itself cannot be swept
+        @dev collateral, payment, and the bond itself cannot be swept
         @param token send the entire token balance of this address to the owner
     */
     function sweep(IERC20Metadata token)
@@ -400,7 +400,7 @@ contract Bond is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         if (
-            address(token) == repaymentToken ||
+            address(token) == paymentToken ||
             address(token) == address(this) ||
             address(token) == collateralToken
         ) {
@@ -441,10 +441,10 @@ contract Bond is
         @notice the amount of collateral that the issuer would be able to 
             withdraw from the contract
         @dev this function calculates the amount of collateral tokens thatare able to be withdrawn by the issuer.
-        The amount of tokens can increase by bonds being burnt and converted as well as repayment made.
+        The amount of tokens can increase by bonds being burnt and converted as well as payment made.
         Each bond is covered by a certain amount of collateral to fulfill collateralRatio and convertibleRatio.
         For convertible bonds, the totalSupply of bonds must be covered by the convertibleRatio.
-        That means even if all of the bonds were covered by repayment, there must still be enough collateral
+        That means even if all of the bonds were covered by payment, there must still be enough collateral
         in the contract to cover the outstanding bonds convertible until the maturity date -
         at which point all collateral will be able to be withdrawn.
 
@@ -466,13 +466,13 @@ contract Bond is
         @return the amount of collateral received
      */
     function previewWithdraw() public view returns (uint256) {
-        uint256 tokensCoveredByRepayment = _upscale(totalPaid());
+        uint256 tokensCoveredByPayment = _upscale(totalPaid());
         uint256 collateralTokensRequired;
-        if (tokensCoveredByRepayment > totalSupply()) {
+        if (tokensCoveredByPayment > totalSupply()) {
             collateralTokensRequired = 0;
         } else {
-            collateralTokensRequired = (totalSupply() -
-                tokensCoveredByRepayment).mulDivUp(collateralRatio, ONE);
+            collateralTokensRequired = (totalSupply() - tokensCoveredByPayment)
+                .mulDivUp(collateralRatio, ONE);
         }
         uint256 convertibleTokensRequired = totalSupply().mulDivUp(
             convertibleRatio,
@@ -500,10 +500,10 @@ contract Bond is
     }
 
     /**
-        @notice the amount of collateral and repayment tokens
+        @notice the amount of collateral and payment tokens
             the bonds would redeem for at maturity
         @param bonds the amount of bonds to burn and redeem for tokens
-        @return the amount of repayment tokens to receive
+        @return the amount of payment tokens to receive
         @return the amount of collateral tokens to receive
     */
     function previewRedeemAtMaturity(uint256 bonds)
@@ -515,7 +515,7 @@ contract Bond is
         if (repaidAmount > totalSupply()) {
             repaidAmount = totalSupply();
         }
-        uint256 repaymentTokensToSend = bonds.mulDivUp(
+        uint256 paymentTokensToSend = bonds.mulDivUp(
             totalPaid(),
             totalSupply()
         );
@@ -526,15 +526,15 @@ contract Bond is
             ONE
         );
 
-        return (repaymentTokensToSend, collateralTokensToSend);
+        return (paymentTokensToSend, collateralTokensToSend);
     }
 
     /**
-        @notice gets the external balance of the ERC20 repayment token
-        @return the amount of repaymentTokens in the contract
+        @notice gets the external balance of the ERC20 payment token
+        @return the amount of paymentTokens in the contract
     */
     function totalPaid() public view returns (uint256) {
-        return IERC20Metadata(repaymentToken).balanceOf(address(this));
+        return IERC20Metadata(paymentToken).balanceOf(address(this));
     }
 
     /**
@@ -546,7 +546,7 @@ contract Bond is
     }
 
     /**
-        @notice checks if the balance of repayment token covers the bond supply
+        @notice checks if the balance of payment token covers the bond supply
         @dev upscaling the token amount as there could be differing decimals
         @return whether or not the bond is fully paid
     */
@@ -611,10 +611,10 @@ contract Bond is
     }
 
     /**
-        @dev this function takes the amount of repaymentTokens and scales to bond tokens rounding up
-            this is needed because the repaymentToken can have different decimals
+        @dev this function takes the amount of paymentTokens and scales to bond tokens rounding up
+            this is needed because the paymentToken can have different decimals
     */
     function _upscale(uint256 amount) internal view returns (uint256) {
-        return amount.mulDivUp(_computeScalingFactor(repaymentToken), ONE);
+        return amount.mulDivUp(_computeScalingFactor(paymentToken), ONE);
     }
 }

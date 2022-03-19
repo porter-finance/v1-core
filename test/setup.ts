@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TestERC20, BondFactory, Bond } from "../typechain";
 import { getBondContract } from "./utilities";
 
-export const deployNATIVEandREPAY = async (owner: SignerWithAddress) => {
+export const deployNativeAndPayment = async (owner: SignerWithAddress) => {
   const MockErc20Contract = await ethers.getContractFactory("TestERC20");
   console.log("factory");
   const native = (await MockErc20Contract.connect(owner).deploy(
@@ -16,20 +16,20 @@ export const deployNATIVEandREPAY = async (owner: SignerWithAddress) => {
   console.log({ native: native.address });
   await native.deployed();
 
-  const repay = (await MockErc20Contract.connect(owner).deploy(
-    "Repayment Token",
-    "REPAY",
+  const pay = (await MockErc20Contract.connect(owner).deploy(
+    "Payment Token",
+    "PAY",
     ethers.utils.parseUnits("500"),
     18
   )) as TestERC20;
-  await repay.deployed();
-  return await Promise.all([native, repay]);
+  await pay.deployed();
+  return await Promise.all([native, pay]);
 };
 
 export const createBond = async (
   owner: SignerWithAddress,
   nativeToken: TestERC20,
-  repaymentToken: TestERC20,
+  paymentToken: TestERC20,
   factory: BondFactory
 ) => {
   // these could be converted to parameters
@@ -57,7 +57,7 @@ export const createBond = async (
         bondSymbol,
         owner.address,
         maturityDate,
-        repaymentToken.address,
+        paymentToken.address,
         nativeToken.address,
         collateralRatio,
         convertibleRatio,

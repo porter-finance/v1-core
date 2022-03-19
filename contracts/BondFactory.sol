@@ -11,7 +11,7 @@ import "./Bond.sol";
     @author Porter Finance
     @notice This factory contract issues new bond contracts
     @dev This uses a cloneFactory to save on gas costs during deployment
-        see https://docs.openzeppelin.com/contracts/4.x/api/proxy#Clones
+        see OpenZeppelin's "Clones" proxy
 */
 contract BondFactory is AccessControl {
     /// @notice the role required to issue bonds
@@ -39,7 +39,7 @@ contract BondFactory is AccessControl {
         string symbol,
         address indexed owner,
         uint256 maturityDate,
-        address indexed repaymentToken,
+        address indexed paymentToken,
         address indexed collateralToken,
         uint256 collateralRatio,
         uint256 convertibleRatio,
@@ -83,18 +83,18 @@ contract BondFactory is AccessControl {
         @param maturityDate Timestamp of when the bond matures
         @param collateralToken Address of the collateral to use for the bond
         @param collateralRatio Ratio of bond: collateral token
-        @param repaymentToken Address of the token being paid
+        @param paymentToken Address of the token being paid
         @param convertibleRatio Ratio of bond:token that the bond can be converted into
         @param maxSupply Max amount of tokens able to mint
-        @dev This uses a clone to save on deployment costs https://github.com/porter-finance/v1-core/issues/15 
-            which adds a slight overhead everytime users interact with the bonds - but saves 10x the gas during deployment
+        @dev This uses a clone to save on deployment costs which adds a slight overhead
+            everytime users interact with the bonds - but saves on gas during deployment
     */
     function createBond(
         string memory name,
         string memory symbol,
         address owner,
         uint256 maturityDate,
-        address repaymentToken,
+        address paymentToken,
         address collateralToken,
         uint256 collateralRatio,
         uint256 convertibleRatio,
@@ -106,7 +106,7 @@ contract BondFactory is AccessControl {
             symbol,
             owner,
             maturityDate,
-            repaymentToken,
+            paymentToken,
             collateralToken,
             collateralRatio,
             convertibleRatio,
@@ -118,7 +118,7 @@ contract BondFactory is AccessControl {
             symbol,
             owner,
             maturityDate,
-            repaymentToken,
+            paymentToken,
             collateralToken,
             collateralRatio,
             convertibleRatio,

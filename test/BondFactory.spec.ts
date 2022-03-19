@@ -25,13 +25,13 @@ describe("BondFactory", async () => {
   let owner: SignerWithAddress;
   let user: SignerWithAddress;
   let collateralToken: TestERC20;
-  let repaymentToken: TestERC20;
+  let paymentToken: TestERC20;
   let ISSUER_ROLE: any;
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
     ({ factory } = await bondFactoryFixture());
-    ({ collateralToken, repaymentToken } = await (
+    ({ collateralToken, paymentToken } = await (
       await tokenFixture([18])
     ).tokens[0]);
     ISSUER_ROLE = await factory.ISSUER_ROLE();
@@ -45,7 +45,7 @@ describe("BondFactory", async () => {
       "LUG",
       owner.address,
       BondConfig.maturityDate,
-      repaymentToken.address,
+      paymentToken.address,
       collateralToken.address,
       BondConfig.collateralRatio,
       BondConfig.convertibleRatio,
