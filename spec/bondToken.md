@@ -1,35 +1,50 @@
-# BondToken
+## Bond
 
-A `bondToken` factory will create a new ERC20 `bondToken` for each auction that is initiated on our platform. We are currently exploring if we should use a regular factory, or a cloneFactory: https://github.com/porter-finance/v1-core/issues/15
+A new `Bond` contract is created for each [borrower](https://docs.porter.finance/portal/protocol/borrowers). They implement the standard EIP-20/ERC20 token methods as well as Porter specific methods. Each `BondToken` represents a [zero coupon bond](https://docs.porter.finance/portal/intro-to-bonds/zero-coupon-bonds) that can be purchased by [lenders](https://docs.porter.finance/portal/protocol/lenders).
 
-### Methods
+`Bonds` support the following functionality:
 
-`redeemBond()` checks maturity date & bond standing - if it's past maturity date and the loan as been repayed then burn the bonds and send the repayment tokens to the address calling redeem() - maybe we follow the rocketpool method and calculate the % of total bond tokens a user holds, then allow them to claim that % amount of the total repayment tokens. once all bond tokens are redeemed (total remaining supply is zero), the bond standing will be updated to `REDEEMED`
+### Borrower
 
-`setBondStanding()` - emits an event of `BondStandingChange`. to be called by owner only after an auction ends and in various other situations
+- Depositing collateral and minting new `Bonds` via `mint()`
+- Handling repayment for the issuer via `repay()`
+- withdrawing collateral `withdrawCollateral()`
 
-### State Variables
+### Lenders
 
-`currentBondStanding` - to be one of:
+- Handling convertibility via a configured ratio and the ability for lenders to convert their `Bonds` using `convert()`
+- Allowing bond redemption for the bond holders via `redeem()`
 
-```js
-  enum BondStanding {
-    GOOD,
-    DEFAULTED,
-    PAID,
-    REDEEMED
-  }
-```
+### Collateral
 
-`maturityDate` - due date for the DAO to repay its debt
+Borrowers specify the ERC20 tokens they would like to use as collateral when creating the bond. Only a single collateral type is supported.
 
-### Events
+### Convert
 
-```js
-  event BondStandingChange(BondStanding oldStanding, BondStanding newStanding);
-  event Redeem(address receiver, uint256 amount);
-```
+If convertability in enabled for the bond,
+Bondholders will have an option to redeem their bond tokens for the underlying collateral at a predefined "convertibility ratio".
+For example - when the bond is created the ratio may be 1 bond token : .5 collateral token. This gives the lenders equity upside because the bond token can be redeemed, at any time before maturity of the bond, for a portion of a collateral token. Convertibility cannot be changed once set and after the bond's maturity, the bond token can no longer be redeemed for the collateral token.
 
-# BondToken Alternatives considered
+### Repay
 
-Deploying the bondToken upon the completion of an auction.
+This gives the ability for a borrower to repay their debt. Repaying allows the borrower to withdraw any collateral that is not used to back convertible tokens. After the maturity date is met, all collateral can be withdrawn and the bond will be considered to be `PAID`. At this time, lenders lose the ability to convert their bond tokens into the collateral token. Lenders gain the ability to redeem their bond tokens for the borrowing token.
+
+### Redeem
+
+#### if repaid
+
+Bonds can be redeemed for a pro rata share of the repayment amount.
+
+#### if defaulted
+
+Bonds can be redeemed for a pro rata share of the collateral + repayment amount.
+
+# Design Decisions
+
+## Use clone factory instead of normal factory for creating new Bonds
+
+- https://github.com/porter-finance/v1-core/issues/15
+
+## Upgradability strategy
+
+Contracts are not upgradable. In the future it will be possible for borrowers to refinance their loan by granting the `WITHDRAW_ROLE` and the `MINT_ROLE` to a refinance contract.
