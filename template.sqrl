@@ -106,7 +106,7 @@
 {{@foreach(val.outputs) => key, val}}
   <tr>
     <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
-    <td>{{key}}</td>
+    {{@if (val.key == "_0" && val.key == "_1")}}<td>{{key}}</td>{{/if}}
     {{@if (val.description)}}
     <td>{{val.description}}</td>
     {{/if}}

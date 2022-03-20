@@ -128,8 +128,7 @@ function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 <table>
   <tr>
     <td>bytes32 </td>
-    <td>_0</td>
-      </tr>
+          </tr>
 </table>
 
 ### ISSUER_ROLE
@@ -145,8 +144,7 @@ the role required to issue bonds
 <table>
   <tr>
     <td>bytes32 </td>
-    <td>_0</td>
-      </tr>
+          </tr>
 </table>
 
 ### createBond
@@ -212,8 +210,7 @@ Creates a bond
 <table>
   <tr>
     <td>address </td>
-    <td>clone</td>
-      </tr>
+          </tr>
 </table>
 
 ### getRoleAdmin
@@ -236,8 +233,7 @@ function getRoleAdmin(bytes32 role) external view returns (bytes32)
 <table>
   <tr>
     <td>bytes32 </td>
-    <td>_0</td>
-      </tr>
+          </tr>
 </table>
 
 ### grantRole
@@ -283,8 +279,7 @@ function hasRole(bytes32 role, address account) external view returns (bool)
 <table>
   <tr>
     <td>bool </td>
-    <td>_0</td>
-      </tr>
+          </tr>
 </table>
 
 ### isAllowListEnabled
@@ -300,8 +295,7 @@ when enabled, issuance is restricted to those with the ISSUER_ROLE
 <table>
   <tr>
     <td>bool </td>
-    <td>_0</td>
-      </tr>
+          </tr>
 </table>
 
 ### renounceRole
@@ -380,8 +374,7 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 <table>
   <tr>
     <td>bool </td>
-    <td>_0</td>
-      </tr>
+          </tr>
 </table>
 
 ### tokenImplementation
@@ -395,6 +388,5 @@ function tokenImplementation() external view returns (address)
 <table>
   <tr>
     <td>address </td>
-    <td>_0</td>
-      </tr>
+          </tr>
 </table>
