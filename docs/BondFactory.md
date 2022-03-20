@@ -1,63 +1,119 @@
 # BondFactory
 
-_Porter Finance_
-
-> Bond Factory
-
 This factory contract issues new bond contracts
-
-_This uses a cloneFactory to save on gas costs during deployment see OpenZeppelin&#39;s &quot;Clones&quot; proxy_
 
 ## Events
 
-### `AllowListEnabled`
+### AllowListEnabled
 
 Emitted when the allow list is toggled on or off
 
-| Name               | Type | Description                     |
-| ------------------ | ---- | ------------------------------- |
-| isAllowListEnabled | bool | the new state of the allow list |
+<table>
+  <tr>
+    <td>bool </td>
+    <td>isAllowListEnabled</td>
+        <td>the new state of the allow list</td>
+      </tr>
+</table>
 
-### `BondCreated`
+### BondCreated
 
 Emitted when a new bond is created
 
-| Name                      | Type    | Description                                                |
-| ------------------------- | ------- | ---------------------------------------------------------- |
-| newBond                   | address | The address of the newley deployed bond Inherit createBond |
-| name                      | string  | undefined                                                  |
-| symbol                    | string  | undefined                                                  |
-| owner `indexed`           | address | undefined                                                  |
-| maturityDate              | uint256 | undefined                                                  |
-| paymentToken `indexed`    | address | undefined                                                  |
-| collateralToken `indexed` | address | undefined                                                  |
-| collateralRatio           | uint256 | undefined                                                  |
-| convertibleRatio          | uint256 | undefined                                                  |
-| maxSupply                 | uint256 | undefined                                                  |
+<table>
+  <tr>
+    <td>address </td>
+    <td>newBond</td>
+        <td>The address of the newley deployed bond Inherit createBond</td>
+      </tr>
+  <tr>
+    <td>string </td>
+    <td>name</td>
+      </tr>
+  <tr>
+    <td>string </td>
+    <td>symbol</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>owner</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>maturityDate</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>paymentToken</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>collateralToken</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>collateralRatio</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>convertibleRatio</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>maxSupply</td>
+      </tr>
+</table>
 
-### `RoleAdminChanged`
+### RoleAdminChanged
 
-| Name                        | Type    | Description |
-| --------------------------- | ------- | ----------- |
-| role `indexed`              | bytes32 | undefined   |
-| previousAdminRole `indexed` | bytes32 | undefined   |
-| newAdminRole `indexed`      | bytes32 | undefined   |
+<table>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>previousAdminRole</td>
+      </tr>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>newAdminRole</td>
+      </tr>
+</table>
 
-### `RoleGranted`
+### RoleGranted
 
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>account</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>sender</td>
+      </tr>
+</table>
 
-### `RoleRevoked`
+### RoleRevoked
 
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>account</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>sender</td>
+      </tr>
+</table>
 
 ## Methods
 
@@ -69,9 +125,8 @@ function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+<table>
+</table>
 
 ### ISSUER_ROLE
 
@@ -83,9 +138,8 @@ the role required to issue bonds
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+<table>
+</table>
 
 ### createBond
 
@@ -95,27 +149,105 @@ function createBond(string name, string symbol, address owner, uint256 maturityD
 
 Creates a bond
 
-_This uses a clone to save on deployment costs which adds a slight overhead everytime users interact with the bonds - but saves on gas during deployment_
-
 #### Parameters
 
-| Name             | Type    | Description                                             |
-| ---------------- | ------- | ------------------------------------------------------- |
-| name             | string  | Name of the bond                                        |
-| symbol           | string  | Ticker symbol for the bond                              |
-| owner            | address | Owner of the bond                                       |
-| maturityDate     | uint256 | Timestamp of when the bond matures                      |
-| paymentToken     | address | Address of the token being paid                         |
-| collateralToken  | address | Address of the collateral to use for the bond           |
-| collateralRatio  | uint256 | Ratio of bond: collateral token                         |
-| convertibleRatio | uint256 | Ratio of bond:token that the bond can be converted into |
-| maxSupply        | uint256 | Max amount of tokens able to mint                       |
+<table>
+  <tr>
+    <td>string </td>
+    <td>name</td>
+        <td>Name of the bond</td>
+      </tr>
+  <tr>
+    <td>string </td>
+    <td>symbol</td>
+        <td>Ticker symbol for the bond</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>owner</td>
+        <td>Owner of the bond</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>maturityDate</td>
+        <td>Timestamp of when the bond matures</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>paymentToken</td>
+        <td>Address of the token being paid</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>collateralToken</td>
+        <td>Address of the collateral to use for the bond</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>collateralRatio</td>
+        <td>Ratio of bond: collateral token</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>convertibleRatio</td>
+        <td>Ratio of bond:token that the bond can be converted into</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>maxSupply</td>
+        <td>Max amount of tokens able to mint</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name  | Type    | Description |
-| ----- | ------- | ----------- |
-| clone | address | undefined   |
+<table>
+  <tr>
+    <td>string </td>
+    <td>name</td>
+        <td>Name of the bond</td>
+      </tr>
+  <tr>
+    <td>string </td>
+    <td>symbol</td>
+        <td>Ticker symbol for the bond</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>owner</td>
+        <td>Owner of the bond</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>maturityDate</td>
+        <td>Timestamp of when the bond matures</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>paymentToken</td>
+        <td>Address of the token being paid</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>collateralToken</td>
+        <td>Address of the collateral to use for the bond</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>collateralRatio</td>
+        <td>Ratio of bond: collateral token</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>convertibleRatio</td>
+        <td>Ratio of bond:token that the bond can be converted into</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>maxSupply</td>
+        <td>Max amount of tokens able to mint</td>
+      </tr>
+</table>
 
 ### getRoleAdmin
 
@@ -123,19 +255,23 @@ _This uses a clone to save on deployment costs which adds a slight overhead ever
 function getRoleAdmin(bytes32 role) external view returns (bytes32)
 ```
 
-_Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role&#39;s admin, use {\_setRoleAdmin}._
-
 #### Parameters
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| role | bytes32 | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+</table>
 
 ### grantRole
 
@@ -143,14 +279,18 @@ _Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. 
 function grantRole(bytes32 role, address account) external nonpayable
 ```
 
-_Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have `role`&#39;s admin role._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 ### hasRole
 
@@ -158,20 +298,31 @@ _Grants `role` to `account`. If `account` had not been already granted `role`, e
 function hasRole(bytes32 role, address account) external view returns (bool)
 ```
 
-_Returns `true` if `account` has been granted `role`._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 ### isAllowListEnabled
 
@@ -183,9 +334,8 @@ when enabled, issuance is restricted to those with the ISSUER_ROLE
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+</table>
 
 ### renounceRole
 
@@ -193,14 +343,18 @@ when enabled, issuance is restricted to those with the ISSUER_ROLE
 function renounceRole(bytes32 role, address account) external nonpayable
 ```
 
-_Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function&#39;s purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been revoked `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `account`._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 ### revokeRole
 
@@ -208,14 +362,18 @@ _Revokes `role` from the calling account. Roles are often managed via {grantRole
 function revokeRole(bytes32 role, address account) external nonpayable
 ```
 
-_Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have `role`&#39;s admin role._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 ### setIsAllowListEnabled
 
@@ -225,13 +383,15 @@ function setIsAllowListEnabled(bool _isAllowListEnabled) external nonpayable
 
 Turns the allow list on or off
 
-_Must be called by the current owner_
-
 #### Parameters
 
-| Name                 | Type | Description                                |
-| -------------------- | ---- | ------------------------------------------ |
-| \_isAllowListEnabled | bool | If the allow list should be enabled or not |
+<table>
+  <tr>
+    <td>bool </td>
+    <td>_isAllowListEnabled</td>
+        <td>If the allow list should be enabled or not</td>
+      </tr>
+</table>
 
 ### supportsInterface
 
@@ -239,19 +399,23 @@ _Must be called by the current owner_
 function supportsInterface(bytes4 interfaceId) external view returns (bool)
 ```
 
-_See {IERC165-supportsInterface}._
-
 #### Parameters
 
-| Name        | Type   | Description |
-| ----------- | ------ | ----------- |
-| interfaceId | bytes4 | undefined   |
+<table>
+  <tr>
+    <td>bytes4 </td>
+    <td>interfaceId</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+  <tr>
+    <td>bytes4 </td>
+    <td>interfaceId</td>
+      </tr>
+</table>
 
 ### tokenImplementation
 
@@ -261,6 +425,5 @@ function tokenImplementation() external view returns (address)
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | address | undefined   |
+<table>
+</table>

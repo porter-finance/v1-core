@@ -196,6 +196,7 @@ contract Bond is
         @param _collateralToken the ERC20 token address for the bond
         @param _collateralRatio the amount of tokens per bond needed
         @param _convertibleRatio the amount of tokens per bond a convertible bond can be converted for
+        @param _maxSupply the max amount of bonds able to be minted
     */
     function initialize(
         string memory bondName,

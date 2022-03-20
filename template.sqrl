@@ -1,23 +1,15 @@
 {{@if (it.name)}}# {{it.name}}{{/if}}
 
 
-{{@if (it.author)}}*{{it.author}}*{{/if}}
-
-
-{{@if (it.title)}}> {{it.title}}{{/if}}
-
-
 {{@if (it.notice)}}{{it.notice}}{{/if}}
 
-
-{{@if (it.details)}}*{{it.details}}*{{/if}}
 
 
 {{@if (Object.keys(it.events).length > 0)}}
 ## Events
 
 {{@foreach(it.events) => key, val}}
-### `{{key}}`
+### {{key}}
 
 
 {{@if (val.notice)}}{{val.notice}}{{/if}}
@@ -28,11 +20,17 @@
 
 {{@if (Object.keys(val.inputs).length > 0)}}
 
-| Name | Type | Description |
-|---|---|---|
+<table>
 {{@foreach(val.inputs) => key, val}}
-| {{key}} {{@if (val.indexed)}}`indexed`{{/if}} | {{val.type}} | {{val.description}} |
+  <tr>
+    <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
+    <td>{{key}}</td>
+    {{@if (val.description)}}
+    <td>{{val.description}}</td>
+    {{/if}}
+  </tr>
 {{/foreach}}
+</table>
 {{/if}}
 
 {{/foreach}}
@@ -43,22 +41,24 @@
 ## Errors
 
 {{@foreach(it.errors) => key, val}}
-### `{{key}}`
-
-
-{{@if (val.notice)}}{{val.notice}}{{/if}}
-
+### {{key}}{{@if (val.notice)}} - {{val.notice}}{{/if}}
 
 {{@if (val.details)}}*{{val.details}}*{{/if}}
 
 
 {{@if (Object.keys(val.inputs).length > 0)}}
 
-| Name | Type | Description |
-|---|---|---|
+<table>
 {{@foreach(val.inputs) => key, val}}
-| {{key}} | {{val.type}} | {{val.description}} |
+  <tr>
+    <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
+    <td>{{key}}</td>
+    {{@if (val.description)}}
+    <td>{{val.description}}</td>
+    {{/if}}
+  </tr>
 {{/foreach}}
+</table>
 {{/if}}
 
 {{/foreach}}
@@ -68,6 +68,7 @@
 
 {{@if (Object.keys(it.methods).length > 0)}}
 ## Methods
+
 
 {{@foreach(it.methods) => key, val}}
 ### {{key.split('(')[0]}}
@@ -81,29 +82,39 @@
 {{@if (val.notice)}}{{val.notice}}{{/if}}
 
 
-{{@if (val.details)}}*{{val.details}}*{{/if}}
-
-
 {{@if (Object.keys(val.inputs).length > 0)}}
 #### Parameters
 
-| Name | Type | Description |
-|---|---|---|
+<table>
 {{@foreach(val.inputs) => key, val}}
-| {{key}} | {{val.type}} | {{val.description}} |
+  <tr>
+    <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
+    <td>{{key}}</td>
+    {{@if (val.description)}}
+    <td>{{val.description}}</td>
+    {{/if}}
+  </tr>
 {{/foreach}}
+</table>
 {{/if}}
 
 {{@if (Object.keys(val.outputs).length > 0)}}
 #### Returns
 
-| Name | Type | Description |
-|---|---|---|
-{{@foreach(val.outputs) => key, val}}
-| {{key}} | {{val.type}} | {{val.description}} |
-{{/foreach}}
 
+<table>
+{{@foreach(val.inputs) => key, val}}
+  <tr>
+    <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
+    <td>{{key}}</td>
+    {{@if (val.description)}}
+    <td>{{val.description}}</td>
+    {{/if}}
+  </tr>
+{{/foreach}}
+</table>
 {{/if}}
+
 {{/foreach}}
 
 {{/if}}

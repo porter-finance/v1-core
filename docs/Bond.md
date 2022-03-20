@@ -1,163 +1,272 @@
 # Bond
 
-_Porter Finance_
-
-> Bond
-
 A custom ERC20 token that can be used to issue bonds.The contract handles issuance, conversion, and redemption of bonds.
-
-_External calls to tokens used for collateral and payment are used throughout to transfer and check balances_
 
 ## Events
 
-### `Approval`
+### Approval
 
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| owner `indexed`   | address | undefined   |
-| spender `indexed` | address | undefined   |
-| value             | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>owner</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>spender</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>value</td>
+      </tr>
+</table>
 
-### `CollateralDeposit`
+### CollateralDeposit
 
 emitted when a collateral is deposited for a bond
 
-| Name            | Type    | Description                         |
-| --------------- | ------- | ----------------------------------- |
-| from `indexed`  | address | the address depositing collateral   |
-| token `indexed` | address | the address of the collateral token |
-| amount          | uint256 | the number of the tokens deposited  |
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>from</td>
+        <td>the address depositing collateral</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>token</td>
+        <td>the address of the collateral token</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+        <td>the number of the tokens deposited</td>
+      </tr>
+</table>
 
-### `CollateralWithdraw`
+### CollateralWithdraw
 
 emitted when a bond&#39;s issuer withdraws collateral
 
-| Name            | Type    | Description                         |
-| --------------- | ------- | ----------------------------------- |
-| from `indexed`  | address | the address withdrawing collateral  |
-| token `indexed` | address | the address of the collateral token |
-| amount          | uint256 | the number of the tokens withdrawn  |
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>from</td>
+        <td>the address withdrawing collateral</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>token</td>
+        <td>the address of the collateral token</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+        <td>the number of the tokens withdrawn</td>
+      </tr>
+</table>
 
-### `Convert`
+### Convert
 
 emitted when bond tokens are converted by a borrower
 
-| Name                      | Type    | Description                              |
-| ------------------------- | ------- | ---------------------------------------- |
-| from `indexed`            | address | the address converting their tokens      |
-| collateralToken `indexed` | address | the address of the collateral received   |
-| amountOfBondsConverted    | uint256 | the number of burnt bonds                |
-| amountOfCollateralTokens  | uint256 | the number of collateral tokens received |
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>from</td>
+        <td>the address converting their tokens</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>collateralToken</td>
+        <td>the address of the collateral received</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amountOfBondsConverted</td>
+        <td>the number of burnt bonds</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amountOfCollateralTokens</td>
+        <td>the number of collateral tokens received</td>
+      </tr>
+</table>
 
-### `Mint`
+### Mint
 
 emitted when bonds are minted
 
-| Name           | Type    | Description                |
-| -------------- | ------- | -------------------------- |
-| from `indexed` | address | the address minting        |
-| amount         | uint256 | the amount of bonds minted |
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>from</td>
+        <td>the address minting</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+        <td>the amount of bonds minted</td>
+      </tr>
+</table>
 
-### `Payment`
+### Payment
 
 emitted when a portion of the bond&#39;s principal is paid
 
-| Name           | Type    | Description                     |
-| -------------- | ------- | ------------------------------- |
-| from `indexed` | address | the address depositing payment  |
-| amount         | uint256 | the amount of payment deposited |
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>from</td>
+        <td>the address depositing payment</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+        <td>the amount of payment deposited</td>
+      </tr>
+</table>
 
-### `PaymentInFull`
+### PaymentInFull
 
 emitted when all of the bond&#39;s principal is paid back
 
-| Name           | Type    | Description                                |
-| -------------- | ------- | ------------------------------------------ |
-| from `indexed` | address | the address depositing payment             |
-| amount         | uint256 | the amount deposited to fully pay the bond |
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>from</td>
+        <td>the address depositing payment</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+        <td>the amount deposited to fully pay the bond</td>
+      </tr>
+</table>
 
-### `Redeem`
+### Redeem
 
 emitted when a bond is redeemed
 
-| Name                          | Type    | Description                               |
-| ----------------------------- | ------- | ----------------------------------------- |
-| from `indexed`                | address | the bond holder whose bonds are burnt     |
-| paymentToken `indexed`        | address | the address of the payment token          |
-| collateralToken `indexed`     | address | the address of the collateral token       |
-| amountOfBondsRedeemed         | uint256 | the amount of bonds burned for redemption |
-| amountOfPaymentTokensReceived | uint256 | the amount of payment tokens              |
-| amountOfCollateralTokens      | uint256 | the amount of collateral tokens           |
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>from</td>
+        <td>the bond holder whose bonds are burnt</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>paymentToken</td>
+        <td>the address of the payment token</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>collateralToken</td>
+        <td>the address of the collateral token</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amountOfBondsRedeemed</td>
+        <td>the amount of bonds burned for redemption</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amountOfPaymentTokensReceived</td>
+        <td>the amount of payment tokens</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amountOfCollateralTokens</td>
+        <td>the amount of collateral tokens</td>
+      </tr>
+</table>
 
-### `RoleAdminChanged`
+### RoleAdminChanged
 
-| Name                        | Type    | Description |
-| --------------------------- | ------- | ----------- |
-| role `indexed`              | bytes32 | undefined   |
-| previousAdminRole `indexed` | bytes32 | undefined   |
-| newAdminRole `indexed`      | bytes32 | undefined   |
+<table>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>previousAdminRole</td>
+      </tr>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>newAdminRole</td>
+      </tr>
+</table>
 
-### `RoleGranted`
+### RoleGranted
 
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>account</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>sender</td>
+      </tr>
+</table>
 
-### `RoleRevoked`
+### RoleRevoked
 
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 <code>indexed</code></td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>account</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>sender</td>
+      </tr>
+</table>
 
-### `Transfer`
+### Transfer
 
-| Name           | Type    | Description |
-| -------------- | ------- | ----------- |
-| from `indexed` | address | undefined   |
-| to `indexed`   | address | undefined   |
-| value          | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>from</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>to</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>value</td>
+      </tr>
+</table>
 
 ## Errors
 
-### `BondNotYetMatured`
+### BondNotYetMatured - operation restricted because the bond is not yet mature
 
-operation restricted because the bond is not yet mature
+### BondPastMaturity - operation restricted because the bond has matured
 
-### `BondPastMaturity`
+### BondSupplyExceeded - attempted to mint bonds that would exceeded maxSupply
 
-operation restricted because the bond has matured
+### CollateralRatioLessThanConvertibleRatio - collateralRatio must be greater than convertibleRatio
 
-### `BondSupplyExceeded`
+### InvalidMaturityDate - maturity date is not valid
 
-attempted to mint bonds that would exceeded maxSupply
+### PaymentMet - attempted to pay after payment was met
 
-### `CollateralRatioLessThanConvertibleRatio`
+### SweepDisallowedForToken - attempted to sweep a token used in the contract
 
-collateralRatio must be greater than convertibleRatio
+### TokenOverflow - unexpected amount returned on external token transfer
 
-### `InvalidMaturityDate`
-
-maturity date is not valid
-
-### `PaymentMet`
-
-attempted to pay after payment was met
-
-### `SweepDisallowedForToken`
-
-attempted to sweep a token used in the contract
-
-### `TokenOverflow`
-
-unexpected amount returned on external token transfer
-
-### `ZeroAmount`
-
-attempted to perform an action that would do nothing
+### ZeroAmount - attempted to perform an action that would do nothing
 
 ## Methods
 
@@ -169,9 +278,8 @@ function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+<table>
+</table>
 
 ### MINT_ROLE
 
@@ -181,13 +289,10 @@ function MINT_ROLE() external view returns (bytes32)
 
 this role permits the minting of bonds
 
-_this is assigned to owner in `initialize` the owner can assign other addresses with this role to enable their minting_
-
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+<table>
+</table>
 
 ### WITHDRAW_ROLE
 
@@ -197,13 +302,10 @@ function WITHDRAW_ROLE() external view returns (bytes32)
 
 this role permits the withdraw of collateral from the contract
 
-_this is assigned to owner in `initialize` the owner can assign other addresses with this role to enable their withdraw_
-
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+<table>
+</table>
 
 ### allowance
 
@@ -211,20 +313,31 @@ _this is assigned to owner in `initialize` the owner can assign other addresses 
 function allowance(address owner, address spender) external view returns (uint256)
 ```
 
-_See {IERC20-allowance}._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| owner   | address | undefined   |
-| spender | address | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>owner</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>spender</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>owner</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>spender</td>
+      </tr>
+</table>
 
 ### approve
 
@@ -232,20 +345,31 @@ _See {IERC20-allowance}._
 function approve(address spender, uint256 amount) external nonpayable returns (bool)
 ```
 
-_See {IERC20-approve}. NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on `transferFrom`. This is semantically equivalent to an infinite approval. Requirements: - `spender` cannot be the zero address._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| spender | address | undefined   |
-| amount  | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>spender</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>spender</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+      </tr>
+</table>
 
 ### balanceOf
 
@@ -253,19 +377,23 @@ _See {IERC20-approve}. NOTE: If `amount` is the maximum `uint256`, the allowance
 function balanceOf(address account) external view returns (uint256)
 ```
 
-_See {IERC20-balanceOf}._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| account | address | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 ### burn
 
@@ -273,13 +401,14 @@ _See {IERC20-balanceOf}._
 function burn(uint256 amount) external nonpayable
 ```
 
-_Destroys `amount` tokens from the caller. See {ERC20-\_burn}._
-
 #### Parameters
 
-| Name   | Type    | Description |
-| ------ | ------- | ----------- |
-| amount | uint256 | undefined   |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+      </tr>
+</table>
 
 ### burnFrom
 
@@ -287,14 +416,18 @@ _Destroys `amount` tokens from the caller. See {ERC20-\_burn}._
 function burnFrom(address account, uint256 amount) external nonpayable
 ```
 
-_Destroys `amount` tokens from `account`, deducting from the caller&#39;s allowance. See {ERC20-\_burn} and {ERC20-allowance}. Requirements: - the caller must have allowance for `accounts`&#39;s tokens of at least `amount`._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| account | address | undefined   |
-| amount  | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+      </tr>
+</table>
 
 ### collateralRatio
 
@@ -304,13 +437,10 @@ function collateralRatio() external view returns (uint256)
 
 the ratio of collateral tokens per bond with
 
-_this amount is expressed as a deviation from 1-to-1 (equal to 1e18)_
-
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+<table>
+</table>
 
 ### collateralToken
 
@@ -322,9 +452,8 @@ the address of the ERC20 token used as collateral backing the bond
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | address | undefined   |
+<table>
+</table>
 
 ### convert
 
@@ -336,9 +465,13 @@ Bond holder can convert their bond to underlying collateral The bond must be con
 
 #### Parameters
 
-| Name  | Type    | Description                                                                                       |
-| ----- | ------- | ------------------------------------------------------------------------------------------------- |
-| bonds | uint256 | the number of bonds which will be burnt and converted into the collateral at the convertibleRatio |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>bonds</td>
+        <td>the number of bonds which will be burnt and converted into the collateral at the convertibleRatio</td>
+      </tr>
+</table>
 
 ### convertibleRatio
 
@@ -348,13 +481,10 @@ function convertibleRatio() external view returns (uint256)
 
 the ratio of ERC20 tokens the bonds will convert into
 
-_this amount is expressed as a deviation from 1-to-1 (equal to 1e18) if this ratio is 0, the bond is not convertible. after maturity, the bond is not convertible._
-
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+<table>
+</table>
 
 ### decimals
 
@@ -362,13 +492,10 @@ _this amount is expressed as a deviation from 1-to-1 (equal to 1e18) if this rat
 function decimals() external view returns (uint8)
 ```
 
-_Returns the number of decimals used to get its user representation. For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`). Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei. This is the value {ERC20} uses, unless this function is overridden; NOTE: This information is only used for *display* purposes: it in no way affects any of the arithmetic of the contract, including {IERC20-balanceOf} and {IERC20-transfer}._
-
 #### Returns
 
-| Name | Type  | Description |
-| ---- | ----- | ----------- |
-| \_0  | uint8 | undefined   |
+<table>
+</table>
 
 ### decreaseAllowance
 
@@ -376,20 +503,31 @@ _Returns the number of decimals used to get its user representation. For example
 function decreaseAllowance(address spender, uint256 subtractedValue) external nonpayable returns (bool)
 ```
 
-_Atomically decreases the allowance granted to `spender` by the caller. This is an alternative to {approve} that can be used as a mitigation for problems described in {IERC20-approve}. Emits an {Approval} event indicating the updated allowance. Requirements: - `spender` cannot be the zero address. - `spender` must have allowance for the caller of at least `subtractedValue`._
-
 #### Parameters
 
-| Name            | Type    | Description |
-| --------------- | ------- | ----------- |
-| spender         | address | undefined   |
-| subtractedValue | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>spender</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>subtractedValue</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>spender</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>subtractedValue</td>
+      </tr>
+</table>
 
 ### getRoleAdmin
 
@@ -397,19 +535,23 @@ _Atomically decreases the allowance granted to `spender` by the caller. This is 
 function getRoleAdmin(bytes32 role) external view returns (bytes32)
 ```
 
-_Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role&#39;s admin, use {\_setRoleAdmin}._
-
 #### Parameters
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| role | bytes32 | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+</table>
 
 ### grantRole
 
@@ -417,14 +559,18 @@ _Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. 
 function grantRole(bytes32 role, address account) external nonpayable
 ```
 
-_Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have `role`&#39;s admin role._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 ### hasRole
 
@@ -432,20 +578,31 @@ _Grants `role` to `account`. If `account` had not been already granted `role`, e
 function hasRole(bytes32 role, address account) external view returns (bool)
 ```
 
-_Returns `true` if `account` has been granted `role`._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 ### increaseAllowance
 
@@ -453,20 +610,31 @@ _Returns `true` if `account` has been granted `role`._
 function increaseAllowance(address spender, uint256 addedValue) external nonpayable returns (bool)
 ```
 
-_Atomically increases the allowance granted to `spender` by the caller. This is an alternative to {approve} that can be used as a mitigation for problems described in {IERC20-approve}. Emits an {Approval} event indicating the updated allowance. Requirements: - `spender` cannot be the zero address._
-
 #### Parameters
 
-| Name       | Type    | Description |
-| ---------- | ------- | ----------- |
-| spender    | address | undefined   |
-| addedValue | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>spender</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>addedValue</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>spender</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>addedValue</td>
+      </tr>
+</table>
 
 ### initialize
 
@@ -476,21 +644,55 @@ function initialize(string bondName, string bondSymbol, address owner, uint256 _
 
 this function is called one time during initial bond creation and sets up the configuration for the bond
 
-_New bond contract deployed via clone_
-
 #### Parameters
 
-| Name               | Type    | Description                                                           |
-| ------------------ | ------- | --------------------------------------------------------------------- |
-| bondName           | string  | passed into the ERC20 token                                           |
-| bondSymbol         | string  | passed into the ERC20 token                                           |
-| owner              | address | ownership of this contract transferred to this address                |
-| \_maturityDate     | uint256 | the timestamp at which the bond will mature                           |
-| \_paymentToken     | address | the ERC20 token address the bond will be redeemable for at maturity   |
-| \_collateralToken  | address | the ERC20 token address for the bond                                  |
-| \_collateralRatio  | uint256 | the amount of tokens per bond needed                                  |
-| \_convertibleRatio | uint256 | the amount of tokens per bond a convertible bond can be converted for |
-| \_maxSupply        | uint256 | undefined                                                             |
+<table>
+  <tr>
+    <td>string </td>
+    <td>bondName</td>
+        <td>passed into the ERC20 token</td>
+      </tr>
+  <tr>
+    <td>string </td>
+    <td>bondSymbol</td>
+        <td>passed into the ERC20 token</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>owner</td>
+        <td>ownership of this contract transferred to this address</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>_maturityDate</td>
+        <td>the timestamp at which the bond will mature</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>_paymentToken</td>
+        <td>the ERC20 token address the bond will be redeemable for at maturity</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>_collateralToken</td>
+        <td>the ERC20 token address for the bond</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>_collateralRatio</td>
+        <td>the amount of tokens per bond needed</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>_convertibleRatio</td>
+        <td>the amount of tokens per bond a convertible bond can be converted for</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>_maxSupply</td>
+        <td>the max amount of bonds able to be minted</td>
+      </tr>
+</table>
 
 ### isFullyPaid
 
@@ -500,13 +702,10 @@ function isFullyPaid() external view returns (bool)
 
 checks if the balance of payment token covers the bond supply
 
-_upscaling the token amount as there could be differing decimals_
-
 #### Returns
 
-| Name | Type | Description                           |
-| ---- | ---- | ------------------------------------- |
-| \_0  | bool | whether or not the bond is fully paid |
+<table>
+</table>
 
 ### isMature
 
@@ -518,9 +717,8 @@ checks if the maturity date has passed (including current block timestamp)
 
 #### Returns
 
-| Name | Type | Description                                           |
-| ---- | ---- | ----------------------------------------------------- |
-| \_0  | bool | whether or not the bond has reached the maturity date |
+<table>
+</table>
 
 ### maturityDate
 
@@ -532,9 +730,8 @@ A date in the future set at bond creation at which the bond will mature. Before 
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+<table>
+</table>
 
 ### maxSupply
 
@@ -544,13 +741,10 @@ function maxSupply() external view returns (uint256)
 
 the max amount of bonds able to be minted and cannot be changed
 
-_checked in the `mint` function to limit `totalSupply` exceeding this number_
-
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+<table>
+</table>
 
 ### mint
 
@@ -560,13 +754,15 @@ function mint(uint256 bonds) external nonpayable
 
 mints the amount of specified bonds by transferring in collateral
 
-_CollateralDeposit + Mint events are both emitted. bonds to mint is bounded by maxSupply_
-
 #### Parameters
 
-| Name  | Type    | Description                 |
-| ----- | ------- | --------------------------- |
-| bonds | uint256 | the amount of bonds to mint |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>bonds</td>
+        <td>the amount of bonds to mint</td>
+      </tr>
+</table>
 
 ### name
 
@@ -574,13 +770,10 @@ _CollateralDeposit + Mint events are both emitted. bonds to mint is bounded by m
 function name() external view returns (string)
 ```
 
-_Returns the name of the token._
-
 #### Returns
 
-| Name | Type   | Description |
-| ---- | ------ | ----------- |
-| \_0  | string | undefined   |
+<table>
+</table>
 
 ### pay
 
@@ -590,13 +783,15 @@ function pay(uint256 amount) external nonpayable
 
 allows the issuer to pay the bond by depositing payment token
 
-_emits PaymentInFull if the full balance has been repaid, PaymentDeposited otherwise the lower of outstandingAmount and amount is chosen to prevent overpayment_
-
 #### Parameters
 
-| Name   | Type    | Description                         |
-| ------ | ------- | ----------------------------------- |
-| amount | uint256 | the number of payment tokens to pay |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+        <td>the number of payment tokens to pay</td>
+      </tr>
+</table>
 
 ### paymentToken
 
@@ -608,9 +803,8 @@ The address of the ERC20 token this bond will be redeemable for at maturity
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | address | undefined   |
+<table>
+</table>
 
 ### previewConvertBeforeMaturity
 
@@ -620,19 +814,25 @@ function previewConvertBeforeMaturity(uint256 bonds) external view returns (uint
 
 the amount of collateral the given bonds would convert into if able
 
-_this function rounds down the number of returned collateral_
-
 #### Parameters
 
-| Name  | Type    | Description                                                        |
-| ----- | ------- | ------------------------------------------------------------------ |
-| bonds | uint256 | the amount of bonds that would be burnt to convert into collateral |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>bonds</td>
+        <td>the amount of bonds that would be burnt to convert into collateral</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type    | Description                   |
-| ---- | ------- | ----------------------------- |
-| \_0  | uint256 | amount of collateral received |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>bonds</td>
+        <td>the amount of bonds that would be burnt to convert into collateral</td>
+      </tr>
+</table>
 
 ### previewMintBeforeMaturity
 
@@ -642,19 +842,25 @@ function previewMintBeforeMaturity(uint256 bonds) external view returns (uint256
 
 preview the amount of collateral tokens required to mint the given bond tokens
 
-_this function rounds up the amount of required collateral for the number of bonds to mint_
-
 #### Parameters
 
-| Name  | Type    | Description                         |
-| ----- | ------- | ----------------------------------- |
-| bonds | uint256 | the amount of desired bonds to mint |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>bonds</td>
+        <td>the amount of desired bonds to mint</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type    | Description                   |
-| ---- | ------- | ----------------------------- |
-| \_0  | uint256 | amount of collateral required |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>bonds</td>
+        <td>the amount of desired bonds to mint</td>
+      </tr>
+</table>
 
 ### previewRedeemAtMaturity
 
@@ -666,16 +872,23 @@ the amount of collateral and payment tokens the bonds would redeem for at maturi
 
 #### Parameters
 
-| Name  | Type    | Description                                       |
-| ----- | ------- | ------------------------------------------------- |
-| bonds | uint256 | the amount of bonds to burn and redeem for tokens |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>bonds</td>
+        <td>the amount of bonds to burn and redeem for tokens</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type    | Description                                |
-| ---- | ------- | ------------------------------------------ |
-| \_0  | uint256 | the amount of payment tokens to receive    |
-| \_1  | uint256 | the amount of collateral tokens to receive |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>bonds</td>
+        <td>the amount of bonds to burn and redeem for tokens</td>
+      </tr>
+</table>
 
 ### previewWithdraw
 
@@ -685,13 +898,10 @@ function previewWithdraw() external view returns (uint256)
 
 the amount of collateral that the issuer would be able to withdraw from the contract
 
-_this function calculates the amount of collateral tokens thatare able to be withdrawn by the issuer. The amount of tokens can increase by bonds being burnt and converted as well as payment made. Each bond is covered by a certain amount of collateral to fulfill collateralRatio and convertibleRatio. For convertible bonds, the totalSupply of bonds must be covered by the convertibleRatio. That means even if all of the bonds were covered by payment, there must still be enough collateral in the contract to cover the outstanding bonds convertible until the maturity date - at which point all collateral will be able to be withdrawn. There are the following scenarios: &quot;total uncovered supply&quot; is the tokens that are not covered by the amount repaid. bond is NOT paid AND NOT mature: to cover collateralRatio = total uncovered supply _ collateralRatio to cover convertibleRatio = total supply _ convertibleRatio bond is NOT paid AND mature to cover collateralRatio = total uncovered supply _ collateralRatio to cover convertibleRatio = 0 (bonds cannot be converted) bond IS paid AND NOT mature to cover collateralRatio = 0 (bonds need not be backed by collateral) to cover convertibleRatio = total supply _ collateral ratio bond IS paid AND mature to cover collateralRatio = 0 to cover convertibleRatio = 0 All outstanding bonds must be covered by the convertibleRatio_
-
 #### Returns
 
-| Name | Type    | Description                       |
-| ---- | ------- | --------------------------------- |
-| \_0  | uint256 | the amount of collateral received |
+<table>
+</table>
 
 ### redeem
 
@@ -703,9 +913,13 @@ this function burns bonds in return for the token borrowed against the bond
 
 #### Parameters
 
-| Name  | Type    | Description                            |
-| ----- | ------- | -------------------------------------- |
-| bonds | uint256 | the amount of bonds to redeem and burn |
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>bonds</td>
+        <td>the amount of bonds to redeem and burn</td>
+      </tr>
+</table>
 
 ### renounceRole
 
@@ -713,14 +927,18 @@ this function burns bonds in return for the token borrowed against the bond
 function renounceRole(bytes32 role, address account) external nonpayable
 ```
 
-_Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function&#39;s purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been revoked `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `account`._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 ### revokeRole
 
@@ -728,14 +946,18 @@ _Revokes `role` from the calling account. Roles are often managed via {grantRole
 function revokeRole(bytes32 role, address account) external nonpayable
 ```
 
-_Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have `role`&#39;s admin role._
-
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
 ### supportsInterface
 
@@ -743,19 +965,23 @@ _Revokes `role` from `account`. If `account` had been granted `role`, emits a {R
 function supportsInterface(bytes4 interfaceId) external view returns (bool)
 ```
 
-_See {IERC165-supportsInterface}._
-
 #### Parameters
 
-| Name        | Type   | Description |
-| ----------- | ------ | ----------- |
-| interfaceId | bytes4 | undefined   |
+<table>
+  <tr>
+    <td>bytes4 </td>
+    <td>interfaceId</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+  <tr>
+    <td>bytes4 </td>
+    <td>interfaceId</td>
+      </tr>
+</table>
 
 ### sweep
 
@@ -765,13 +991,15 @@ function sweep(contract IERC20Metadata token) external nonpayable
 
 sends tokens to the issuer that were sent to this contract
 
-_collateral, payment, and the bond itself cannot be swept_
-
 #### Parameters
 
-| Name  | Type                    | Description                                                |
-| ----- | ----------------------- | ---------------------------------------------------------- |
-| token | contract IERC20Metadata | send the entire token balance of this address to the owner |
+<table>
+  <tr>
+    <td>contract IERC20Metadata </td>
+    <td>token</td>
+        <td>send the entire token balance of this address to the owner</td>
+      </tr>
+</table>
 
 ### symbol
 
@@ -779,13 +1007,10 @@ _collateral, payment, and the bond itself cannot be swept_
 function symbol() external view returns (string)
 ```
 
-_Returns the symbol of the token, usually a shorter version of the name._
-
 #### Returns
 
-| Name | Type   | Description |
-| ---- | ------ | ----------- |
-| \_0  | string | undefined   |
+<table>
+</table>
 
 ### totalCollateral
 
@@ -797,9 +1022,8 @@ gets the external balance of the ERC20 collateral token
 
 #### Returns
 
-| Name | Type    | Description                                    |
-| ---- | ------- | ---------------------------------------------- |
-| \_0  | uint256 | the amount of collateralTokens in the contract |
+<table>
+</table>
 
 ### totalPaid
 
@@ -811,9 +1035,8 @@ gets the external balance of the ERC20 payment token
 
 #### Returns
 
-| Name | Type    | Description                                 |
-| ---- | ------- | ------------------------------------------- |
-| \_0  | uint256 | the amount of paymentTokens in the contract |
+<table>
+</table>
 
 ### totalSupply
 
@@ -821,13 +1044,10 @@ gets the external balance of the ERC20 payment token
 function totalSupply() external view returns (uint256)
 ```
 
-_See {IERC20-totalSupply}._
-
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+<table>
+</table>
 
 ### transfer
 
@@ -835,20 +1055,31 @@ _See {IERC20-totalSupply}._
 function transfer(address to, uint256 amount) external nonpayable returns (bool)
 ```
 
-_See {IERC20-transfer}. Requirements: - `to` cannot be the zero address. - the caller must have a balance of at least `amount`._
-
 #### Parameters
 
-| Name   | Type    | Description |
-| ------ | ------- | ----------- |
-| to     | address | undefined   |
-| amount | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>to</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>to</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+      </tr>
+</table>
 
 ### transferFrom
 
@@ -856,21 +1087,39 @@ _See {IERC20-transfer}. Requirements: - `to` cannot be the zero address. - the c
 function transferFrom(address from, address to, uint256 amount) external nonpayable returns (bool)
 ```
 
-_See {IERC20-transferFrom}. Emits an {Approval} event indicating the updated allowance. This is not required by the EIP. See the note at the beginning of {ERC20}. NOTE: Does not update the allowance if the current allowance is the maximum `uint256`. Requirements: - `from` and `to` cannot be the zero address. - `from` must have a balance of at least `amount`. - the caller must have allowance for `from`&#39;s tokens of at least `amount`._
-
 #### Parameters
 
-| Name   | Type    | Description |
-| ------ | ------- | ----------- |
-| from   | address | undefined   |
-| to     | address | undefined   |
-| amount | uint256 | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>from</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>to</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+      </tr>
+</table>
 
 #### Returns
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+<table>
+  <tr>
+    <td>address </td>
+    <td>from</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>to</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>amount</td>
+      </tr>
+</table>
 
 ### withdrawCollateral
 
