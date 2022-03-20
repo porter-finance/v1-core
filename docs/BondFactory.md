@@ -8,6 +8,57 @@ This factory contract issues new bond contracts
 
 _This uses a cloneFactory to save on gas costs during deployment see OpenZeppelin&#39;s &quot;Clones&quot; proxy_
 
+## Events
+
+### `AllowListEnabled`
+
+Emitted when the allow list is toggled on or off
+
+| Name               | Type | Description                     |
+| ------------------ | ---- | ------------------------------- |
+| isAllowListEnabled | bool | the new state of the allow list |
+
+### `BondCreated`
+
+Emitted when a new bond is created
+
+| Name                      | Type    | Description                                                |
+| ------------------------- | ------- | ---------------------------------------------------------- |
+| newBond                   | address | The address of the newley deployed bond Inherit createBond |
+| name                      | string  | undefined                                                  |
+| symbol                    | string  | undefined                                                  |
+| owner `indexed`           | address | undefined                                                  |
+| maturityDate              | uint256 | undefined                                                  |
+| paymentToken `indexed`    | address | undefined                                                  |
+| collateralToken `indexed` | address | undefined                                                  |
+| collateralRatio           | uint256 | undefined                                                  |
+| convertibleRatio          | uint256 | undefined                                                  |
+| maxSupply                 | uint256 | undefined                                                  |
+
+### `RoleAdminChanged`
+
+| Name                        | Type    | Description |
+| --------------------------- | ------- | ----------- |
+| role `indexed`              | bytes32 | undefined   |
+| previousAdminRole `indexed` | bytes32 | undefined   |
+| newAdminRole `indexed`      | bytes32 | undefined   |
+
+### `RoleGranted`
+
+| Name              | Type    | Description |
+| ----------------- | ------- | ----------- |
+| role `indexed`    | bytes32 | undefined   |
+| account `indexed` | address | undefined   |
+| sender `indexed`  | address | undefined   |
+
+### `RoleRevoked`
+
+| Name              | Type    | Description |
+| ----------------- | ------- | ----------- |
+| role `indexed`    | bytes32 | undefined   |
+| account `indexed` | address | undefined   |
+| sender `indexed`  | address | undefined   |
+
 ## Methods
 
 ### DEFAULT_ADMIN_ROLE
@@ -213,84 +264,3 @@ function tokenImplementation() external view returns (address)
 | Name | Type    | Description |
 | ---- | ------- | ----------- |
 | \_0  | address | undefined   |
-
-## Events
-
-### AllowListEnabled
-
-```solidity
-event AllowListEnabled(bool isAllowListEnabled)
-```
-
-Emitted when the allow list is toggled on or off
-
-#### Parameters
-
-| Name               | Type | Description                     |
-| ------------------ | ---- | ------------------------------- |
-| isAllowListEnabled | bool | the new state of the allow list |
-
-### BondCreated
-
-```solidity
-event BondCreated(address newBond, string name, string symbol, address indexed owner, uint256 maturityDate, address indexed paymentToken, address indexed collateralToken, uint256 collateralRatio, uint256 convertibleRatio, uint256 maxSupply)
-```
-
-Emitted when a new bond is created
-
-#### Parameters
-
-| Name                      | Type    | Description                                                |
-| ------------------------- | ------- | ---------------------------------------------------------- |
-| newBond                   | address | The address of the newley deployed bond Inherit createBond |
-| name                      | string  | undefined                                                  |
-| symbol                    | string  | undefined                                                  |
-| owner `indexed`           | address | undefined                                                  |
-| maturityDate              | uint256 | undefined                                                  |
-| paymentToken `indexed`    | address | undefined                                                  |
-| collateralToken `indexed` | address | undefined                                                  |
-| collateralRatio           | uint256 | undefined                                                  |
-| convertibleRatio          | uint256 | undefined                                                  |
-| maxSupply                 | uint256 | undefined                                                  |
-
-### RoleAdminChanged
-
-```solidity
-event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
-```
-
-#### Parameters
-
-| Name                        | Type    | Description |
-| --------------------------- | ------- | ----------- |
-| role `indexed`              | bytes32 | undefined   |
-| previousAdminRole `indexed` | bytes32 | undefined   |
-| newAdminRole `indexed`      | bytes32 | undefined   |
-
-### RoleGranted
-
-```solidity
-event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
-```
-
-#### Parameters
-
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |
-
-### RoleRevoked
-
-```solidity
-event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
-```
-
-#### Parameters
-
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |

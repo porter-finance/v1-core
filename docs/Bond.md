@@ -8,6 +8,157 @@ A custom ERC20 token that can be used to issue bonds.The contract handles issuan
 
 _External calls to tokens used for collateral and payment are used throughout to transfer and check balances_
 
+## Events
+
+### `Approval`
+
+| Name              | Type    | Description |
+| ----------------- | ------- | ----------- |
+| owner `indexed`   | address | undefined   |
+| spender `indexed` | address | undefined   |
+| value             | uint256 | undefined   |
+
+### `CollateralDeposit`
+
+emitted when a collateral is deposited for a bond
+
+| Name            | Type    | Description                         |
+| --------------- | ------- | ----------------------------------- |
+| from `indexed`  | address | the address depositing collateral   |
+| token `indexed` | address | the address of the collateral token |
+| amount          | uint256 | the number of the tokens deposited  |
+
+### `CollateralWithdraw`
+
+emitted when a bond&#39;s issuer withdraws collateral
+
+| Name            | Type    | Description                         |
+| --------------- | ------- | ----------------------------------- |
+| from `indexed`  | address | the address withdrawing collateral  |
+| token `indexed` | address | the address of the collateral token |
+| amount          | uint256 | the number of the tokens withdrawn  |
+
+### `Convert`
+
+emitted when bond tokens are converted by a borrower
+
+| Name                      | Type    | Description                              |
+| ------------------------- | ------- | ---------------------------------------- |
+| from `indexed`            | address | the address converting their tokens      |
+| collateralToken `indexed` | address | the address of the collateral received   |
+| amountOfBondsConverted    | uint256 | the number of burnt bonds                |
+| amountOfCollateralTokens  | uint256 | the number of collateral tokens received |
+
+### `Mint`
+
+emitted when bonds are minted
+
+| Name           | Type    | Description                |
+| -------------- | ------- | -------------------------- |
+| from `indexed` | address | the address minting        |
+| amount         | uint256 | the amount of bonds minted |
+
+### `Payment`
+
+emitted when a portion of the bond&#39;s principal is paid
+
+| Name           | Type    | Description                     |
+| -------------- | ------- | ------------------------------- |
+| from `indexed` | address | the address depositing payment  |
+| amount         | uint256 | the amount of payment deposited |
+
+### `PaymentInFull`
+
+emitted when all of the bond&#39;s principal is paid back
+
+| Name           | Type    | Description                                |
+| -------------- | ------- | ------------------------------------------ |
+| from `indexed` | address | the address depositing payment             |
+| amount         | uint256 | the amount deposited to fully pay the bond |
+
+### `Redeem`
+
+emitted when a bond is redeemed
+
+| Name                          | Type    | Description                               |
+| ----------------------------- | ------- | ----------------------------------------- |
+| from `indexed`                | address | the bond holder whose bonds are burnt     |
+| paymentToken `indexed`        | address | the address of the payment token          |
+| collateralToken `indexed`     | address | the address of the collateral token       |
+| amountOfBondsRedeemed         | uint256 | the amount of bonds burned for redemption |
+| amountOfPaymentTokensReceived | uint256 | the amount of payment tokens              |
+| amountOfCollateralTokens      | uint256 | the amount of collateral tokens           |
+
+### `RoleAdminChanged`
+
+| Name                        | Type    | Description |
+| --------------------------- | ------- | ----------- |
+| role `indexed`              | bytes32 | undefined   |
+| previousAdminRole `indexed` | bytes32 | undefined   |
+| newAdminRole `indexed`      | bytes32 | undefined   |
+
+### `RoleGranted`
+
+| Name              | Type    | Description |
+| ----------------- | ------- | ----------- |
+| role `indexed`    | bytes32 | undefined   |
+| account `indexed` | address | undefined   |
+| sender `indexed`  | address | undefined   |
+
+### `RoleRevoked`
+
+| Name              | Type    | Description |
+| ----------------- | ------- | ----------- |
+| role `indexed`    | bytes32 | undefined   |
+| account `indexed` | address | undefined   |
+| sender `indexed`  | address | undefined   |
+
+### `Transfer`
+
+| Name           | Type    | Description |
+| -------------- | ------- | ----------- |
+| from `indexed` | address | undefined   |
+| to `indexed`   | address | undefined   |
+| value          | uint256 | undefined   |
+
+## Errors
+
+### `BondNotYetMatured`
+
+operation restricted because the bond is not yet mature
+
+### `BondPastMaturity`
+
+operation restricted because the bond has matured
+
+### `BondSupplyExceeded`
+
+attempted to mint bonds that would exceeded maxSupply
+
+### `CollateralRatioLessThanConvertibleRatio`
+
+collateralRatio must be greater than convertibleRatio
+
+### `InvalidMaturityDate`
+
+maturity date is not valid
+
+### `PaymentMet`
+
+attempted to pay after payment was met
+
+### `SweepDisallowedForToken`
+
+attempted to sweep a token used in the contract
+
+### `TokenOverflow`
+
+unexpected amount returned on external token transfer
+
+### `ZeroAmount`
+
+attempted to perform an action that would do nothing
+
 ## Methods
 
 ### DEFAULT_ADMIN_ROLE
@@ -728,262 +879,3 @@ function withdrawCollateral() external nonpayable
 ```
 
 Withdraw collateral from bond contract the amount of collateral available to be withdrawn depends on the collateralRatio
-
-## Events
-
-### Approval
-
-```solidity
-event Approval(address indexed owner, address indexed spender, uint256 value)
-```
-
-#### Parameters
-
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| owner `indexed`   | address | undefined   |
-| spender `indexed` | address | undefined   |
-| value             | uint256 | undefined   |
-
-### CollateralDeposit
-
-```solidity
-event CollateralDeposit(address indexed from, address indexed token, uint256 amount)
-```
-
-emitted when a collateral is deposited for a bond
-
-#### Parameters
-
-| Name            | Type    | Description                         |
-| --------------- | ------- | ----------------------------------- |
-| from `indexed`  | address | the address depositing collateral   |
-| token `indexed` | address | the address of the collateral token |
-| amount          | uint256 | the number of the tokens deposited  |
-
-### CollateralWithdraw
-
-```solidity
-event CollateralWithdraw(address indexed from, address indexed token, uint256 amount)
-```
-
-emitted when a bond&#39;s issuer withdraws collateral
-
-#### Parameters
-
-| Name            | Type    | Description                         |
-| --------------- | ------- | ----------------------------------- |
-| from `indexed`  | address | the address withdrawing collateral  |
-| token `indexed` | address | the address of the collateral token |
-| amount          | uint256 | the number of the tokens withdrawn  |
-
-### Convert
-
-```solidity
-event Convert(address indexed from, address indexed collateralToken, uint256 amountOfBondsConverted, uint256 amountOfCollateralTokens)
-```
-
-emitted when bond tokens are converted by a borrower
-
-#### Parameters
-
-| Name                      | Type    | Description                              |
-| ------------------------- | ------- | ---------------------------------------- |
-| from `indexed`            | address | the address converting their tokens      |
-| collateralToken `indexed` | address | the address of the collateral received   |
-| amountOfBondsConverted    | uint256 | the number of burnt bonds                |
-| amountOfCollateralTokens  | uint256 | the number of collateral tokens received |
-
-### Mint
-
-```solidity
-event Mint(address indexed from, uint256 amount)
-```
-
-emitted when bonds are minted
-
-#### Parameters
-
-| Name           | Type    | Description                |
-| -------------- | ------- | -------------------------- |
-| from `indexed` | address | the address minting        |
-| amount         | uint256 | the amount of bonds minted |
-
-### Payment
-
-```solidity
-event Payment(address indexed from, uint256 amount)
-```
-
-emitted when a portion of the bond&#39;s principal is paid
-
-#### Parameters
-
-| Name           | Type    | Description                     |
-| -------------- | ------- | ------------------------------- |
-| from `indexed` | address | the address depositing payment  |
-| amount         | uint256 | the amount of payment deposited |
-
-### PaymentInFull
-
-```solidity
-event PaymentInFull(address indexed from, uint256 amount)
-```
-
-emitted when all of the bond&#39;s principal is paid back
-
-#### Parameters
-
-| Name           | Type    | Description                                |
-| -------------- | ------- | ------------------------------------------ |
-| from `indexed` | address | the address depositing payment             |
-| amount         | uint256 | the amount deposited to fully pay the bond |
-
-### Redeem
-
-```solidity
-event Redeem(address indexed from, address indexed paymentToken, address indexed collateralToken, uint256 amountOfBondsRedeemed, uint256 amountOfPaymentTokensReceived, uint256 amountOfCollateralTokens)
-```
-
-emitted when a bond is redeemed
-
-#### Parameters
-
-| Name                          | Type    | Description                               |
-| ----------------------------- | ------- | ----------------------------------------- |
-| from `indexed`                | address | the bond holder whose bonds are burnt     |
-| paymentToken `indexed`        | address | the address of the payment token          |
-| collateralToken `indexed`     | address | the address of the collateral token       |
-| amountOfBondsRedeemed         | uint256 | the amount of bonds burned for redemption |
-| amountOfPaymentTokensReceived | uint256 | the amount of payment tokens              |
-| amountOfCollateralTokens      | uint256 | the amount of collateral tokens           |
-
-### RoleAdminChanged
-
-```solidity
-event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
-```
-
-#### Parameters
-
-| Name                        | Type    | Description |
-| --------------------------- | ------- | ----------- |
-| role `indexed`              | bytes32 | undefined   |
-| previousAdminRole `indexed` | bytes32 | undefined   |
-| newAdminRole `indexed`      | bytes32 | undefined   |
-
-### RoleGranted
-
-```solidity
-event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
-```
-
-#### Parameters
-
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |
-
-### RoleRevoked
-
-```solidity
-event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
-```
-
-#### Parameters
-
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |
-
-### Transfer
-
-```solidity
-event Transfer(address indexed from, address indexed to, uint256 value)
-```
-
-#### Parameters
-
-| Name           | Type    | Description |
-| -------------- | ------- | ----------- |
-| from `indexed` | address | undefined   |
-| to `indexed`   | address | undefined   |
-| value          | uint256 | undefined   |
-
-## Errors
-
-### BondNotYetMatured
-
-```solidity
-error BondNotYetMatured()
-```
-
-operation restricted because the bond is not yet mature
-
-### BondPastMaturity
-
-```solidity
-error BondPastMaturity()
-```
-
-operation restricted because the bond has matured
-
-### BondSupplyExceeded
-
-```solidity
-error BondSupplyExceeded()
-```
-
-attempted to mint bonds that would exceeded maxSupply
-
-### CollateralRatioLessThanConvertibleRatio
-
-```solidity
-error CollateralRatioLessThanConvertibleRatio()
-```
-
-collateralRatio must be greater than convertibleRatio
-
-### InvalidMaturityDate
-
-```solidity
-error InvalidMaturityDate()
-```
-
-maturity date is not valid
-
-### PaymentMet
-
-```solidity
-error PaymentMet()
-```
-
-attempted to pay after payment was met
-
-### SweepDisallowedForToken
-
-```solidity
-error SweepDisallowedForToken()
-```
-
-attempted to sweep a token used in the contract
-
-### TokenOverflow
-
-```solidity
-error TokenOverflow()
-```
-
-unexpected amount returned on external token transfer
-
-### ZeroAmount
-
-```solidity
-error ZeroAmount()
-```
-
-attempted to perform an action that would do nothing
