@@ -103,7 +103,7 @@
 
 
 <table>
-{{@foreach(val.inputs) => key, val}}
+{{@foreach(val.outputs) => key, val}}
   <tr>
     <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
     <td>{{key}}</td>

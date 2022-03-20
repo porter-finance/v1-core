@@ -126,6 +126,10 @@ function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 #### Returns
 
 <table>
+  <tr>
+    <td>bytes32 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### ISSUER_ROLE
@@ -139,6 +143,10 @@ the role required to issue bonds
 #### Returns
 
 <table>
+  <tr>
+    <td>bytes32 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### createBond
@@ -203,49 +211,8 @@ Creates a bond
 
 <table>
   <tr>
-    <td>string </td>
-    <td>name</td>
-        <td>Name of the bond</td>
-      </tr>
-  <tr>
-    <td>string </td>
-    <td>symbol</td>
-        <td>Ticker symbol for the bond</td>
-      </tr>
-  <tr>
     <td>address </td>
-    <td>owner</td>
-        <td>Owner of the bond</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>maturityDate</td>
-        <td>Timestamp of when the bond matures</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>paymentToken</td>
-        <td>Address of the token being paid</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>collateralToken</td>
-        <td>Address of the collateral to use for the bond</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>collateralRatio</td>
-        <td>Ratio of bond: collateral token</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>convertibleRatio</td>
-        <td>Ratio of bond:token that the bond can be converted into</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>maxSupply</td>
-        <td>Max amount of tokens able to mint</td>
+    <td>clone</td>
       </tr>
 </table>
 
@@ -269,7 +236,7 @@ function getRoleAdmin(bytes32 role) external view returns (bytes32)
 <table>
   <tr>
     <td>bytes32 </td>
-    <td>role</td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -315,12 +282,8 @@ function hasRole(bytes32 role, address account) external view returns (bool)
 
 <table>
   <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
+    <td>bool </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -335,6 +298,10 @@ when enabled, issuance is restricted to those with the ISSUER_ROLE
 #### Returns
 
 <table>
+  <tr>
+    <td>bool </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### renounceRole
@@ -412,8 +379,8 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 
 <table>
   <tr>
-    <td>bytes4 </td>
-    <td>interfaceId</td>
+    <td>bool </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -426,4 +393,8 @@ function tokenImplementation() external view returns (address)
 #### Returns
 
 <table>
+  <tr>
+    <td>address </td>
+    <td>_0</td>
+      </tr>
 </table>

@@ -279,6 +279,10 @@ function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 #### Returns
 
 <table>
+  <tr>
+    <td>bytes32 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### MINT_ROLE
@@ -292,6 +296,10 @@ this role permits the minting of bonds
 #### Returns
 
 <table>
+  <tr>
+    <td>bytes32 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### WITHDRAW_ROLE
@@ -305,6 +313,10 @@ this role permits the withdraw of collateral from the contract
 #### Returns
 
 <table>
+  <tr>
+    <td>bytes32 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### allowance
@@ -330,12 +342,8 @@ function allowance(address owner, address spender) external view returns (uint25
 
 <table>
   <tr>
-    <td>address </td>
-    <td>owner</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>spender</td>
+    <td>uint256 </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -362,12 +370,8 @@ function approve(address spender, uint256 amount) external nonpayable returns (b
 
 <table>
   <tr>
-    <td>address </td>
-    <td>spender</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>amount</td>
+    <td>bool </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -390,8 +394,8 @@ function balanceOf(address account) external view returns (uint256)
 
 <table>
   <tr>
-    <td>address </td>
-    <td>account</td>
+    <td>uint256 </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -440,6 +444,10 @@ the ratio of collateral tokens per bond with
 #### Returns
 
 <table>
+  <tr>
+    <td>uint256 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### collateralToken
@@ -453,6 +461,10 @@ the address of the ERC20 token used as collateral backing the bond
 #### Returns
 
 <table>
+  <tr>
+    <td>address </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### convert
@@ -484,6 +496,10 @@ the ratio of ERC20 tokens the bonds will convert into
 #### Returns
 
 <table>
+  <tr>
+    <td>uint256 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### decimals
@@ -495,6 +511,10 @@ function decimals() external view returns (uint8)
 #### Returns
 
 <table>
+  <tr>
+    <td>uint8 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### decreaseAllowance
@@ -520,12 +540,8 @@ function decreaseAllowance(address spender, uint256 subtractedValue) external no
 
 <table>
   <tr>
-    <td>address </td>
-    <td>spender</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>subtractedValue</td>
+    <td>bool </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -549,7 +565,7 @@ function getRoleAdmin(bytes32 role) external view returns (bytes32)
 <table>
   <tr>
     <td>bytes32 </td>
-    <td>role</td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -595,12 +611,8 @@ function hasRole(bytes32 role, address account) external view returns (bool)
 
 <table>
   <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
+    <td>bool </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -627,12 +639,8 @@ function increaseAllowance(address spender, uint256 addedValue) external nonpaya
 
 <table>
   <tr>
-    <td>address </td>
-    <td>spender</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>addedValue</td>
+    <td>bool </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -705,6 +713,11 @@ checks if the balance of payment token covers the bond supply
 #### Returns
 
 <table>
+  <tr>
+    <td>bool </td>
+    <td>_0</td>
+        <td>whether or not the bond is fully paid</td>
+      </tr>
 </table>
 
 ### isMature
@@ -718,6 +731,11 @@ checks if the maturity date has passed (including current block timestamp)
 #### Returns
 
 <table>
+  <tr>
+    <td>bool </td>
+    <td>_0</td>
+        <td>whether or not the bond has reached the maturity date</td>
+      </tr>
 </table>
 
 ### maturityDate
@@ -731,6 +749,10 @@ A date in the future set at bond creation at which the bond will mature. Before 
 #### Returns
 
 <table>
+  <tr>
+    <td>uint256 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### maxSupply
@@ -744,6 +766,10 @@ the max amount of bonds able to be minted and cannot be changed
 #### Returns
 
 <table>
+  <tr>
+    <td>uint256 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### mint
@@ -773,6 +799,10 @@ function name() external view returns (string)
 #### Returns
 
 <table>
+  <tr>
+    <td>string </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### pay
@@ -804,6 +834,10 @@ The address of the ERC20 token this bond will be redeemable for at maturity
 #### Returns
 
 <table>
+  <tr>
+    <td>address </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### previewConvertBeforeMaturity
@@ -829,8 +863,8 @@ the amount of collateral the given bonds would convert into if able
 <table>
   <tr>
     <td>uint256 </td>
-    <td>bonds</td>
-        <td>the amount of bonds that would be burnt to convert into collateral</td>
+    <td>_0</td>
+        <td>amount of collateral received</td>
       </tr>
 </table>
 
@@ -857,8 +891,8 @@ preview the amount of collateral tokens required to mint the given bond tokens
 <table>
   <tr>
     <td>uint256 </td>
-    <td>bonds</td>
-        <td>the amount of desired bonds to mint</td>
+    <td>_0</td>
+        <td>amount of collateral required</td>
       </tr>
 </table>
 
@@ -885,8 +919,13 @@ the amount of collateral and payment tokens the bonds would redeem for at maturi
 <table>
   <tr>
     <td>uint256 </td>
-    <td>bonds</td>
-        <td>the amount of bonds to burn and redeem for tokens</td>
+    <td>_0</td>
+        <td>the amount of payment tokens to receive</td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>_1</td>
+        <td>the amount of collateral tokens to receive</td>
       </tr>
 </table>
 
@@ -901,6 +940,11 @@ the amount of collateral that the issuer would be able to withdraw from the cont
 #### Returns
 
 <table>
+  <tr>
+    <td>uint256 </td>
+    <td>_0</td>
+        <td>the amount of collateral received</td>
+      </tr>
 </table>
 
 ### redeem
@@ -978,8 +1022,8 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 
 <table>
   <tr>
-    <td>bytes4 </td>
-    <td>interfaceId</td>
+    <td>bool </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -1010,6 +1054,10 @@ function symbol() external view returns (string)
 #### Returns
 
 <table>
+  <tr>
+    <td>string </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### totalCollateral
@@ -1023,6 +1071,11 @@ gets the external balance of the ERC20 collateral token
 #### Returns
 
 <table>
+  <tr>
+    <td>uint256 </td>
+    <td>_0</td>
+        <td>the amount of collateralTokens in the contract</td>
+      </tr>
 </table>
 
 ### totalPaid
@@ -1036,6 +1089,11 @@ gets the external balance of the ERC20 payment token
 #### Returns
 
 <table>
+  <tr>
+    <td>uint256 </td>
+    <td>_0</td>
+        <td>the amount of paymentTokens in the contract</td>
+      </tr>
 </table>
 
 ### totalSupply
@@ -1047,6 +1105,10 @@ function totalSupply() external view returns (uint256)
 #### Returns
 
 <table>
+  <tr>
+    <td>uint256 </td>
+    <td>_0</td>
+      </tr>
 </table>
 
 ### transfer
@@ -1072,12 +1134,8 @@ function transfer(address to, uint256 amount) external nonpayable returns (bool)
 
 <table>
   <tr>
-    <td>address </td>
-    <td>to</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>amount</td>
+    <td>bool </td>
+    <td>_0</td>
       </tr>
 </table>
 
@@ -1108,16 +1166,8 @@ function transferFrom(address from, address to, uint256 amount) external nonpaya
 
 <table>
   <tr>
-    <td>address </td>
-    <td>from</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>to</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>amount</td>
+    <td>bool </td>
+    <td>_0</td>
       </tr>
 </table>
 
