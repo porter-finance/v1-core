@@ -4,20 +4,16 @@ import { BondFactory, TestERC20 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
 import { BondConfigType } from "./interfaces";
+import { FIFTY_MILLION, THREE_YEARS_FROM_NOW } from "./constants";
 
 const { ethers } = require("hardhat");
 
-const maturityDate = Math.round(
-  new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-    1000
-);
-
 const BondConfig: BondConfigType = {
-  targetBondSupply: utils.parseUnits("50000000", 18), // 50 million bonds
+  targetBondSupply: utils.parseUnits(FIFTY_MILLION, 18), // 50 million bonds
   collateralRatio: BigNumber.from(0),
   convertibleRatio: BigNumber.from(0),
-  maturityDate,
-  maxSupply: utils.parseUnits("50000000", 18),
+  maturityDate: THREE_YEARS_FROM_NOW,
+  maxSupply: utils.parseUnits(FIFTY_MILLION, 18),
 };
 
 describe("BondFactory", async () => {
@@ -54,7 +50,7 @@ describe("BondFactory", async () => {
   }
 
   describe("#createBond", async () => {
-    it("only approved issuers can create a bond", async () => {
+    it("should allow only approved issuers to create a bond", async () => {
       await expect(createBond(factory)).to.be.revertedWith(
         `AccessControl: account ${owner.address.toLowerCase()} is missing role ${ISSUER_ROLE}`
       );
@@ -64,7 +60,7 @@ describe("BondFactory", async () => {
       await expect(createBond(factory)).to.emit(factory, "BondCreated");
     });
 
-    it("anyone can call createBond with allowList disabled", async () => {
+    it("should allow anyone to call createBond with allow list disabled", async () => {
       await expect(factory.setIsAllowListEnabled(false))
         .to.emit(factory, "AllowListEnabled")
         .withArgs(false);
@@ -76,25 +72,25 @@ describe("BondFactory", async () => {
     });
   });
 
-  describe("#grantRole", async () => {
-    it("fails if non owner tries to grantRole", async () => {
+  describe("grantRole", async () => {
+    it("should fail if non owner tries to grantRole", async () => {
       await expect(factory.connect(user).grantRole(ISSUER_ROLE, owner.address))
         .to.be.reverted;
     });
 
-    it("emits event", async () => {
+    it("should emit event", async () => {
       await expect(factory.grantRole(ISSUER_ROLE, owner.address)).to.emit(
         factory,
         "RoleGranted"
       );
     });
   });
-  describe("#setIsAllowList", async () => {
-    it("fails if non owner tries to update allow list", async () => {
+  describe("setIsAllowListEnabled", async () => {
+    it("should fail if non owner tries to update allow list", async () => {
       await expect(factory.connect(user).setIsAllowListEnabled(false)).to.be
         .reverted;
     });
-    it("allowList toggle works correctly", async () => {
+    it("should toggle allow list", async () => {
       expect(await factory.isAllowListEnabled()).to.be.equal(true);
 
       await expect(factory.setIsAllowListEnabled(false))

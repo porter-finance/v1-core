@@ -14,8 +14,8 @@ const rinkebyFactory = "0x69e892D6c419883BFa5Def1FeB01cdf71129573d";
 const rinkebyGnosis = "0xC5992c0e0A3267C7F75493D0F717201E26BE35f7";
 describe("Integration", () => {
   if (!RINKEBY_DEPLOYER_ADDRESS)
-    throw "{RINKEBY_DEPLOYER_ADDRESS} env variable is required";
-  it("creates erc20 tokens and bonds", async () => {
+    throw new Error("{RINKEBY_DEPLOYER_ADDRESS} env variable is required");
+  it("should create erc20 tokens and bonds", async () => {
     if (network.name === "hardhat") {
       await network.provider.request({
         method: "hardhat_impersonateAccount",
