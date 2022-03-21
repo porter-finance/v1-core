@@ -1,4 +1,4 @@
-import { BigNumber, ContractTransaction, Event } from "ethers";
+import { BigNumber, BigNumberish, ContractTransaction, Event } from "ethers";
 import { use, expect } from "chai";
 import { ethers } from "hardhat";
 import { Bond, TestERC20 } from "../typechain";
@@ -59,6 +59,14 @@ export const getBondContract = async (tx: Promise<any>): Promise<Bond> => {
 export const getTargetCollateral = (bondConfig: BondConfigType): BigNumber => {
   const { targetBondSupply, collateralRatio } = bondConfig;
   return targetBondSupply.mul(collateralRatio).div(ONE);
+};
+
+export const getTargetPayment = (
+  bondConfig: BondConfigType,
+  decimals: BigNumberish
+): BigNumber => {
+  const { targetBondSupply } = bondConfig;
+  return targetBondSupply.mul(ethers.utils.parseUnits("1", decimals)).div(ONE);
 };
 
 /**

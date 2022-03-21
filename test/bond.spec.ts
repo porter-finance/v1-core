@@ -6,6 +6,7 @@ import {
   getBondContract,
   getEventArgumentsFromTransaction,
   getTargetCollateral,
+  getTargetPayment,
 } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
@@ -483,11 +484,7 @@ describe("Bond", () => {
 
         it("should accept payment", async () => {
           await expect(
-            bond.pay(
-              BondConfig.targetBondSupply
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE)
-            )
+            bond.pay(getTargetPayment(BondConfig, decimals))
           ).to.emit(bond, "PaymentInFull");
         });
 
@@ -498,11 +495,7 @@ describe("Bond", () => {
               .div(ONE)
           );
           await expect(
-            bond.pay(
-              BondConfig.targetBondSupply
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE)
-            )
+            bond.pay(getTargetPayment(BondConfig, decimals))
           ).to.be.revertedWith("PaymentMet");
         });
       });
@@ -513,9 +506,7 @@ describe("Bond", () => {
               bond.address,
               getTargetCollateral(BondConfig)
             );
-            console.log(await collateralToken.balanceOf(owner.address));
             await bond.mint(BondConfig.targetBondSupply);
-            console.log(await collateralToken.balanceOf(owner.address));
           });
           [
             {
@@ -534,12 +525,9 @@ describe("Bond", () => {
               description: "smallest unit",
             },
             {
-              sharesToBurn: utils.parseUnits("1", 18),
-              collateralToReceive: utils
-                .parseUnits("1", 18)
-                .mul(BondConfig.collateralRatio)
-                .div(ONE),
-              description: "equivilant amount of collateral ratio",
+              sharesToBurn: BondConfig.targetBondSupply,
+              collateralToReceive: getTargetCollateral(BondConfig),
+              description: "total amount",
             },
           ].forEach(({ sharesToBurn, collateralToReceive, description }) => {
             it(`should make excess collateral available to withdraw when ${description} are burned`, async () => {
@@ -592,16 +580,12 @@ describe("Bond", () => {
           [
             {
               sharesToBurn: 0,
-              paymentTokenAmount: BondConfig.targetBondSupply
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE),
+              paymentTokenAmount: getTargetPayment(BondConfig, decimals),
               collateralToReceive: getTargetCollateral(BondConfig),
             },
             {
               sharesToBurn: utils.parseUnits("1000", 18),
-              paymentTokenAmount: BondConfig.targetBondSupply
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE),
+              paymentTokenAmount: getTargetPayment(BondConfig, decimals),
               collateralToReceive: getTargetCollateral(BondConfig),
             },
           ].forEach(
@@ -620,16 +604,12 @@ describe("Bond", () => {
           [
             {
               sharesToBurn: 0,
-              paymentTokenAmount: BondConfig.targetBondSupply
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE),
+              paymentTokenAmount: getTargetPayment(BondConfig, decimals),
               collateralToReceive: getTargetCollateral(BondConfig),
             },
             {
               sharesToBurn: 0,
-              paymentTokenAmount: BondConfig.targetBondSupply
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE),
+              paymentTokenAmount: getTargetPayment(BondConfig, decimals),
               collateralToReceive: getTargetCollateral(BondConfig),
             },
           ].forEach(
@@ -658,6 +638,26 @@ describe("Bond", () => {
             expect(await collateralToken.balanceOf(bond.address)).to.equal(0);
           });
 
+          it("should allow all collateral to be withdrawn when fully paid", async () => {
+            const targetPayment = getTargetPayment(BondConfig, decimals);
+            await paymentToken.approve(bond.address, targetPayment);
+            await expectTokenDelta(
+              bond.pay.bind(this, targetPayment),
+              paymentToken,
+              owner,
+              bond.address,
+              targetPayment
+            );
+            expect(await bond.totalSupply()).to.not.equal(0);
+            await expectTokenDelta(
+              bond.withdrawCollateral,
+              collateralToken,
+              owner,
+              bond.address,
+              getTargetCollateral(BondConfig)
+            );
+          });
+
           it("should revert when called by non-withdrawer", async () => {
             await expect(
               bond.connect(attacker).withdrawCollateral()
@@ -679,11 +679,11 @@ describe("Bond", () => {
             );
           });
         });
-        describe(`convertible decimals`, async () => {
+        describe(`convertible`, async () => {
           beforeEach(async () => {
             await collateralToken.approve(
-              bond.address,
-              getTargetCollateral(BondConfig)
+              convertibleBond.address,
+              getTargetCollateral(ConvertibleBondConfig)
             );
             await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
           });
@@ -744,16 +744,18 @@ describe("Bond", () => {
           [
             {
               sharesToBurn: 0,
-              paymentTokenAmount: ConvertibleBondConfig.targetBondSupply
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE),
+              paymentTokenAmount: getTargetPayment(
+                ConvertibleBondConfig,
+                decimals
+              ),
               collateralToReceive: getTargetCollateral(ConvertibleBondConfig),
             },
             {
               sharesToBurn: utils.parseUnits("1000", 18),
-              paymentTokenAmount: ConvertibleBondConfig.targetBondSupply
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE),
+              paymentTokenAmount: getTargetPayment(
+                ConvertibleBondConfig,
+                decimals
+              ),
               collateralToReceive: getTargetCollateral(ConvertibleBondConfig),
             },
           ].forEach(
@@ -786,9 +788,10 @@ describe("Bond", () => {
             },
             {
               sharesToBurn: 0,
-              paymentTokenAmount: ConvertibleBondConfig.targetBondSupply
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE),
+              paymentTokenAmount: getTargetPayment(
+                ConvertibleBondConfig,
+                decimals
+              ),
               collateralToReceive: getTargetCollateral(ConvertibleBondConfig),
             },
           ].forEach(
@@ -971,7 +974,7 @@ describe("Bond", () => {
           await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
           const {
             from,
-            paymentToken,
+            paymentToken: paymentTokenAddress,
             collateralToken: convertedCollateralToken,
             amountOfBondsRedeemed,
             amountOfPaymentTokensReceived,
@@ -989,9 +992,11 @@ describe("Bond", () => {
           );
 
           expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
-          expect(await paymentToken.balanceOf(bondHolder.address)).to.be.equal(
-            0
-          );
+          expect(
+            await paymentToken
+              .attach(paymentTokenAddress)
+              .balanceOf(bondHolder.address)
+          ).to.be.equal(0);
           expect(
             await collateralToken.balanceOf(bondHolder.address)
           ).to.be.equal(
@@ -1006,8 +1011,8 @@ describe("Bond", () => {
           const tokensToConvert = ConvertibleBondConfig.targetBondSupply;
           beforeEach(async () => {
             await collateralToken.approve(
-              bond.address,
-              getTargetCollateral(BondConfig)
+              convertibleBond.address,
+              getTargetCollateral(ConvertibleBondConfig)
             );
             await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
             await convertibleBond.transfer(bondHolder.address, tokensToConvert);
