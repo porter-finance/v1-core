@@ -37,9 +37,9 @@ export const createBond = async (
   const bondSymbol = "LEARN";
   const collateralRatio = ethers.utils.parseUnits(".5", 18);
   const convertibleRatio = ethers.utils.parseUnits(".5", 18);
+  // one day from todayz
   const maturityDate = Math.round(
-    new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
-      1000
+    new Date(new Date().setDate(new Date().getDate() + 1)).getTime() / 1000
   );
   const maxSupply = ethers.utils.parseUnits("50000000", 18);
 
