@@ -13,6 +13,11 @@ A new `Bond` contract is created for each [borrower](https://docs.porter.finance
 ## Borrowers
 
 Borrowers are on chain entities that want to borrow stablecoins using their native token as collateral with a fixed interest rate and no liquidation risk.
+- Creation and minting new `BondTokens` via `initialize()` and `mint()`
+- Depositing/withdrawing collateral via `mint()` and `withdrawCollateral()`
+- Handling convertibility via a configured ratio and the ability for lenders to convert their `BondTokens` using `convert()`
+- Handling payment for the issuer via `pay()`
+- Allowing bond redemption for the bond holders via `redeem()`
 
 To borrow money, a borrower has to issue a bond and then sell it.
 
@@ -50,8 +55,10 @@ Borrowers decide on multiple paramaters and call the `Factory.createBond` method
 This method creates a new bond and grants the borrower the `MINT_ROLE` and the `ISSUER_ROLE` on the newly deployed bond.
 
 After a bond is issued, there are a few things the borrower can do.
+### Pay
 
-#
+This gives the ability for a borrower to pay their debt. Paying allows the borrower to withdraw any collateral that is not used to back convertible tokens. After the maturity date is met, all collateral can be withdrawn and the bond will be considered to be `PAID`. At this time, lenders lose the ability to convert their bond tokens into the collateral token. Lenders gain the ability to redeem their bond tokens for the borrowing token.
+
 
 ### `Bond.mint()`
 

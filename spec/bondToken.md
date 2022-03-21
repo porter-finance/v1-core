@@ -6,6 +6,7 @@ A new `Bond` contract is created for each [borrower](https://docs.porter.finance
 
 ### Borrower
 
+
 - Depositing collateral and minting new `Bonds` via `mint()`
 - Handling repayment for the issuer via `repay()`
 - withdrawing collateral `withdrawCollateral()`
@@ -18,6 +19,7 @@ A new `Bond` contract is created for each [borrower](https://docs.porter.finance
 ### Collateral
 
 Borrowers specify the ERC20 tokens they would like to use as collateral when creating the bond. Only a single collateral type is supported.
+
 
 ### Convert
 
