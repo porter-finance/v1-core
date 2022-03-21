@@ -102,7 +102,8 @@ export const initiateAuction = async (
   const auctionEndDate = Math.round(
     new Date(new Date().setDate(new Date().getDate() + 1)).getTime() / 1000
   );
-  const _auctionedSellAmount = await bond.balanceOf(owner.address);
+  const tokenBalance = await bond.balanceOf(owner.address);
+  const _auctionedSellAmount = tokenBalance.div(10);
   const _minBuyAmount = 1000000000000000;
   const minimumBiddingAmountPerOrder = 1000000000000000;
   const minFundingThreshold = 0;
