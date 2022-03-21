@@ -214,6 +214,10 @@ describe("Bond", () => {
           expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
         });
 
+        it("should verifiable as bond by Factory.isBond", async () => {
+          expect(await factory.isBond(bond.address)).to.be.true;
+        });
+
         it("should have given issuer the default admin role", async () => {
           expect(
             await bond.hasRole(await bond.DEFAULT_ADMIN_ROLE(), owner.address)
