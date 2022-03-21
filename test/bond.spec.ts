@@ -2,6 +2,7 @@ import { BigNumber, utils, BytesLike } from "ethers";
 import { expect } from "chai";
 import { TestERC20, Bond, BondFactory } from "../typechain";
 import {
+  expectTokenDelta,
   getBondContract,
   getEventArgumentsFromTransaction,
   getTargetCollateral,
@@ -278,11 +279,11 @@ describe("Bond", () => {
         });
 
         it("should revert on too big of a token", async () => {
-          const tokens = (await tokenFixture([20])).tokens.find(
+          const token = (await tokenFixture([20])).tokens.find(
             (token) => token.decimals === 20
           );
-          if (tokens) {
-            const { paymentToken } = tokens;
+          if (token) {
+            const { paymentToken } = token;
             await expect(
               factory.createBond(
                 "Bond",
@@ -303,9 +304,10 @@ describe("Bond", () => {
       });
       describe(`mint`, async () => {
         beforeEach(async () => {
-          await collateralToken
-            .attach(collateralToken.address)
-            .approve(bond.address, getTargetCollateral(BondConfig));
+          await collateralToken.approve(
+            bond.address,
+            getTargetCollateral(BondConfig)
+          );
         });
 
         it("should revert when called by non-minter", async () => {
@@ -443,10 +445,10 @@ describe("Bond", () => {
       });
       describe(`pay`, async () => {
         beforeEach(async () => {
-          const amountToDeposit = BondConfig.targetBondSupply
-            .mul(BondConfig.collateralRatio)
-            .div(ONE);
-          await collateralToken.approve(bond.address, amountToDeposit);
+          await collateralToken.approve(
+            bond.address,
+            getTargetCollateral(BondConfig)
+          );
           await expect(bond.mint(BondConfig.targetBondSupply)).to.not.be
             .reverted;
           await paymentToken.approve(
@@ -507,10 +509,13 @@ describe("Bond", () => {
       describe("withdrawCollateral", async () => {
         describe(`non-convertible`, async () => {
           beforeEach(async () => {
-            const token = collateralToken.attach(collateralToken.address);
-            const amountToDeposit = getTargetCollateral(BondConfig);
-            await token.approve(bond.address, amountToDeposit);
+            await collateralToken.approve(
+              bond.address,
+              getTargetCollateral(BondConfig)
+            );
+            console.log(await collateralToken.balanceOf(owner.address));
             await bond.mint(BondConfig.targetBondSupply);
+            console.log(await collateralToken.balanceOf(owner.address));
           });
           [
             {
@@ -639,6 +644,20 @@ describe("Bond", () => {
               });
             }
           );
+
+          it("should allow all collateral to be withdrawn when all bonds are burned", async () => {
+            await bond.burn(BondConfig.targetBondSupply);
+            expect(await bond.totalSupply()).to.equal(0);
+            await expectTokenDelta(
+              bond.withdrawCollateral,
+              collateralToken,
+              owner,
+              owner.address,
+              getTargetCollateral(BondConfig)
+            );
+            expect(await collateralToken.balanceOf(bond.address)).to.equal(0);
+          });
+
           it("should revert when called by non-withdrawer", async () => {
             await expect(
               bond.connect(attacker).withdrawCollateral()
@@ -662,9 +681,10 @@ describe("Bond", () => {
         });
         describe(`convertible decimals`, async () => {
           beforeEach(async () => {
-            const token = collateralToken.attach(collateralToken.address);
-            const amountToDeposit = getTargetCollateral(ConvertibleBondConfig);
-            await token.approve(convertibleBond.address, amountToDeposit);
+            await collateralToken.approve(
+              bond.address,
+              getTargetCollateral(BondConfig)
+            );
             await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
           });
           [
@@ -817,12 +837,10 @@ describe("Bond", () => {
           .div(ONE);
         // Bond holder will have their bonds and the contract will be able to accept deposits of payment token
         beforeEach(async () => {
-          const amountToDeposit = BondConfig.targetBondSupply
-            .mul(BondConfig.collateralRatio)
-            .div(ONE);
-          await collateralToken
-            .attach(collateralToken.address)
-            .approve(bond.address, amountToDeposit);
+          await collateralToken.approve(
+            bond.address,
+            getTargetCollateral(BondConfig)
+          );
           await bond.mint(BondConfig.targetBondSupply);
           await bond.transfer(bondHolder.address, utils.parseUnits("4000", 18));
           await paymentToken.approve(bond.address, BondConfig.targetBondSupply);
@@ -935,9 +953,6 @@ describe("Bond", () => {
           );
           // Fast forward to expire
           await ethers.provider.send("evm_mine", [BondConfig.maturityDate]);
-          await bond
-            .connect(bondHolder)
-            .approve(bond.address, utils.parseUnits("4000", 18));
 
           expect(await bond.balanceOf(bondHolder.address)).to.be.equal(
             utils.parseUnits("4000", 18)
@@ -974,15 +989,11 @@ describe("Bond", () => {
           );
 
           expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
+          expect(await paymentToken.balanceOf(bondHolder.address)).to.be.equal(
+            0
+          );
           expect(
-            await collateralToken
-              .attach(paymentToken)
-              .balanceOf(bondHolder.address)
-          ).to.be.equal(0);
-          expect(
-            await collateralToken
-              .attach(collateralToken.address)
-              .balanceOf(bondHolder.address)
+            await collateralToken.balanceOf(bondHolder.address)
           ).to.be.equal(
             BondConfig.collateralRatio
               .mul(utils.parseUnits("4000", 18))
@@ -994,9 +1005,10 @@ describe("Bond", () => {
         describe("convertible bonds", async () => {
           const tokensToConvert = ConvertibleBondConfig.targetBondSupply;
           beforeEach(async () => {
-            const token = collateralToken.attach(collateralToken.address);
-            const amountToDeposit = getTargetCollateral(BondConfig);
-            await token.approve(convertibleBond.address, amountToDeposit);
+            await collateralToken.approve(
+              bond.address,
+              getTargetCollateral(BondConfig)
+            );
             await convertibleBond.mint(ConvertibleBondConfig.targetBondSupply);
             await convertibleBond.transfer(bondHolder.address, tokensToConvert);
           });
