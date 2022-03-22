@@ -148,8 +148,8 @@ contract Bond is
 
     /// @notice operation restricted because the bond has matured
     error BondPastMaturity();
-    /// @notice operation restricted because the bond is not yet mature
-    error BondNotYetMatured();
+    /// @notice operation restricted because the bond is not yet matured or paid
+    error BondNotYetMaturedOrPaid();
 
     /// @notice maturity date is not valid
     error InvalidMaturityDate();
@@ -161,6 +161,9 @@ contract Bond is
 
     /// @notice attempted to pay after payment was met
     error PaymentMet();
+
+    /// @notice this bond has been repaid so more bonds can not be minted
+    error BondsCanNoLongerBeMinted();
 
     /// @notice attempted to sweep a token used in the contract
     error SweepDisallowedForToken();
@@ -178,9 +181,18 @@ contract Bond is
         _;
     }
 
-    modifier afterMaturity() {
+    modifier afterMaturityOrRepaid() {
         if (!isMature()) {
-            revert BondNotYetMatured();
+            if (!isFullyPaid()) {
+                revert BondNotYetMaturedOrPaid();
+            }
+        }
+        _;
+    }
+
+    modifier isNotFullyPaid() {
+        if (isFullyPaid()) {
+            revert BondsCanNoLongerBeMinted();
         }
         _;
     }
@@ -244,6 +256,7 @@ contract Bond is
         external
         onlyRole(MINT_ROLE)
         beforeMaturity
+        isNotFullyPaid
         nonReentrant
     {
         if (totalSupply() + bonds > maxSupply) {
@@ -343,7 +356,7 @@ contract Bond is
         @notice this function burns bonds in return for the token borrowed against the bond
         @param bonds the amount of bonds to redeem and burn
     */
-    function redeem(uint256 bonds) external nonReentrant afterMaturity {
+    function redeem(uint256 bonds) external nonReentrant afterMaturityOrRepaid {
         // calculate amount before burning as the preview function uses totalSupply.
         (
             uint256 paymentTokensToSend,
@@ -544,6 +557,9 @@ contract Bond is
         @return whether or not the bond is fully paid
     */
     function isFullyPaid() public view returns (bool) {
+        if (totalSupply() == 0) {
+            return false;
+        }
         return _upscale(totalPaid()) >= totalSupply();
     }
 
