@@ -464,7 +464,6 @@ contract Bond is
         if (tokensCoveredByPayment > totalSupply()) {
             collateralTokensRequired = 0;
         } else {
-            // what would happen if this was negative?
             collateralTokensRequired = (totalSupply() - tokensCoveredByPayment)
                 .mulDivUp(collateralRatio, ONE);
         }
