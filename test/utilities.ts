@@ -61,6 +61,13 @@ export const getTargetCollateral = (bondConfig: BondConfigType): BigNumber => {
   return targetBondSupply.mul(collateralRatio).div(ONE);
 };
 
+export const getTargetConvertibleCollateral = (
+  bondConfig: BondConfigType
+): BigNumber => {
+  const { targetBondSupply, convertibleRatio } = bondConfig;
+  return targetBondSupply.mul(convertibleRatio).div(ONE);
+};
+
 export const getTargetPayment = (
   bondConfig: BondConfigType,
   decimals: BigNumberish

@@ -13,6 +13,7 @@ import {
   payAndWithdraw,
   payAndWithdrawAtMaturity,
   redeemAtMaturity,
+  getTargetConvertibleCollateral,
 } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
@@ -210,17 +211,14 @@ describe("Bond", () => {
         ({ attackingToken, collateralToken, paymentToken } = bondWithTokens);
       });
       describe("initialize", async () => {
-
-
-        it("should verifiable as bond by Factory.isBond", async () => {
-          expect(await factory.isBond(bond.address)).to.be.true;
-        });
-
-
         describe("non-convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
+          });
+
+          it("should verifiable as bond by Factory.isBond", async () => {
+            expect(await factory.isBond(bond.address)).to.be.equal(true);
           });
 
           it("should have no minted coins", async () => {
@@ -921,17 +919,30 @@ describe("Bond", () => {
               bond,
               paymentToken,
               paymentTokenAmount: getTargetPayment(config, decimals),
-              collateralToReceive: getTargetCollateral(config),
+              collateralToReceive: getTargetCollateral(config).sub(
+                getTargetConvertibleCollateral(config)
+              ),
             });
           });
 
           it("should make excess collateral available to withdraw when payment token is fully repaid", async () => {
+            const totalCollateralAvailable = getTargetCollateral(config);
+            const totalWithdrawableCollateral = totalCollateralAvailable.sub(
+              getTargetConvertibleCollateral(config)
+            );
             await (await bond.burn(utils.parseUnits("1000", 18))).wait();
+            // since we've burnt 1000 bonds, the collateral has been unlocked
+            const unlockedCollateral = utils
+              .parseUnits("1000", 18)
+              .mul(config.convertibleRatio)
+              .div(ONE);
+            const collateralToReceive =
+              totalWithdrawableCollateral.add(unlockedCollateral);
             await payAndWithdraw({
               bond,
               paymentToken,
               paymentTokenAmount: getTargetPayment(config, decimals),
-              collateralToReceive: getTargetCollateral(config),
+              collateralToReceive,
             });
           });
 
@@ -1259,7 +1270,6 @@ describe("Bond", () => {
             const expectedCollateralToWithdraw = config.targetBondSupply
               .mul(config.convertibleRatio)
               .div(ONE);
-
 
             const {
               from,
