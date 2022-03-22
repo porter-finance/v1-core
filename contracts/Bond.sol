@@ -240,12 +240,14 @@ contract Bond is
         @dev CollateralDeposit + Mint events are both emitted. bonds to mint is bounded by maxSupply
         @param bonds the amount of bonds to mint
     */
-    function mint(uint256 bonds) external onlyRole(MINT_ROLE) nonReentrant {
+    function mint(uint256 bonds)
+        external
+        onlyRole(MINT_ROLE)
+        notPastMaturity
+        nonReentrant
+    {
         if (totalSupply() + bonds > maxSupply) {
             revert BondSupplyExceeded();
-        }
-        if (isMature()) {
-            revert BondPastMaturity();
         }
 
         uint256 collateralToDeposit = previewMintBeforeMaturity(bonds);
