@@ -14,6 +14,8 @@ import {
   payAndWithdrawAtMaturity,
   redeemAtMaturity,
   getTargetConvertibleCollateral,
+  upscaleAmount,
+  downscaleAmount,
 } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
@@ -449,6 +451,13 @@ describe("Bond", () => {
               "BondPastMaturity"
             );
           });
+
+          it("should return amount owed scaled to mint amount", async () => {
+            await expect(bond.mint(config.targetBondSupply));
+            expect(await bond.amountOwed()).to.equal(
+              downscaleAmount(config.targetBondSupply, decimals)
+            );
+          });
         });
         describe("non-convertible", () => {
           beforeEach(async () => {
@@ -564,6 +573,13 @@ describe("Bond", () => {
               "BondPastMaturity"
             );
           });
+
+          it("should return amount owed scaled to mint amount", async () => {
+            await expect(bond.mint(config.targetBondSupply));
+            expect(await bond.amountOwed()).to.equal(
+              downscaleAmount(config.targetBondSupply, decimals)
+            );
+          });
         });
         describe("uncollateralized", async () => {
           beforeEach(async () => {
@@ -624,6 +640,13 @@ describe("Bond", () => {
               "BondPastMaturity"
             );
           });
+
+          it("should return amount owed scaled to mint amount", async () => {
+            await expect(bond.mint(config.targetBondSupply));
+            expect(await bond.amountOwed()).to.equal(
+              downscaleAmount(config.targetBondSupply, decimals)
+            );
+          });
         });
       });
       describe("pay", async () => {
@@ -682,6 +705,39 @@ describe("Bond", () => {
             await expect(
               bond.pay(getTargetPayment(config, decimals))
             ).to.be.revertedWith("PaymentMet");
+          });
+
+          it("should return amount owed scaled to payment amount", async () => {
+            const thirdSupply = config.targetBondSupply
+              .div(3)
+              .mul(utils.parseUnits("1", decimals))
+              .div(ONE);
+
+            expect(await bond.amountOwed()).to.equal(
+              downscaleAmount(config.targetBondSupply, decimals)
+            );
+
+            await (await bond.pay(thirdSupply)).wait();
+            expect(await bond.amountOwed()).to.equal(
+              downscaleAmount(config.targetBondSupply, decimals).sub(
+                await bond.totalPaid()
+              )
+            );
+
+            await (await bond.pay(thirdSupply)).wait();
+            expect(await bond.amountOwed()).to.equal(
+              downscaleAmount(config.targetBondSupply, decimals).sub(
+                await bond.totalPaid()
+              )
+            );
+
+            await (await bond.pay(thirdSupply)).wait();
+            expect(await bond.amountOwed()).to.equal(BigNumber.from(2));
+
+            await expect(bond.pay(2)).to.emit(bond, "Payment");
+            expect(await bond.amountOwed()).to.equal(
+              downscaleAmount(ZERO, decimals)
+            );
           });
         });
       });
@@ -838,6 +894,17 @@ describe("Bond", () => {
             );
           });
 
+          it("should not change amount owed", async () => {
+            const targetPayment = getTargetPayment(config, decimals).div(2);
+            await (
+              await paymentToken.approve(bond.address, targetPayment)
+            ).wait();
+            await (await bond.pay(targetPayment)).wait();
+            const amountOwed = await bond.amountOwed();
+            await (await bond.withdrawCollateral()).wait();
+            expect(await bond.amountOwed()).to.be.equal(amountOwed);
+          });
+
           it("should revert when called by non-withdrawer", async () => {
             await expect(
               bond.connect(attacker).withdrawCollateral()
@@ -972,6 +1039,17 @@ describe("Bond", () => {
             });
           });
 
+          it("should not change amount owed", async () => {
+            const targetPayment = getTargetPayment(config, decimals).div(2);
+            await (
+              await paymentToken.approve(bond.address, targetPayment)
+            ).wait();
+            await (await bond.pay(targetPayment)).wait();
+            const amountOwed = await bond.amountOwed();
+            await (await bond.withdrawCollateral()).wait();
+            expect(await bond.amountOwed()).to.be.equal(amountOwed);
+          });
+
           it("should revert when called by non-withdrawer", async () => {
             await expect(
               bond.connect(attacker).withdrawCollateral()
@@ -1035,6 +1113,17 @@ describe("Bond", () => {
             expect(await bond.previewWithdraw()).to.equal(
               utils.parseEther("1")
             );
+          });
+
+          it("should not change amount owed", async () => {
+            const targetPayment = getTargetPayment(config, decimals).div(2);
+            await (
+              await paymentToken.approve(bond.address, targetPayment)
+            ).wait();
+            await (await bond.pay(targetPayment)).wait();
+            const amountOwed = await bond.amountOwed();
+            await (await bond.withdrawCollateral()).wait();
+            expect(await bond.amountOwed()).to.be.equal(amountOwed);
           });
 
           it("should revert when called by non-withdrawer", async () => {
@@ -1285,6 +1374,17 @@ describe("Bond", () => {
             expect(amountOfBondsConverted).to.equal(config.targetBondSupply);
             expect(amountOfCollateralTokens).to.equal(
               expectedCollateralToWithdraw
+            );
+          });
+
+          it("should lower amount owed when bonds are converted", async () => {
+            const amountOwed = await bond.amountOwed();
+            await bond
+              .connect(bondHolder)
+              .convert(config.targetBondSupply.div(2));
+            expect(await bond.amountOwed()).to.be.equal(amountOwed.div(2));
+            expect(await bond.amountOwed()).to.be.equal(
+              downscaleAmount(config.targetBondSupply.div(2), decimals)
             );
           });
         });
