@@ -274,10 +274,8 @@ contract Bond is
             The bond must be convertible and not past maturity
         @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
     */
-    function convert(uint256 bonds) external nonReentrant {
-        uint256 collateralToSend = isMature()
-            ? 0
-            : previewConvertBeforeMaturity(bonds);
+    function convert(uint256 bonds) external nonReentrant notPastMaturity {
+        uint256 collateralToSend = previewConvertBeforeMaturity(bonds);
         if (collateralToSend == 0) {
             revert ZeroAmount();
         }
