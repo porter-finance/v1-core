@@ -178,9 +178,16 @@ contract Bond is
     error TokenOverflow();
 
     /// @dev used to confirm the bond has not yet matured
-    modifier notPastMaturity() {
+    modifier beforeMaturity() {
         if (isMature()) {
             revert BondPastMaturity();
+        }
+        _;
+    }
+
+    modifier afterMaturity() {
+        if (!isMature()) {
+            revert BondNotYetMatured();
         }
         _;
     }
@@ -243,7 +250,7 @@ contract Bond is
     function mint(uint256 bonds)
         external
         onlyRole(MINT_ROLE)
-        notPastMaturity
+        beforeMaturity
         nonReentrant
     {
         if (totalSupply() + bonds > maxSupply) {
@@ -274,7 +281,7 @@ contract Bond is
             The bond must be convertible and not past maturity
         @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
     */
-    function convert(uint256 bonds) external nonReentrant notPastMaturity {
+    function convert(uint256 bonds) external nonReentrant beforeMaturity {
         uint256 collateralToSend = previewConvertBeforeMaturity(bonds);
         if (collateralToSend == 0) {
             revert ZeroAmount();
@@ -320,14 +327,13 @@ contract Bond is
             the lower of outstandingAmount and amount is chosen to prevent overpayment
         @param amount the number of payment tokens to pay
     */
-    function pay(uint256 amount) external nonReentrant notPastMaturity {
+    function pay(uint256 amount) external nonReentrant beforeMaturity {
         if (isFullyPaid()) {
             revert PaymentMet();
         }
         if (amount == 0) {
             revert ZeroAmount();
         }
-
         // @audit-info
         // I'm not sure how we can fix this here. We could check that _upscale(totalPaid() + amount) >= totalSupply() but
         // that would break in the case of a token taking a fee.
@@ -349,12 +355,12 @@ contract Bond is
         @notice this function burns bonds in return for the token borrowed against the bond
         @param bonds the amount of bonds to redeem and burn
     */
-    function redeem(uint256 bonds) external nonReentrant {
+    function redeem(uint256 bonds) external nonReentrant afterMaturity {
         // calculate amount before burning as the preview function uses totalSupply.
         (
             uint256 paymentTokensToSend,
             uint256 collateralTokensToSend
-        ) = isMature() ? previewRedeemAtMaturity(bonds) : (0, 0);
+        ) = previewRedeemAtMaturity(bonds);
 
         if (paymentTokensToSend == 0 && collateralTokensToSend == 0) {
             revert ZeroAmount();
