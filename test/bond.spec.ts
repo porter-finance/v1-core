@@ -1324,9 +1324,7 @@ describe("Bond", () => {
             const expectedCollateralToWithdraw = tokensToConvert
               .mul(config.convertibleRatio)
               .div(ONE);
-            await bond
-              .connect(bondHolder)
-              .approve(bond.address, tokensToConvert);
+
             const {
               from,
               collateralToken: convertedCollateralToken,
