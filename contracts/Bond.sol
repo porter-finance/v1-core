@@ -129,13 +129,6 @@ contract Bond is
     event Payment(address indexed from, uint256 amount);
 
     /**
-        @notice emitted when all of the bond's principal is paid back
-        @param from the address depositing payment
-        @param amount the amount deposited to fully pay the bond
-    */
-    event PaymentInFull(address indexed from, uint256 amount);
-
-    /**
         @notice emitted when a bond is redeemed
         @param from the bond holder whose bonds are burnt
         @param paymentToken the address of the payment token
@@ -244,14 +237,11 @@ contract Bond is
         if (totalSupply() + bonds > maxSupply) {
             revert BondSupplyExceeded();
         }
-
-        uint256 collateralToDeposit = isMature()
-            ? 0
-            : previewMintBeforeMaturity(bonds);
-
-        if (collateralToDeposit == 0) {
-            revert ZeroAmount();
+        if (isMature()) {
+            revert BondPastMaturity();
         }
+
+        uint256 collateralToDeposit = previewMintBeforeMaturity(bonds);
 
         _mint(_msgSender(), bonds);
 
@@ -319,8 +309,7 @@ contract Bond is
 
     /**
         @notice allows the issuer to pay the bond by depositing payment token
-        @dev emits PaymentInFull if the full balance has been repaid, PaymentDeposited otherwise
-            the lower of outstandingAmount and amount is chosen to prevent overpayment
+        @dev emits Payment event
         @param amount the number of payment tokens to pay
     */
     function pay(uint256 amount) external nonReentrant notPastMaturity {
@@ -341,11 +330,7 @@ contract Bond is
             _msgSender(),
             amount
         );
-        if (isFullyPaid()) {
-            emit PaymentInFull(_msgSender(), amountRepaid);
-        } else {
-            emit Payment(_msgSender(), amountRepaid);
-        }
+        emit Payment(_msgSender(), amountRepaid);
     }
 
     /**
