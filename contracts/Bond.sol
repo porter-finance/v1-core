@@ -471,16 +471,16 @@ contract Bond is
         );
 
         uint256 totalRequiredCollateral;
-        if (!isFullyPaid()) {
+
+        if (isFullyPaid()) {
+            totalRequiredCollateral = isMature()
+                ? 0
+                : convertibleTokensRequired;
+        } else {
             totalRequiredCollateral = convertibleTokensRequired >
                 collateralTokensRequired
                 ? convertibleTokensRequired
                 : collateralTokensRequired;
-        } else if (!isMature()) {
-            totalRequiredCollateral = convertibleTokensRequired;
-        } else {
-            // @audit-info redundant but explicit
-            totalRequiredCollateral = 0;
         }
 
         if (totalRequiredCollateral >= totalCollateral()) {
