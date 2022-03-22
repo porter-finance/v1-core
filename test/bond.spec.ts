@@ -209,12 +209,13 @@ describe("Bond", () => {
         bondWithTokens = getBond({ decimals });
         ({ attackingToken, collateralToken, paymentToken } = bondWithTokens);
       });
-      describe("initialization", async () => {
+      describe("initialize", async () => {
         describe("non-convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
           });
+
           it("should have no minted coins", async () => {
             expect(await bond.balanceOf(owner.address)).to.be.equal(0);
             expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
@@ -309,6 +310,7 @@ describe("Bond", () => {
               throw new Error("Token not found!");
             }
           });
+
           it("should revert on a token without decimals", async () => {
             await expect(
               factory.createBond(
@@ -326,7 +328,7 @@ describe("Bond", () => {
           });
         });
       });
-      describe(`mint`, async () => {
+      describe("mint", async () => {
         describe("convertible", () => {
           beforeEach(async () => {
             bond = bondWithTokens.convertible.bond;
@@ -351,6 +353,7 @@ describe("Bond", () => {
               collateralToDeposit: ZERO,
             });
           });
+
           it(`should preview mint and mint with quarter target`, async () => {
             previewMintAndMint({
               bond,
@@ -361,6 +364,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it(`should preview mint and mint with half target`, async () => {
             previewMintAndMint({
               bond,
@@ -371,6 +375,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it(`should preview mint and mint with target`, async () => {
             previewMintAndMint({
               bond,
@@ -379,6 +384,7 @@ describe("Bond", () => {
               collateralToDeposit: getTargetCollateral(config),
             });
           });
+
           it(`should preview mint and mint when collateral rounds up`, async () => {
             previewMintAndMint({
               bond,
@@ -402,6 +408,7 @@ describe("Bond", () => {
                 .sub(1),
             });
           });
+
           it(`should fail to mint when collateral rounds down`, async () => {
             await failPreviewMint({
               bond,
@@ -412,6 +419,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it(`should fail to mint when both round down`, async () => {
             await failPreviewMint({
               bond,
@@ -460,6 +468,7 @@ describe("Bond", () => {
               collateralToDeposit: ZERO,
             });
           });
+
           it(`should preview mint and mint with quarter target`, async () => {
             await previewMintAndMint({
               bond,
@@ -470,6 +479,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it(`should preview mint and mint with half target`, async () => {
             await previewMintAndMint({
               bond,
@@ -480,6 +490,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it(`should preview mint and mint with target`, async () => {
             await previewMintAndMint({
               bond,
@@ -488,6 +499,7 @@ describe("Bond", () => {
               collateralToDeposit: getTargetCollateral(config),
             });
           });
+
           it(`should preview mint and mint when collateral rounds up`, async () => {
             await previewMintAndMint({
               bond,
@@ -511,6 +523,7 @@ describe("Bond", () => {
                 .sub(1),
             });
           });
+
           it(`should fail to mint when collateral rounds down`, async () => {
             await failPreviewMint({
               bond,
@@ -521,6 +534,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it(`should fail to mint when both round down`, async () => {
             await failPreviewMint({
               bond,
@@ -556,6 +570,7 @@ describe("Bond", () => {
               `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${mintRole}`
             );
           });
+
           it(`should preview mint and mint with quarter target`, async () => {
             await previewMintAndMint({
               bond,
@@ -573,6 +588,7 @@ describe("Bond", () => {
               collateralToDeposit: ZERO,
             });
           });
+
           it(`should preview mint and mint when collateral rounds up`, async () => {
             await previewMintAndMint({
               bond,
@@ -581,6 +597,7 @@ describe("Bond", () => {
               collateralToDeposit: ZERO,
             });
           });
+
           it(`should preview mint and mint with zero target`, async () => {
             await previewMintAndMint({
               bond,
@@ -604,7 +621,7 @@ describe("Bond", () => {
           });
         });
       });
-      describe(`pay`, async () => {
+      describe("pay", async () => {
         describe("non-convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
@@ -681,6 +698,7 @@ describe("Bond", () => {
               collateralToReceive: ZERO,
             });
           });
+
           it(`should make excess collateral available to withdraw when collateral rounded down are burned`, async () => {
             await burnAndWithdraw({
               bond,
@@ -688,6 +706,7 @@ describe("Bond", () => {
               collateralToReceive: ZERO,
             });
           });
+
           it(`should make excess collateral available to withdraw when smallest unit are burned`, async () => {
             await burnAndWithdraw({
               bond,
@@ -695,6 +714,7 @@ describe("Bond", () => {
               collateralToReceive: BigNumber.from(1),
             });
           });
+
           it(`should make excess collateral available to withdraw when total amount are burned`, async () => {
             await burnAndWithdraw({
               bond,
@@ -714,6 +734,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it(`should make excess collateral available to withdraw collateral in scaled magnitude`, async () => {
             await payAndWithdraw({
               bond,
@@ -726,6 +747,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it(`should make excess collateral available to withdraw collateral in scaled magnitude`, async () => {
             await payAndWithdraw({
               bond,
@@ -767,6 +789,7 @@ describe("Bond", () => {
               maturityDate: config.maturityDate,
             });
           });
+
           it("should make excess collateral available to withdraw when maturity is reached", async () => {
             await payAndWithdrawAtMaturity({
               bond,
@@ -849,6 +872,7 @@ describe("Bond", () => {
               collateralToReceive: ZERO,
             });
           });
+
           it("should make collateral available to withdraw when bonds are burned", async () => {
             await burnAndWithdraw({
               bond,
@@ -871,6 +895,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it("should make excess collateral available to withdraw when payment token is partially repaid", async () => {
             await (await bond.burn(utils.parseUnits("1000", 18))).wait();
             await payAndWithdraw({
@@ -918,6 +943,7 @@ describe("Bond", () => {
               maturityDate: config.maturityDate,
             });
           });
+
           it("should make excess collateral available to withdraw when maturity is reached", async () => {
             await payAndWithdrawAtMaturity({
               bond,
@@ -927,6 +953,7 @@ describe("Bond", () => {
               maturityDate: config.maturityDate,
             });
           });
+
           it("should revert when called by non-withdrawer", async () => {
             await expect(
               bond.connect(attacker).withdrawCollateral()
@@ -965,6 +992,7 @@ describe("Bond", () => {
               collateralToReceive: ZERO,
             });
           });
+
           it(`should have zero collateral available to withdraw when they are burned`, async () => {
             await burnAndWithdraw({
               bond,
@@ -972,6 +1000,7 @@ describe("Bond", () => {
               collateralToReceive: ZERO,
             });
           });
+
           it(`should have zero collateral available to withdraw when they are burned`, async () => {
             await burnAndWithdraw({
               bond,
@@ -1012,15 +1041,11 @@ describe("Bond", () => {
           });
         });
       });
-      describe(`redeem`, async () => {
+      describe("redeem", async () => {
         describe("non-convertible", async () => {
-          let tokensToPay: BigNumber;
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
-            tokensToPay = config.targetBondSupply
-              .mul(utils.parseUnits("1", decimals))
-              .div(ONE);
             await collateralToken.approve(
               bond.address,
               getTargetCollateral(config)
@@ -1035,7 +1060,7 @@ describe("Bond", () => {
           // Bond holder will have their bonds and the contract will be able to accept deposits of payment token
 
           it("should withdraw of payment token when bond is repaid & past maturity", async () => {
-            await bond.pay(tokensToPay);
+            await bond.pay(getTargetPayment(config, decimals));
             await redeemAtMaturity({
               bond,
               maturityDate: config.maturityDate,
@@ -1044,8 +1069,9 @@ describe("Bond", () => {
               collateralTokenToSend: ZERO,
             });
           });
+
           it("should withdraw zero tokens when bond is repaid & past maturity", async () => {
-            await bond.pay(tokensToPay);
+            await bond.pay(getTargetPayment(config, decimals));
             await redeemAtMaturity({
               bond,
               maturityDate: config.maturityDate,
@@ -1054,8 +1080,9 @@ describe("Bond", () => {
               collateralTokenToSend: ZERO,
             });
           });
+
           it("should withdraw of payment token when bond is repaid & past maturity", async () => {
-            await bond.pay(tokensToPay);
+            await bond.pay(getTargetPayment(config, decimals));
             await redeemAtMaturity({
               bond,
               maturityDate: config.maturityDate,
@@ -1077,6 +1104,7 @@ describe("Bond", () => {
                 .div(ONE),
             });
           });
+
           it("should allow withdraw of collateral when bond is not repaid & past maturity ", async () => {
             await redeemAtMaturity({
               bond,
@@ -1137,6 +1165,7 @@ describe("Bond", () => {
               await paymentToken.balanceOf(bondHolder.address)
             ).to.be.equal(utils.parseUnits("4000", decimals));
           });
+
           it("should redeem bond at default for collateral token", async () => {
             const expectedCollateralToReceive = utils
               .parseUnits("4000", 18)
@@ -1182,23 +1211,23 @@ describe("Bond", () => {
       });
       describe("convert", async () => {
         describe("convertible", async () => {
-          let tokensToConvert: BigNumber;
           beforeEach(async () => {
             bond = bondWithTokens.convertible.bond;
             config = bondWithTokens.convertible.config;
-            tokensToConvert = config.targetBondSupply;
             await collateralToken.approve(
               bond.address,
               getTargetCollateral(config)
             );
             await bond.mint(config.targetBondSupply);
-            await bond.transfer(bondHolder.address, tokensToConvert);
+            await bond.transfer(bondHolder.address, config.targetBondSupply);
           });
+
           it(`previews convert zero converted`, async () => {
             expect(await bond.previewConvertBeforeMaturity(ZERO)).to.equal(
               ZERO
             );
           });
+
           it(`previews convert target converted`, async () => {
             expect(
               await bond.previewConvertBeforeMaturity(config.targetBondSupply)
@@ -1206,6 +1235,7 @@ describe("Bond", () => {
               config.convertibleRatio.mul(config.targetBondSupply).div(ONE)
             );
           });
+
           it(`previews convert double target converted`, async () => {
             expect(
               await bond.previewConvertBeforeMaturity(
@@ -1217,25 +1247,26 @@ describe("Bond", () => {
                 .div(ONE)
             );
           });
+
           it("should convert bond amount into collateral at convertibleRatio", async () => {
-            const expectedCollateralToWithdraw = tokensToConvert
+            const expectedCollateralToWithdraw = config.targetBondSupply
               .mul(config.convertibleRatio)
               .div(ONE);
             await bond
               .connect(bondHolder)
-              .approve(bond.address, tokensToConvert);
+              .approve(bond.address, config.targetBondSupply);
             const {
               from,
               collateralToken: convertedCollateralToken,
               amountOfBondsConverted,
               amountOfCollateralTokens,
             } = await getEventArgumentsFromTransaction(
-              await bond.connect(bondHolder).convert(tokensToConvert),
+              await bond.connect(bondHolder).convert(config.targetBondSupply),
               "Convert"
             );
             expect(from).to.equal(bondHolder.address);
             expect(convertedCollateralToken).to.equal(collateralToken.address);
-            expect(amountOfBondsConverted).to.equal(tokensToConvert);
+            expect(amountOfBondsConverted).to.equal(config.targetBondSupply);
             expect(amountOfCollateralTokens).to.equal(
               expectedCollateralToWithdraw
             );
@@ -1246,6 +1277,7 @@ describe("Bond", () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
           });
+
           it("should fail to convert if bond is not convertible", async () => {
             await expect(
               bond.convert(config.targetBondSupply)
@@ -1257,6 +1289,7 @@ describe("Bond", () => {
             bond = bondWithTokens.uncollateralized.bond;
             config = bondWithTokens.uncollateralized.config;
           });
+
           it("should fail to convert if bond is uncollateralized and therefore unconvertible", async () => {
             await expect(
               bond.convert(config.targetBondSupply)
@@ -1270,6 +1303,7 @@ describe("Bond", () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
           });
+
           it("should remove a token from the contract", async () => {
             await attackingToken.connect(attacker).transfer(bond.address, 1000);
             await bond.sweep(attackingToken.address);
