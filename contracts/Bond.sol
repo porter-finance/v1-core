@@ -162,7 +162,7 @@ contract Bond is
     /// @notice attempted to pay after payment was met
     error PaymentMet();
 
-    /// @notice this bond has been repaid so more bonds can not be minted
+    /// @notice this bond has been paid so more bonds can not be minted
     error BondsCanNoLongerBeMinted();
 
     /// @notice attempted to sweep a token used in the contract
@@ -342,12 +342,12 @@ contract Bond is
         // that would break in the case of a token taking a fee.
         // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
         // if reentrency is exploited here what can they do? Just pay over the maximum amount?
-        uint256 amountRepaid = _safeTransferIn(
+        uint256 amountPaid = _safeTransferIn(
             IERC20Metadata(paymentToken),
             _msgSender(),
             amount
         );
-        emit Payment(_msgSender(), amountRepaid);
+        emit Payment(_msgSender(), amountPaid);
     }
 
     /**
@@ -451,7 +451,7 @@ contract Bond is
         at which point all collateral will be able to be withdrawn.
 
         There are the following scenarios:
-        "total uncovered supply" is the tokens that are not covered by the amount repaid.
+        "total uncovered supply" is the tokens that are not covered by the amount paid.
             bond is NOT paid AND NOT mature:
                 to cover collateralRatio = total uncovered supply * collateralRatio
                 to cover convertibleRatio = total supply * convertibleRatio
@@ -513,18 +513,18 @@ contract Bond is
         view
         returns (uint256, uint256)
     {
-        uint256 repaidAmount = _upscale(totalPaid());
+        uint256 paidAmount = _upscale(totalPaid());
         if (isFullyPaid()) {
-            repaidAmount = totalSupply();
+            paidAmount = totalSupply();
         }
         uint256 paymentTokensToSend = bonds.mulDivUp(
             totalPaid(),
             totalSupply()
         );
 
-        uint256 nonRepaidAmount = totalSupply() - repaidAmount;
+        uint256 nonPaidAmount = totalSupply() - paidAmount;
         uint256 collateralTokensToSend = collateralRatio.mulDivDown(
-            bonds.mulDivDown(nonRepaidAmount, totalSupply()),
+            bonds.mulDivDown(nonPaidAmount, totalSupply()),
             ONE
         );
 
