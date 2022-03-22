@@ -4,7 +4,7 @@
 
 ## Not created
 
-- Allowed address can create a bond and move to "Created"
+- Allowed address can create a bond and move to "Unpaid and not matured"
 
 ## Unpaid and not matured
 
