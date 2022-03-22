@@ -338,11 +338,7 @@ contract Bond is
             _msgSender(),
             amount
         );
-        if (isFullyPaid()) {
-            emit PaymentInFull(_msgSender(), amountRepaid);
-        } else {
-            emit Payment(_msgSender(), amountRepaid);
-        }
+        emit Payment(_msgSender(), amountRepaid);
     }
 
     /**
