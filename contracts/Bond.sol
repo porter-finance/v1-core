@@ -181,16 +181,14 @@ contract Bond is
         _;
     }
 
-    modifier afterMaturityOrRepaid() {
-        if (!isMature()) {
-            if (!isFullyPaid()) {
-                revert BondNotYetMaturedOrPaid();
-            }
+    modifier afterMaturityOrPaid() {
+        if (!isMature() && !isFullyPaid()) {
+            revert BondNotYetMaturedOrPaid();
         }
         _;
     }
 
-    modifier isNotFullyPaid() {
+    modifier notFullyPaid() {
         if (isFullyPaid()) {
             revert BondsCanNoLongerBeMinted();
         }
@@ -256,7 +254,7 @@ contract Bond is
         external
         onlyRole(MINT_ROLE)
         beforeMaturity
-        isNotFullyPaid
+        notFullyPaid
         nonReentrant
     {
         if (totalSupply() + bonds > maxSupply) {
@@ -356,7 +354,7 @@ contract Bond is
         @notice this function burns bonds in return for the token borrowed against the bond
         @param bonds the amount of bonds to redeem and burn
     */
-    function redeem(uint256 bonds) external nonReentrant afterMaturityOrRepaid {
+    function redeem(uint256 bonds) external nonReentrant afterMaturityOrPaid {
         // calculate amount before burning as the preview function uses totalSupply.
         (
             uint256 paymentTokensToSend,
