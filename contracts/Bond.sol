@@ -488,7 +488,9 @@ contract Bond is
                 collateralTokensRequired
                 ? convertibleTokensRequired
                 : collateralTokensRequired;
-        } else if (maturityDate < block.timestamp) {
+        } else if (isMature()) {
+            // this seems wrong and using !isMature does not cause tests to fail
+            // # TODO investigate and add tests
             totalRequiredCollateral = convertibleTokensRequired;
         } else {
             // @audit-info redundant but explicit
@@ -515,7 +517,7 @@ contract Bond is
         returns (uint256, uint256)
     {
         uint256 repaidAmount = _upscale(totalPaid());
-        if (repaidAmount > totalSupply()) {
+        if (isFullyPaid()) {
             repaidAmount = totalSupply();
         }
         uint256 paymentTokensToSend = bonds.mulDivUp(
