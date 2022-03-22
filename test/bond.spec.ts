@@ -210,6 +210,13 @@ describe("Bond", () => {
         ({ attackingToken, collateralToken, paymentToken } = bondWithTokens);
       });
       describe("initialize", async () => {
+
+
+        it("should verifiable as bond by Factory.isBond", async () => {
+          expect(await factory.isBond(bond.address)).to.be.true;
+        });
+
+
         describe("non-convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
@@ -1252,9 +1259,8 @@ describe("Bond", () => {
             const expectedCollateralToWithdraw = config.targetBondSupply
               .mul(config.convertibleRatio)
               .div(ONE);
-            await bond
-              .connect(bondHolder)
-              .approve(bond.address, config.targetBondSupply);
+
+
             const {
               from,
               collateralToken: convertedCollateralToken,

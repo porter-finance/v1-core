@@ -129,13 +129,6 @@ contract Bond is
     event Payment(address indexed from, uint256 amount);
 
     /**
-        @notice emitted when all of the bond's principal is paid back
-        @param from the address depositing payment
-        @param amount the amount deposited to fully pay the bond
-    */
-    event PaymentInFull(address indexed from, uint256 amount);
-
-    /**
         @notice emitted when a bond is redeemed
         @param from the bond holder whose bonds are burnt
         @param paymentToken the address of the payment token
@@ -178,9 +171,16 @@ contract Bond is
     error TokenOverflow();
 
     /// @dev used to confirm the bond has not yet matured
-    modifier notPastMaturity() {
+    modifier beforeMaturity() {
         if (isMature()) {
             revert BondPastMaturity();
+        }
+        _;
+    }
+
+    modifier afterMaturity() {
+        if (!isMature()) {
+            revert BondNotYetMatured();
         }
         _;
     }
@@ -240,12 +240,14 @@ contract Bond is
         @dev CollateralDeposit + Mint events are both emitted. bonds to mint is bounded by maxSupply
         @param bonds the amount of bonds to mint
     */
-    function mint(uint256 bonds) external onlyRole(MINT_ROLE) nonReentrant {
+    function mint(uint256 bonds)
+        external
+        onlyRole(MINT_ROLE)
+        beforeMaturity
+        nonReentrant
+    {
         if (totalSupply() + bonds > maxSupply) {
             revert BondSupplyExceeded();
-        }
-        if (isMature()) {
-            revert BondPastMaturity();
         }
 
         uint256 collateralToDeposit = previewMintBeforeMaturity(bonds);
@@ -272,10 +274,8 @@ contract Bond is
             The bond must be convertible and not past maturity
         @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
     */
-    function convert(uint256 bonds) external nonReentrant {
-        uint256 collateralToSend = isMature()
-            ? 0
-            : previewConvertBeforeMaturity(bonds);
+    function convert(uint256 bonds) external nonReentrant beforeMaturity {
+        uint256 collateralToSend = previewConvertBeforeMaturity(bonds);
         if (collateralToSend == 0) {
             revert ZeroAmount();
         }
@@ -316,18 +316,16 @@ contract Bond is
 
     /**
         @notice allows the issuer to pay the bond by depositing payment token
-        @dev emits PaymentInFull if the full balance has been repaid, PaymentDeposited otherwise
-            the lower of outstandingAmount and amount is chosen to prevent overpayment
+        @dev emits Payment event
         @param amount the number of payment tokens to pay
     */
-    function pay(uint256 amount) external nonReentrant notPastMaturity {
+    function pay(uint256 amount) external nonReentrant beforeMaturity {
         if (isFullyPaid()) {
             revert PaymentMet();
         }
         if (amount == 0) {
             revert ZeroAmount();
         }
-
         // @audit-info
         // I'm not sure how we can fix this here. We could check that _upscale(totalPaid() + amount) >= totalSupply() but
         // that would break in the case of a token taking a fee.
@@ -338,23 +336,19 @@ contract Bond is
             _msgSender(),
             amount
         );
-        if (isFullyPaid()) {
-            emit PaymentInFull(_msgSender(), amountRepaid);
-        } else {
-            emit Payment(_msgSender(), amountRepaid);
-        }
+        emit Payment(_msgSender(), amountRepaid);
     }
 
     /**
         @notice this function burns bonds in return for the token borrowed against the bond
         @param bonds the amount of bonds to redeem and burn
     */
-    function redeem(uint256 bonds) external nonReentrant {
+    function redeem(uint256 bonds) external nonReentrant afterMaturity {
         // calculate amount before burning as the preview function uses totalSupply.
         (
             uint256 paymentTokensToSend,
             uint256 collateralTokensToSend
-        ) = isMature() ? previewRedeemAtMaturity(bonds) : (0, 0);
+        ) = previewRedeemAtMaturity(bonds);
 
         if (paymentTokensToSend == 0 && collateralTokensToSend == 0) {
             revert ZeroAmount();
@@ -482,7 +476,9 @@ contract Bond is
                 collateralTokensRequired
                 ? convertibleTokensRequired
                 : collateralTokensRequired;
-        } else if (maturityDate < block.timestamp) {
+        } else if (isMature()) {
+            // this seems wrong and using !isMature does not cause tests to fail
+            // # TODO investigate and add tests
             totalRequiredCollateral = convertibleTokensRequired;
         } else {
             // @audit-info redundant but explicit
@@ -509,7 +505,7 @@ contract Bond is
         returns (uint256, uint256)
     {
         uint256 repaidAmount = _upscale(totalPaid());
-        if (repaidAmount > totalSupply()) {
+        if (isFullyPaid()) {
             repaidAmount = totalSupply();
         }
         uint256 paymentTokensToSend = bonds.mulDivUp(
