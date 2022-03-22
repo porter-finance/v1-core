@@ -204,18 +204,15 @@ describe("Bond", () => {
         ({ attackingToken, collateralToken, paymentToken } = bondWithTokens);
       });
       describe("initialization", async () => {
-
-
-        it("should verifiable as bond by Factory.isBond", async () => {
-          expect(await factory.isBond(bond.address)).to.be.true;
-        });
-
-
         describe("non-convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
           });
+          it("should verifiable as bond by Factory.isBond", async () => {
+            expect(await factory.isBond(bond.address)).to.be.true;
+          });
+
           it("should have no minted coins", async () => {
             expect(await bond.balanceOf(owner.address)).to.be.equal(0);
             expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
