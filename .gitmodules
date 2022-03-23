@@ -1,0 +1,2 @@
+[submodule "lib/solmate"]
+	url = https://github.com/rari-capital/solmate/tree/0a121c54b23ccde77bb0dd84a59b71783c126894.git
