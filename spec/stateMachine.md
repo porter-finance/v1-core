@@ -4,18 +4,18 @@
 
 ## Not created
 
-- Allowed addresses can create a bond and move to "Unpaid and not matured"
+- Allowed addresses can create a bond and move to "Not fully paid and not matured"
 
-## Unpaid and not matured
+## Not fully paid and not matured
 
-- When maturity date passes move to "unpaid and matured"
-- Owner can fully repay and move to "Fully paid and not matured"
+- When maturity date passes move to "Not fully paid and matured"
+- Owner can fully pay and move to "Fully paid and not matured"
 
 ## Fully paid and not matured
 
 - When maturity date passes move to "Fully paid and matured"
 
-## Unpaid and matured (Defaulted)
+## Not fully paid and matured
 
 - This state is terminal (no more transitions are possible)
 
