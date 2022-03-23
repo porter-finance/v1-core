@@ -803,7 +803,7 @@ describe("Bond", () => {
             );
           });
 
-          it("should fail if already repaid", async () => {
+          it("should fail if already paid", async () => {
             await bond.pay(
               config.targetBondSupply
                 .mul(utils.parseUnits("1", decimals))
@@ -812,6 +812,17 @@ describe("Bond", () => {
             await expect(
               bond.pay(getTargetPayment(config, decimals))
             ).to.be.revertedWith("PaymentMet");
+          });
+
+          it("should fail on zero payment amount", async () => {
+            await expect(bond.pay(ZERO)).to.be.revertedWith("ZeroAmount");
+          });
+
+          it("should fail on fully paid bonds attempt to mint", async () => {
+            await (await bond.pay(getTargetPayment(config, decimals))).wait();
+            await expect(bond.mint(ONE)).to.be.revertedWith(
+              "BondsCanNoLongerBeMinted"
+            );
           });
 
           it("should return amount owed scaled to payment amount", async () => {
