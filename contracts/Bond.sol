@@ -247,7 +247,10 @@ contract Bond is
 
     /**
         @notice mints the amount of specified bonds by transferring in collateral
-        @dev CollateralDeposit + Mint events are both emitted. bonds to mint is bounded by maxSupply
+        @dev Bonds to mint is bounded by maxSupply
+            Mint event is always emitted.
+            CollateralDeposit is emitted unless the bond is uncollateralized and
+            therefore requires no collateral to mint bonds.
         @param bonds the amount of bonds to mint
     */
     function mint(uint256 bonds)
