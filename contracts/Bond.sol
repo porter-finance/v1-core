@@ -278,6 +278,10 @@ contract Bond is
             collateralToken,
             collateralDeposited
         );
+
+        if (collateralToDeposit != collateralDeposited) {
+            revert TokenOverflow();
+        }
     }
 
     /**

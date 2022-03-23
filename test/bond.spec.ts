@@ -27,10 +27,11 @@ import {
   ConvertibleBondConfig,
   UncollateralizedBondConfig,
   ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
+  MaliciousBondConfig,
 } from "./constants";
 
-// <https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html>
-// import from waffle since we are using hardhat: <https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions>
+// https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
+// import from waffle since we are using hardhat: https://hardhat.org/plugins/nomiclabs-hardhat-waffle.html#environment-extensions
 const { ethers, waffle } = require("hardhat");
 const { loadFixture } = waffle;
 
@@ -161,6 +162,22 @@ describe("Bond", () => {
                 )
               ),
               config: UncollateralizedBondConfig,
+            },
+            malicious: {
+              bond: await getBondContract(
+                factory.createBond(
+                  "Bond",
+                  "LUG",
+                  owner.address,
+                  MaliciousBondConfig.maturityDate,
+                  attackingToken.address,
+                  attackingToken.address,
+                  MaliciousBondConfig.collateralRatio,
+                  MaliciousBondConfig.convertibleRatio,
+                  MaliciousBondConfig.maxSupply
+                )
+              ),
+              config: MaliciousBondConfig,
             },
           };
         }
@@ -718,6 +735,23 @@ describe("Bond", () => {
             await expect(bond.mint(config.targetBondSupply));
             expect(await bond.amountOwed()).to.equal(
               downscaleAmount(config.targetBondSupply, decimals)
+            );
+          });
+        });
+        describe("malicious", async () => {
+          beforeEach(async () => {
+            bond = bondWithTokens.malicious.bond;
+            config = bondWithTokens.malicious.config;
+            await collateralToken
+              // attaching here as a special case - usually the "collateralToken"
+              // assigned in the `beforeEach` is correct, but here we're using
+              // a malicious token
+              .attach(await bond.collateralToken())
+              .approve(bond.address, getTargetCollateral(config));
+          });
+          it("should not mint tokens when no collateral is transferred", async () => {
+            await expect(bond.mint(config.targetBondSupply)).to.be.revertedWith(
+              "TokenOverflow"
             );
           });
         });
