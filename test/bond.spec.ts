@@ -26,6 +26,7 @@ import {
   NonConvertibleBondConfig,
   ConvertibleBondConfig,
   UncollateralizedBondConfig,
+  ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
 } from "./constants";
 
 // <https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html>
@@ -350,6 +351,60 @@ describe("Bond", () => {
                 config.maxSupply
               )
             ).to.be.revertedWith("function selector was not recognized");
+          });
+
+          it("should revert on a maturity date already passed", async () => {
+            await expect(
+              factory.createBond(
+                "Bond",
+                "LUG",
+                owner.address,
+                BigNumber.from(1),
+                paymentToken.address,
+                collateralToken.address,
+                config.collateralRatio,
+                config.convertibleRatio,
+                config.maxSupply
+              )
+            ).to.be.revertedWith("InvalidMaturityDate");
+          });
+
+          it("should revert on a maturity date current timestamp", async () => {
+            const provider = owner.provider;
+            if (!provider) {
+              throw new Error("no provider");
+            }
+            const currentTimestamp = (await provider.getBlock("latest"))
+              .timestamp;
+            await expect(
+              factory.createBond(
+                "Bond",
+                "LUG",
+                owner.address,
+                currentTimestamp,
+                paymentToken.address,
+                collateralToken.address,
+                config.collateralRatio,
+                config.convertibleRatio,
+                config.maxSupply
+              )
+            ).to.be.revertedWith("InvalidMaturityDate");
+          });
+
+          it("should revert on a maturity date 10 years in the future", async () => {
+            await expect(
+              factory.createBond(
+                "Bond",
+                "LUG",
+                owner.address,
+                ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
+                paymentToken.address,
+                collateralToken.address,
+                config.collateralRatio,
+                config.convertibleRatio,
+                config.maxSupply
+              )
+            ).to.be.revertedWith("InvalidMaturityDate");
           });
         });
       });
