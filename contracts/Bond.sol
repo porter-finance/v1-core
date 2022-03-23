@@ -36,8 +36,10 @@ contract Bond is
     */
     uint256 public maturityDate;
 
-    /// @notice The address of the ERC20 token this bond will be redeemable for at maturity
-    /// @notice The token paid by the borrower to unlock their collateral
+    /**
+        @notice The address of the ERC20 token this bond will be redeemable for at maturity
+            which is paid by the borrower to unlock their collateral
+    */      
     address public paymentToken;
 
     /// @notice the address of the ERC20 token used as collateral backing the bond
@@ -46,7 +48,7 @@ contract Bond is
     /**
         @notice the ratio of collateral tokens per bond with
         @dev this amount is expressed as a deviation from 1-to-1 (equal to 1e18)
-        @dev number of collateral tokens backing one bond
+            number of collateral tokens backing one bond
     */
     uint256 public collateralRatio;
 
@@ -455,16 +457,15 @@ contract Bond is
         @notice the amount of collateral that the issuer would be able to 
             withdraw from the contract
         @dev this function calculates the amount of collateral tokens thatare able to be withdrawn by the issuer.
-        The amount of tokens can increase by bonds being burnt and converted as well as payment made.
-        Each bond is covered by a certain amount of collateral to fulfill collateralRatio and convertibleRatio.
-        For convertible bonds, the totalSupply of bonds must be covered by the convertibleRatio.
-        That means even if all of the bonds were covered by payment, there must still be enough collateral
-        in the contract to cover the outstanding bonds convertible until the maturity date -
-        at which point all collateral will be able to be withdrawn.
+            The amount of tokens can increase by bonds being burnt and converted as well as payment made.
+            Each bond is covered by a certain amount of collateral to fulfill collateralRatio and convertibleRatio.
+            For convertible bonds, the totalSupply of bonds must be covered by the convertibleRatio.
+            That means even if all of the bonds were covered by payment, there must still be enough collateral
+            in the contract to cover the outstanding bonds convertible until the maturity date -
+            at which point all collateral will be able to be withdrawn.
 
         There are the following scenarios:
         "total uncovered supply" is the tokens that are not covered by the amount repaid.
-
 
             bond IS paid AND mature
                 to cover collateralRatio = 0
