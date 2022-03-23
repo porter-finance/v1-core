@@ -4,7 +4,7 @@
 
 ## Not created
 
-- Allowed address can create a bond and move to "Unpaid and not matured"
+- Allowed addresses can create a bond and move to "Unpaid and not matured"
 
 ## Unpaid and not matured
 
@@ -15,7 +15,7 @@
 
 - When maturity date passes move to "Fully paid and matured"
 
-## Unpaid and matured
+## Unpaid and matured (Defaulted)
 
 - This state is terminal (no more transitions are possible)
 
