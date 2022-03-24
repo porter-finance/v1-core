@@ -39,7 +39,7 @@ contract Bond is
     /**
         @notice The address of the ERC20 token this bond will be redeemable for at maturity
             which is paid by the borrower to unlock their collateral
-    */      
+    */
     address public paymentToken;
 
     /// @notice the address of the ERC20 token used as collateral backing the bond
@@ -340,7 +340,7 @@ contract Bond is
     }
 
     /**
-        @notice allows the issuer to pay the bond by transfering payment token
+        @notice allows the issuer to pay the bond by transferring payment token
         @dev emits Payment event
         @param amount the number of payment tokens to pay
     */
@@ -456,7 +456,7 @@ contract Bond is
     /** 
         @notice the amount of collateral that the issuer would be able to 
             withdraw from the contract
-        @dev this function calculates the amount of collateral tokens thatare able to be withdrawn by the issuer.
+        @dev this function calculates the amount of collateral tokens that are able to be withdrawn by the issuer.
             The amount of tokens can increase by bonds being burnt and converted as well as payment made.
             Each bond is covered by a certain amount of collateral to fulfill collateralRatio and convertibleRatio.
             For convertible bonds, the totalSupply of bonds must be covered by the convertibleRatio.
