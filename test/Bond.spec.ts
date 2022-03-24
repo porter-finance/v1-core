@@ -1471,7 +1471,7 @@ describe("Bond", () => {
             ).to.be.equal(utils.parseUnits("4000", decimals));
           });
 
-          it("should redeem unpaidbond at maturity for collateral token", async () => {
+          it("should redeem unpaid bond at maturity for collateral token", async () => {
             const expectedCollateralToReceive = utils
               .parseUnits("4000", 18)
               .mul(await bond.totalCollateral())
