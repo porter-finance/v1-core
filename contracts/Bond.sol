@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
-import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import {ERC20CappedUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
 
+import {ERC20BurnableUpgradeable, ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -22,6 +23,7 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 contract Bond is
     AccessControlUpgradeable,
     ERC20BurnableUpgradeable,
+    ERC20CappedUpgradeable,
     ReentrancyGuard
 {
     using SafeERC20 for IERC20Metadata;
@@ -238,7 +240,8 @@ contract Bond is
 
         __ERC20_init(bondName, bondSymbol);
         __ERC20Burnable_init();
-
+        __ERC20Capped_init_unchained(_maxSupply);
+        __AccessControl_init();
         maturityDate = _maturityDate;
         paymentToken = _paymentToken;
         collateralToken = _collateralToken;
@@ -589,6 +592,14 @@ contract Bond is
     function amountOwed() public view returns (uint256) {
         uint256 amountUnpaid = totalSupply() - _upscale(totalPaid());
         return amountUnpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
+    }
+
+    function _mint(address to, uint256 amount)
+        internal
+        virtual
+        override(ERC20CappedUpgradeable, ERC20Upgradeable)
+    {
+        ERC20CappedUpgradeable._mint(to, amount);
     }
 
     /**
