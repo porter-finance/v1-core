@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
-import {ERC20BurnableUpgradeable, ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
@@ -18,9 +18,8 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
     @dev External calls to tokens used for collateral and payment are used throughout to transfer and check balances
     there is risk that these tokens are malicious and each one should be carefully inspected before being trusted. 
 */
+
 contract Bond is
-    Initializable,
-    ERC20Upgradeable,
     AccessControlUpgradeable,
     ERC20BurnableUpgradeable,
     ReentrancyGuard
