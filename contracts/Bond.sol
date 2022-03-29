@@ -245,7 +245,7 @@ contract Bond is
 
     /**
         @notice mints the amount of specified bonds by transferring in collateral
-        @dev Bonds to mint is bounded by maxSupply
+        @dev Bonds to mint is capped by the ERC20CappedUpgradeable inherited contract
             Mint event is always emitted.
             CollateralDeposit is emitted unless the bond is uncollateralized and
             therefore requires no collateral to mint bonds.
