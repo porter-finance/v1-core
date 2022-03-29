@@ -579,7 +579,6 @@ contract Bond is
 
     function _mint(address to, uint256 amount)
         internal
-        virtual
         override(ERC20CappedUpgradeable, ERC20Upgradeable)
     {
         ERC20CappedUpgradeable._mint(to, amount);
