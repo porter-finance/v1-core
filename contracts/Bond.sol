@@ -63,12 +63,6 @@ contract Bond is
     uint256 public convertibleRatio;
 
     /**
-        @notice the max amount of bonds able to be minted and cannot be changed
-        @dev checked in the `mint` function to limit `totalSupply` exceeding this number
-    */
-    uint256 public maxSupply;
-
-    /**
         @notice this role permits the withdraw of collateral from the contract
         @dev this is assigned to owner in `initialize`
             the owner can assign other addresses with this role to enable their withdraw
@@ -164,9 +158,6 @@ contract Bond is
     /// @notice collateralRatio must be greater than convertibleRatio
     error CollateralRatioLessThanConvertibleRatio();
 
-    /// @notice attempted to mint bonds that would exceeded maxSupply
-    error BondSupplyExceeded();
-
     /// @notice attempted to pay after payment was met
     error PaymentMet();
 
@@ -226,7 +217,7 @@ contract Bond is
         address _collateralToken,
         uint256 _collateralRatio,
         uint256 _convertibleRatio,
-        uint256 _maxSupply
+        uint256 maxSupply
     ) external initializer {
         if (_collateralRatio < _convertibleRatio) {
             revert CollateralRatioLessThanConvertibleRatio();
@@ -239,16 +230,12 @@ contract Bond is
         }
 
         __ERC20_init(bondName, bondSymbol);
-        __ERC20Burnable_init();
-        __ERC20Capped_init_unchained(_maxSupply);
-        __AccessControl_init();
+        __ERC20Capped_init(maxSupply);
         maturityDate = _maturityDate;
         paymentToken = _paymentToken;
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
-        maxSupply = _maxSupply;
-
         _computeScalingFactor(paymentToken);
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
@@ -271,10 +258,6 @@ contract Bond is
         notFullyPaid
         nonReentrant
     {
-        if (totalSupply() + bonds > maxSupply) {
-            revert BondSupplyExceeded();
-        }
-
         uint256 collateralToDeposit = previewMintBeforeMaturity(bonds);
 
         _mint(_msgSender(), bonds);
