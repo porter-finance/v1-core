@@ -199,6 +199,7 @@ contract Bond is
     /**
         @notice this function is called one time during initial bond creation and sets up the configuration for the bond
         @dev New bond contract deployed via clone
+        @dev Not calling __AccessControl_init or __ERC20Burnable_init here because they currently generate an empty function 
         @param bondName passed into the ERC20 token
         @param bondSymbol passed into the ERC20 token
         @param owner ownership of this contract transferred to this address
@@ -231,6 +232,7 @@ contract Bond is
 
         __ERC20_init(bondName, bondSymbol);
         __ERC20Capped_init(maxSupply);
+
         maturityDate = _maturityDate;
         paymentToken = _paymentToken;
         collateralToken = _collateralToken;
