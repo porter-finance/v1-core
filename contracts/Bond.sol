@@ -17,9 +17,9 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
     @notice A custom ERC20 token that can be used to issue bonds.
     @notice The contract handles issuance, payment, conversion, and redemption of bonds.
     @dev External calls to tokens used for collateral and payment are used throughout to transfer and check balances
-    there is risk that these tokens are malicious and each one should be carefully inspected before being trusted. 
-    @dev does not inherit from ERC20Upgradeable.sol or Initializable since ERC20BurnableUpgradeable and
-    ERC20CappedUpgradeable inherit from them
+        there is risk that these tokens are malicious and each one should be carefully inspected before being trusted. 
+    @dev does not inherit from ERC20Upgradeable or Initializable since ERC20BurnableUpgradeable and
+        ERC20CappedUpgradeable inherit from them
 */
 contract Bond is
     AccessControlUpgradeable,
@@ -151,11 +151,13 @@ contract Bond is
 
     /// @notice operation restricted because the bond has matured
     error BondPastMaturity();
+
     /// @notice operation restricted because the bond is not yet matured or paid
     error BondNotYetMaturedOrPaid();
 
     /// @notice maturity date is not valid
     error InvalidMaturityDate();
+
     /// @notice collateralRatio must be greater than convertibleRatio
     error CollateralRatioLessThanConvertibleRatio();
 
@@ -170,6 +172,7 @@ contract Bond is
 
     /// @notice attempted to perform an action that would do nothing
     error ZeroAmount();
+
     /// @notice unexpected amount returned on external token transfer
     error UnexpectedTokenOperation();
 
