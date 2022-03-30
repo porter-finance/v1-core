@@ -18,8 +18,9 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
     @notice The contract handles issuance, payment, conversion, and redemption of bonds.
     @dev External calls to tokens used for collateral and payment are used throughout to transfer and check balances
     there is risk that these tokens are malicious and each one should be carefully inspected before being trusted. 
+    @dev does not inherit from ERC20Upgradeable.sol or Initializable since ERC20BurnableUpgradeable and
+    ERC20CappedUpgradeable inherit from them
 */
-
 contract Bond is
     AccessControlUpgradeable,
     ERC20BurnableUpgradeable,
