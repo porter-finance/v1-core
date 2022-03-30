@@ -10,6 +10,8 @@ import "hardhat-deploy"; // runs scripts in the ./deploy folder
 import "@nomiclabs/hardhat-etherscan"; // adds 'verify' task
 import "hardhat-storage-layout"; // exports storage layout of contracts
 
+import "./tasks/storageLayout.ts"; // add hh storage-layout
+
 dotenv.config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
