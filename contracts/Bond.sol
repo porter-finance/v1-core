@@ -459,7 +459,7 @@ contract Bond is
                 to cover convertibleRatio = 0
             bond IS paid AND NOT mature
                 to cover collateralRatio = 0 (bonds need not be backed by collateral)
-                to cover convertibleRatio = total supply * collateral ratio
+                to cover convertibleRatio = total supply * convertibleRatio ratio
 
             bond is NOT paid AND NOT mature:
                 to cover collateralRatio = total uncovered supply * collateralRatio
