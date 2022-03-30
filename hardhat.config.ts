@@ -8,6 +8,7 @@ import "@nomiclabs/hardhat-ethers"; // integrates ethers into the hre
 import "solidity-coverage"; // adds 'coverage' task
 import "hardhat-deploy"; // runs scripts in the ./deploy folder
 import "@nomiclabs/hardhat-etherscan"; // adds 'verify' task
+import "hardhat-storage-layout"; // exports storage layout of contracts
 
 dotenv.config();
 
