@@ -122,22 +122,11 @@ contract BondFactory is AccessControl {
         uint256 maxSupply
     ) external onlyIssuer returns (address clone) {
         clone = Clones.clone(tokenImplementation);
+
         isBond[clone] = true;
 
-        allowance = IERC20Metadata(collateralToken).allowance(
-            msg.sender,
-            address(this)
-        );
-        // console.log(collateralToken);
-        // console.log(msg.sender);
-        console.log(
-            "allowance",
-            allowance,
-            maxSupply.mulDivUp(collateralRatio, ONE)
-        );
-        // console.log(address(this));
         IERC20Metadata(collateralToken).safeTransferFrom(
-            msg.sender,
+            owner,
             clone,
             maxSupply.mulDivUp(collateralRatio, ONE)
         );
@@ -145,7 +134,7 @@ contract BondFactory is AccessControl {
         Bond(clone).initialize(
             name,
             symbol,
-            msg.sender,
+            owner,
             maturityDate,
             paymentToken,
             collateralToken,

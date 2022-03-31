@@ -5,6 +5,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
 import { BondConfigType } from "./interfaces";
 import { FIFTY_MILLION, THREE_YEARS_FROM_NOW_IN_SECONDS } from "./constants";
+import { getTargetCollateral } from "./utilities";
 
 const { ethers } = require("hardhat");
 
@@ -36,6 +37,10 @@ describe("BondFactory", async () => {
   async function createBond(factory: BondFactory) {
     BondConfig.collateralRatio = utils.parseUnits("0.5", 18);
     BondConfig.convertibleRatio = utils.parseUnits("0.5", 18);
+    await collateralToken.approve(
+      factory.address,
+      getTargetCollateral(BondConfig)
+    );
     return factory.createBond(
       "Bond",
       "LUG",
