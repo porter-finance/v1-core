@@ -300,8 +300,8 @@ contract Bond is
         @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
     */
     function convert(uint256 bonds) external nonReentrant beforeMaturity {
-        uint256 collateralToSend = previewConvertBeforeMaturity(bonds);
-        if (collateralToSend == 0) {
+        uint256 convertibleTokensToSend = previewConvertBeforeMaturity(bonds);
+        if (convertibleTokensToSend == 0) {
             revert ZeroAmount();
         }
 
@@ -310,10 +310,15 @@ contract Bond is
         //  Reentrancy possibility: the bonds are already burnt - if there weren't enough bonds to burn, an error is thrown
         IERC20Metadata(collateralToken).safeTransfer(
             _msgSender(),
-            collateralToSend
+            convertibleTokensToSend
         );
 
-        emit Convert(_msgSender(), collateralToken, bonds, collateralToSend);
+        emit Convert(
+            _msgSender(),
+            collateralToken,
+            bonds,
+            convertibleTokensToSend
+        );
     }
 
     /**
