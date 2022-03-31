@@ -66,13 +66,6 @@ contract Bond is
     */
     bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
 
-    /**
-        @notice this role permits the minting of bonds
-        @dev this is assigned to owner in `initialize`
-            the owner can assign other addresses with this role to enable their minting
-    */
-    bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
-
     uint256 internal constant ONE = 1e18;
 
     /**
@@ -153,9 +146,6 @@ contract Bond is
     /// @notice attempted to pay after payment was met
     error PaymentMet();
 
-    /// @notice this bond has been paid so more bonds can not be minted
-    error BondsCanNoLongerBeMinted();
-
     /// @notice attempted to sweep a token used in the contract
     error SweepDisallowedForToken();
 
@@ -177,14 +167,6 @@ contract Bond is
     modifier afterMaturityOrPaid() {
         if (!isMature() && !isFullyPaid()) {
             revert BondNotYetMaturedOrPaid();
-        }
-        _;
-    }
-
-    /// @dev used to confirm that the bond has not been fully paid
-    modifier notFullyPaid() {
-        if (isFullyPaid()) {
-            revert BondsCanNoLongerBeMinted();
         }
         _;
     }
@@ -234,7 +216,6 @@ contract Bond is
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
-        _grantRole(MINT_ROLE, owner);
         _mint(owner, maxSupply);
     }
 
