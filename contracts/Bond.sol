@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
-import {ERC20CappedUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
-
-import {ERC20BurnableUpgradeable, ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -18,13 +16,11 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
     @notice The contract handles issuance, payment, conversion, and redemption of bonds.
     @dev External calls to tokens used for collateral and payment are used throughout to transfer and check balances
         there is risk that these tokens are malicious and each one should be carefully inspected before being trusted. 
-    @dev does not inherit from ERC20Upgradeable or Initializable since ERC20BurnableUpgradeable and
-        ERC20CappedUpgradeable inherit from them
+    @dev does not inherit from ERC20Upgradeable or Initializable since ERC20BurnableUpgradeable inherits from them
 */
 contract Bond is
     AccessControlUpgradeable,
     ERC20BurnableUpgradeable,
-    ERC20CappedUpgradeable,
     ReentrancyGuard
 {
     using SafeERC20 for IERC20Metadata;
@@ -235,7 +231,6 @@ contract Bond is
         }
 
         __ERC20_init(bondName, bondSymbol);
-        __ERC20Capped_init(maxSupply);
 
         maturityDate = _maturityDate;
         paymentToken = _paymentToken;
@@ -247,42 +242,7 @@ contract Bond is
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
         _grantRole(MINT_ROLE, owner);
-    }
-
-    /**
-        @notice mints the amount of specified bonds by transferring in collateral
-        @dev Bonds to mint is capped by the ERC20CappedUpgradeable inherited contract
-            Mint event is always emitted.
-            CollateralDeposit is emitted unless the bond is uncollateralized and
-            therefore requires no collateral to mint bonds.
-        @param bonds the amount of bonds to mint
-    */
-    function mint(uint256 bonds)
-        external
-        onlyRole(MINT_ROLE)
-        beforeMaturity
-        notFullyPaid
-        nonReentrant
-    {
-        uint256 collateralToDeposit = previewMintBeforeMaturity(bonds);
-
-        _mint(_msgSender(), bonds);
-
-        emit Mint(_msgSender(), bonds);
-
-        if (collateralToDeposit > 0) {
-            uint256 collateralDeposited = _safeTransferIn(
-                IERC20Metadata(collateralToken),
-                _msgSender(),
-                collateralToDeposit
-            );
-
-            emit CollateralDeposit(
-                _msgSender(),
-                collateralToken,
-                collateralDeposited
-            );
-        }
+        _mintBonds(maxSupply);
     }
 
     /**
@@ -588,11 +548,33 @@ contract Bond is
         return amountUnpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
     }
 
-    function _mint(address to, uint256 amount)
-        internal
-        override(ERC20CappedUpgradeable, ERC20Upgradeable)
-    {
-        ERC20CappedUpgradeable._mint(to, amount);
+    /**
+        @notice mints the amount of specified bonds by transferring in collateral
+        @dev Mint event is always emitted.
+            CollateralDeposit is emitted unless the bond is uncollateralized and
+            therefore requires no collateral to mint bonds.
+        @param bonds the amount of bonds to mint
+    */
+    function _mintBonds(uint256 bonds) internal {
+        uint256 collateralToDeposit = previewMintBeforeMaturity(bonds);
+
+        _mint(_msgSender(), bonds);
+
+        emit Mint(_msgSender(), bonds);
+
+        if (collateralToDeposit > 0) {
+            uint256 collateralDeposited = _safeTransferIn(
+                IERC20Metadata(collateralToken),
+                _msgSender(),
+                collateralToDeposit
+            );
+
+            emit CollateralDeposit(
+                _msgSender(),
+                collateralToken,
+                collateralDeposited
+            );
+        }
     }
 
     /**
