@@ -34,7 +34,7 @@ export async function tokenFixture(decimals: number[]) {
         "AT",
         ethers.constants.MaxUint256,
         decimals
-      )) as TestERC20;
+      )) as MaliciousTestERC20;
 
       const CollateralToken = await ethers.getContractFactory("TestERC20");
       const collateralToken = (await CollateralToken.deploy(
