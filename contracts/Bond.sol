@@ -88,13 +88,6 @@ contract Bond is
     );
 
     /**
-        @notice emitted when bonds are minted
-        @param from the address minting
-        @param amount the amount of bonds minted
-    */
-    event Mint(address indexed from, uint256 amount);
-
-    /**
         @notice emitted when bond tokens are converted by a borrower
         @param from the address converting their tokens
         @param collateralToken the address of the collateral received
@@ -242,7 +235,7 @@ contract Bond is
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
         _grantRole(MINT_ROLE, owner);
-        _mintBonds(maxSupply, owner);
+        _mint(owner, maxSupply);
     }
 
     /**
@@ -380,13 +373,6 @@ contract Bond is
         }
         token.safeTransfer(msg.sender, token.balanceOf(address(this)));
     }
-
-    /**
-        @notice preview the amount of collateral tokens required to mint the given bond tokens
-        @dev this function rounds up the amount of required collateral for the number of bonds to mint
-        @param bonds the amount of desired bonds to mint
-        @return amount of collateral required
-    */
 
     /**
       @notice the amount of collateral the given bonds would convert into if able
@@ -539,18 +525,6 @@ contract Bond is
     function amountOwed() public view returns (uint256) {
         uint256 amountUnpaid = totalSupply() - _upscale(totalPaid());
         return amountUnpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
-    }
-
-    /**
-        @notice mints the amount of specified bonds by transferring in collateral
-        @dev Mint event is always emitted.
-            CollateralDeposit is emitted unless the bond is uncollateralized and
-            therefore requires no collateral to mint bonds.
-        @param bonds the amount of bonds to mint
-    */
-    function _mintBonds(uint256 bonds, address owner) internal {
-        _mint(owner, bonds);
-        emit Mint(owner, bonds);
     }
 
     /**
