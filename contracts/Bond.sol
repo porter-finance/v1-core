@@ -387,13 +387,6 @@ contract Bond is
         @param bonds the amount of desired bonds to mint
         @return amount of collateral required
     */
-    function previewMintBeforeMaturity(uint256 bonds)
-        public
-        view
-        returns (uint256)
-    {
-        return bonds.mulDivUp(collateralRatio, ONE);
-    }
 
     /**
       @notice the amount of collateral the given bonds would convert into if able
@@ -556,7 +549,7 @@ contract Bond is
         @param bonds the amount of bonds to mint
     */
     function _mintBonds(uint256 bonds) internal {
-        uint256 collateralToDeposit = previewMintBeforeMaturity(bonds);
+        uint256 collateralToDeposit = bonds.mulDivUp(collateralRatio, ONE);
 
         _mint(_msgSender(), bonds);
 
