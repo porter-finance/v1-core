@@ -88,6 +88,7 @@ describe("Bond", () => {
     const issuerRole = await factory.ISSUER_ROLE();
 
     await (await factory.grantRole(issuerRole, owner.address)).wait();
+    await (await factory.grantRole(issuerRole, attacker.address)).wait();
 
     /** 
       Create and deploy all tokens with corresponding decimals for DECIMALS_TO_TEST.
@@ -108,59 +109,103 @@ describe("Bond", () => {
         const token = tokens.find((token) => token.decimals === decimals);
         if (token) {
           const { attackingToken, paymentToken, collateralToken } = token;
+
+          await collateralToken.approve(
+            factory.address,
+            getTargetCollateral(NonConvertibleBondConfig)
+              .add(getTargetCollateral(ConvertibleBondConfig))
+              .add(getTargetCollateral(UncollateralizedBondConfig))
+          );
+
+          await attackingToken.approve(
+            factory.address,
+            getTargetCollateral(MaliciousBondConfig)
+          );
+          console.log({
+            allow: await attackingToken.allowance(
+              owner.address,
+              factory.address
+            ),
+            total: getTargetCollateral(MaliciousBondConfig),
+          });
+          console.log({
+            allow: await collateralToken.allowance(
+              owner.address,
+              factory.address
+            ),
+            total: getTargetCollateral(MaliciousBondConfig),
+          });
+
+          // console.log("1")
+          await factory
+            .connect(attacker)
+            .createBond(
+              "Bond",
+              "LUG",
+              owner.address,
+              MaliciousBondConfig.maturityDate,
+              attackingToken.address,
+              attackingToken.address,
+              MaliciousBondConfig.collateralRatio,
+              MaliciousBondConfig.convertibleRatio,
+              MaliciousBondConfig.maxSupply
+            );
+          // .catch(async (err: any) => console.log({ err, decimals, t: attackingToken.address, allowance: await attackingToken.allowance(owner.address, factory.address) }))
+          console.log("2");
+
           return {
             decimals,
             attackingToken,
             paymentToken,
             collateralToken,
-            nonConvertible: {
-              bond: await getBondContract(
-                factory.createBond(
-                  "Bond",
-                  "LUG",
-                  owner.address,
-                  NonConvertibleBondConfig.maturityDate,
-                  paymentToken.address,
-                  collateralToken.address,
-                  NonConvertibleBondConfig.collateralRatio,
-                  NonConvertibleBondConfig.convertibleRatio,
-                  NonConvertibleBondConfig.maxSupply
-                )
-              ),
-              config: NonConvertibleBondConfig,
-            },
-            convertible: {
-              bond: await getBondContract(
-                factory.createBond(
-                  "Bond",
-                  "LUG",
-                  owner.address,
-                  ConvertibleBondConfig.maturityDate,
-                  paymentToken.address,
-                  collateralToken.address,
-                  ConvertibleBondConfig.collateralRatio,
-                  ConvertibleBondConfig.convertibleRatio,
-                  ConvertibleBondConfig.maxSupply
-                )
-              ),
-              config: ConvertibleBondConfig,
-            },
-            uncollateralized: {
-              bond: await getBondContract(
-                factory.createBond(
-                  "Bond",
-                  "LUG",
-                  owner.address,
-                  UncollateralizedBondConfig.maturityDate,
-                  paymentToken.address,
-                  collateralToken.address,
-                  UncollateralizedBondConfig.collateralRatio,
-                  UncollateralizedBondConfig.convertibleRatio,
-                  UncollateralizedBondConfig.maxSupply
-                )
-              ),
-              config: UncollateralizedBondConfig,
-            },
+            // nonConvertible: {
+            //   bond: await getBondContract(
+            //     factory.createBond(
+            //       "Bond",
+            //       "LUG",
+            //       owner.address,
+            //       NonConvertibleBondConfig.maturityDate,
+            //       paymentToken.address,
+            //       collateralToken.address,
+            //       NonConvertibleBondConfig.collateralRatio,
+            //       NonConvertibleBondConfig.convertibleRatio,
+            //       NonConvertibleBondConfig.maxSupply
+            //     )
+            //   ),
+            //   config: NonConvertibleBondConfig,
+            // },
+            // convertible: {
+            //   bond: await getBondContract(
+            //     factory.createBond(
+            //       "Bond",
+            //       "LUG",
+            //       owner.address,
+            //       ConvertibleBondConfig.maturityDate,
+            //       paymentToken.address,
+            //       collateralToken.address,
+            //       ConvertibleBondConfig.collateralRatio,
+            //       ConvertibleBondConfig.convertibleRatio,
+            //       ConvertibleBondConfig.maxSupply
+            //     )
+            //   ),
+            //   config: ConvertibleBondConfig,
+            // },
+            // uncollateralized: {
+            //   bond: await getBondContract(
+            //     factory.createBond(
+            //       "Bond",
+            //       "LUG",
+            //       owner.address,
+            //       UncollateralizedBondConfig.maturityDate,
+            //       paymentToken.address,
+            //       collateralToken.address,
+            //       UncollateralizedBondConfig.collateralRatio,
+            //       UncollateralizedBondConfig.convertibleRatio,
+            //       UncollateralizedBondConfig.maxSupply
+            //     )
+            //   ),
+            //   config: UncollateralizedBondConfig,
+            // },
             malicious: {
               bond: await getBondContract(
                 factory.createBond(
@@ -185,7 +230,7 @@ describe("Bond", () => {
     // all bonds will be the same roles - take the first one
     let roles;
     if (bonds[0]) {
-      const { nonConvertible } = bonds[0];
+      const { malicious: nonConvertible } = bonds[0];
       roles = {
         defaultAdminRole: await nonConvertible.bond.DEFAULT_ADMIN_ROLE(),
         mintRole: await nonConvertible.bond.MINT_ROLE(),
@@ -424,15 +469,12 @@ describe("Bond", () => {
         });
       });
 
-      describe.only("pay", async () => {
+      describe("pay", async () => {
         describe("non-convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
-            await collateralToken.approve(
-              bond.address,
-              getTargetCollateral(config)
-            );
+            console.log("test");
             await paymentToken.approve(
               bond.address,
               config.targetBondSupply
@@ -440,7 +482,7 @@ describe("Bond", () => {
                 .div(ONE)
             );
           });
-          it("should accept partial payment", async () => {
+          it.only("should accept partial payment", async () => {
             const halfSupplyMinusOne = config.targetBondSupply
               .div(2)
               .sub(1)

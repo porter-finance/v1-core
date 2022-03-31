@@ -3,6 +3,10 @@ pragma solidity 0.8.9;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "hardhat/console.sol";
 
 import "./Bond.sol";
 
@@ -14,6 +18,9 @@ import "./Bond.sol";
         see OpenZeppelin's "Clones" proxy
 */
 contract BondFactory is AccessControl {
+    using SafeERC20 for IERC20Metadata;
+    using FixedPointMathLib for uint256;
+
     /// @notice the role required to issue bonds
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
 
@@ -33,6 +40,8 @@ contract BondFactory is AccessControl {
 
     /// @notice when enabled, issuance is restricted to those with the ISSUER_ROLE
     bool public isAllowListEnabled = true;
+    uint256 allowance;
+    uint256 internal constant ONE = 1e18;
 
     /**
         @notice Emitted when the allow list is toggled on or off
@@ -115,10 +124,28 @@ contract BondFactory is AccessControl {
         clone = Clones.clone(tokenImplementation);
         isBond[clone] = true;
 
+        allowance = IERC20Metadata(collateralToken).allowance(
+            msg.sender,
+            address(this)
+        );
+        // console.log(collateralToken);
+        // console.log(msg.sender);
+        console.log(
+            "allowance",
+            allowance,
+            maxSupply.mulDivUp(collateralRatio, ONE)
+        );
+        // console.log(address(this));
+        IERC20Metadata(collateralToken).transferFrom(
+            msg.sender,
+            address(this),
+            maxSupply.mulDivUp(collateralRatio, ONE)
+        );
+
         Bond(clone).initialize(
             name,
             symbol,
-            owner,
+            msg.sender,
             maturityDate,
             paymentToken,
             collateralToken,

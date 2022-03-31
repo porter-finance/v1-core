@@ -8,6 +8,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
+import "hardhat/console.sol";
 
 /**
     @title Bond
@@ -220,6 +221,8 @@ contract Bond is
         uint256 _convertibleRatio,
         uint256 maxSupply
     ) external initializer {
+        console.log("go");
+
         if (_collateralRatio < _convertibleRatio) {
             revert CollateralRatioLessThanConvertibleRatio();
         }
@@ -549,25 +552,25 @@ contract Bond is
         @param bonds the amount of bonds to mint
     */
     function _mintBonds(uint256 bonds) internal {
-        uint256 collateralToDeposit = bonds.mulDivUp(collateralRatio, ONE);
+        // uint256 collateralToDeposit = bonds.mulDivUp(collateralRatio, ONE);
 
         _mint(_msgSender(), bonds);
 
         emit Mint(_msgSender(), bonds);
 
-        if (collateralToDeposit > 0) {
-            uint256 collateralDeposited = _safeTransferIn(
-                IERC20Metadata(collateralToken),
-                _msgSender(),
-                collateralToDeposit
-            );
+        // if (collateralToDeposit > 0) {
+        //     uint256 collateralDeposited = _safeTransferIn(
+        //         IERC20Metadata(collateralToken),
+        //         _msgSender(),
+        //         collateralToDeposit
+        //     );
 
-            emit CollateralDeposit(
-                _msgSender(),
-                collateralToken,
-                collateralDeposited
-            );
-        }
+        //     emit CollateralDeposit(
+        //         _msgSender(),
+        //         collateralToken,
+        //         collateralDeposited
+        //     );
+        // }
     }
 
     /**
