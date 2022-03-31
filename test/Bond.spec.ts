@@ -51,7 +51,7 @@ const DECIMALS_TO_TEST = [6, 8, 18];
   Recommended to use your editors "fold all" and unfolding the test of interest.
   "command / ctrl + k" -> "command / ctrl 0" for Visual Studio Code
 */
-describe("Bond", () => {
+describe.only("Bond", () => {
   // owner deploys and is the "issuer"
   let owner: SignerWithAddress;
   // bondHolder is one who has the bonds and will redeem or convert them
@@ -272,10 +272,11 @@ describe("Bond", () => {
             expect(await factory.isBond(bond.address)).to.be.equal(true);
           });
 
-          // it("should have no minted coins", async () => {
-          //   expect(await bond.balanceOf(owner.address)).to.be.equal(0);
-          //   expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
-          // });
+          it("should have have minted total supply of coins", async () => {
+            expect(await bond.balanceOf(owner.address)).to.be.equal(
+              config.maxSupply
+            );
+          });
 
           it("should have given issuer the default admin role", async () => {
             expect(
@@ -300,12 +301,6 @@ describe("Bond", () => {
               )
             ).to.be.equal(true);
           });
-
-          // it("should return total value for an account", async () => {
-          //   expect(
-          //     await bond.connect(bondHolder).balanceOf(owner.address)
-          //   ).to.be.equal(0);
-          // });
 
           it("should return configured public parameters", async () => {
             expect(await bond.maturityDate()).to.be.equal(config.maturityDate);
