@@ -7,7 +7,6 @@ import {
   getEventArgumentsFromTransaction,
   getTargetCollateral,
   getTargetPayment,
-  previewMintAndMint,
   previewRedeem,
   redeemAndCheckTokens,
 } from "../utilities";
@@ -29,7 +28,7 @@ const { loadFixture } = waffle;
 // Used throughout tests to use multiple instances of different-decimal tokens
 const DECIMALS_TO_TEST = [6, 8, 18];
 
-describe("e2e: Create -> Mint -> Convert -> Pay -> Withdraw -> Mature -> Redeem", () => {
+describe("e2e: Create -> Convert -> Pay -> Withdraw -> Mature -> Redeem", () => {
   // owner deploys and is the "issuer"
   let owner: SignerWithAddress;
   // bondHolder is one who has the bonds and will redeem or convert them
@@ -279,42 +278,6 @@ describe("e2e: Create -> Mint -> Convert -> Pay -> Withdraw -> Mature -> Redeem"
               getTargetCollateral(config)
             );
           });
-
-          it("should revert when called by non-minter", async () => {
-            await expect(bond.connect(attacker).mint(0)).to.be.revertedWith(
-              `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${mintRole}`
-            );
-          });
-
-          it(`should preview mint and mint with zero target`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: ZERO,
-              collateralToDeposit: ZERO,
-            });
-          });
-
-          it(`should preview mint and mint with quarter target`, async () => {
-            await expect(bond.mint(config.targetBondSupply.div(4))).to.not.be
-              .reverted;
-          });
-
-          it(`should preview mint and mint with quarter target`, async () => {
-            await expect(bond.mint(config.targetBondSupply.div(4))).to.not.be
-              .reverted;
-          });
-
-          it(`should preview mint and mint with half target`, async () => {
-            await expect(bond.mint(config.targetBondSupply.div(2))).to.not.be
-              .reverted;
-          });
-
-          it("should not mint more than max supply", async () => {
-            await expect(bond.mint(BigNumber.from(1))).to.be.revertedWith(
-              "ERC20Capped: cap exceeded"
-            );
-          });
         });
         describe("bond holder can not convert part of their shares before maturity", async () => {
           it("should transfer bonds to bond holder", async () => {
@@ -505,42 +468,6 @@ describe("e2e: Create -> Mint -> Convert -> Pay -> Withdraw -> Mature -> Redeem"
             await collateralToken.approve(
               bond.address,
               getTargetCollateral(config)
-            );
-          });
-
-          it("should revert when called by non-minter", async () => {
-            await expect(bond.connect(attacker).mint(0)).to.be.revertedWith(
-              `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${mintRole}`
-            );
-          });
-
-          it(`should preview mint and mint with zero target`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: ZERO,
-              collateralToDeposit: ZERO,
-            });
-          });
-
-          it(`should preview mint and mint with quarter target`, async () => {
-            await expect(bond.mint(config.targetBondSupply.div(4))).to.not.be
-              .reverted;
-          });
-
-          it(`should preview mint and mint with quarter target`, async () => {
-            await expect(bond.mint(config.targetBondSupply.div(4))).to.not.be
-              .reverted;
-          });
-
-          it(`should preview mint and mint with half target`, async () => {
-            await expect(bond.mint(config.targetBondSupply.div(2))).to.not.be
-              .reverted;
-          });
-
-          it("should not mint more than max supply", async () => {
-            await expect(bond.mint(BigNumber.from(1))).to.be.revertedWith(
-              "ERC20Capped: cap exceeded"
             );
           });
         });

@@ -3,18 +3,15 @@ import { expect } from "chai";
 import { TestERC20, Bond, BondFactory } from "../typechain";
 import {
   expectTokenDelta,
-  failPreviewMint,
   getBondContract,
   getTargetCollateral,
   getTargetPayment,
   getEventArgumentsFromTransaction,
-  previewMintAndMint,
   burnAndWithdraw,
   payAndWithdraw,
   payAndWithdrawAtMaturity,
   previewRedeem,
   getTargetConvertibleCollateral,
-  upscaleAmount,
   downscaleAmount,
   redeemAndCheckTokens,
 } from "./utilities";
@@ -426,338 +423,8 @@ describe("Bond", () => {
           });
         });
       });
-      describe("mint", async () => {
-        describe("convertible", () => {
-          beforeEach(async () => {
-            bond = bondWithTokens.convertible.bond;
-            config = bondWithTokens.convertible.config;
-            await collateralToken.approve(
-              bond.address,
-              getTargetCollateral(config)
-            );
-          });
 
-          it("should revert when called by non-minter", async () => {
-            await expect(bond.connect(attacker).mint(0)).to.be.revertedWith(
-              `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${mintRole}`
-            );
-          });
-
-          it(`should preview mint and mint with zero target`, async () => {
-            previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: ZERO,
-              collateralToDeposit: ZERO,
-            });
-          });
-
-          it(`should preview mint and mint with quarter target`, async () => {
-            previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: config.targetBondSupply.div(4),
-              collateralToDeposit: config.collateralRatio
-                .mul(config.targetBondSupply.div(4))
-                .div(ONE),
-            });
-          });
-
-          it(`should preview mint and mint with half target`, async () => {
-            previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: config.targetBondSupply.div(2),
-              collateralToDeposit: config.collateralRatio
-                .mul(config.targetBondSupply.div(2))
-                .div(ONE),
-            });
-          });
-
-          it(`should preview mint and mint with target`, async () => {
-            previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: config.targetBondSupply,
-              collateralToDeposit: getTargetCollateral(config),
-            });
-          });
-
-          it(`should preview mint and mint when collateral rounds up`, async () => {
-            previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: utils.parseUnits("1", 18).sub(2),
-              collateralToDeposit: utils
-                .parseUnits("1", 18)
-                .mul(config.collateralRatio)
-                .div(ONE),
-            });
-          });
-
-          it(`should fail to mint when collateral rounds down`, async () => {
-            await failPreviewMint({
-              bond,
-              mintAmount: utils.parseUnits("1", 18),
-              collateralToDeposit: utils
-                .parseUnits("1", 18)
-                .mul(config.collateralRatio)
-                .div(ONE)
-                .sub(1),
-            });
-          });
-
-          it(`should fail to mint when collateral rounds down`, async () => {
-            await failPreviewMint({
-              bond,
-              mintAmount: utils.parseUnits("1", 18).add(1),
-              collateralToDeposit: utils
-                .parseUnits("1", 18)
-                .mul(config.collateralRatio)
-                .div(ONE),
-            });
-          });
-
-          it(`should fail to mint when both round down`, async () => {
-            await failPreviewMint({
-              bond,
-              mintAmount: utils.parseUnits("1", 18).sub(1),
-              collateralToDeposit: utils
-                .parseUnits("1", 18)
-                .mul(config.collateralRatio)
-                .div(ONE)
-                .sub(1),
-            });
-          });
-
-          it("should not mint more than max supply", async () => {
-            await expect(
-              bond.mint(config.targetBondSupply.add(1))
-            ).to.be.revertedWith("ERC20Capped: cap exceeded");
-          });
-
-          it("should not mint after maturity", async () => {
-            await ethers.provider.send("evm_mine", [config.maturityDate]);
-            await expect(bond.mint(config.targetBondSupply)).to.be.revertedWith(
-              "BondPastMaturity"
-            );
-          });
-
-          it("should return amount owed scaled to mint amount", async () => {
-            await expect(bond.mint(config.targetBondSupply));
-            expect(await bond.amountOwed()).to.equal(
-              downscaleAmount(config.targetBondSupply, decimals)
-            );
-          });
-        });
-        describe("non-convertible", () => {
-          beforeEach(async () => {
-            bond = bondWithTokens.nonConvertible.bond;
-            config = bondWithTokens.nonConvertible.config;
-            await collateralToken.approve(
-              bond.address,
-              getTargetCollateral(config)
-            );
-          });
-          it("should revert when called by non-minter", async () => {
-            await expect(bond.connect(attacker).mint(0)).to.be.revertedWith(
-              `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${mintRole}`
-            );
-          });
-
-          it(`should preview mint and mint with zero target`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: ZERO,
-              collateralToDeposit: ZERO,
-            });
-          });
-
-          it(`should preview mint and mint with quarter target`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: config.targetBondSupply.div(4),
-              collateralToDeposit: config.collateralRatio
-                .mul(config.targetBondSupply.div(4))
-                .div(ONE),
-            });
-          });
-
-          it(`should preview mint and mint with half target`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: config.targetBondSupply.div(2),
-              collateralToDeposit: config.collateralRatio
-                .mul(config.targetBondSupply.div(2))
-                .div(ONE),
-            });
-          });
-
-          it(`should preview mint and mint with target`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: config.targetBondSupply,
-              collateralToDeposit: getTargetCollateral(config),
-            });
-          });
-
-          it(`should preview mint and mint when collateral rounds up`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: utils.parseUnits("1", 18).sub(1),
-              collateralToDeposit: utils
-                .parseUnits("1", 18)
-                .mul(config.collateralRatio)
-                .div(ONE),
-            });
-          });
-
-          it(`should fail to mint when collateral rounds down`, async () => {
-            await failPreviewMint({
-              bond,
-              mintAmount: utils.parseUnits("1", 18),
-              collateralToDeposit: utils
-                .parseUnits("1", 18)
-                .mul(config.collateralRatio)
-                .div(ONE)
-                .sub(1),
-            });
-          });
-
-          it(`should fail to mint when collateral rounds down`, async () => {
-            await failPreviewMint({
-              bond,
-              mintAmount: utils.parseUnits("1", 18).add(1),
-              collateralToDeposit: utils
-                .parseUnits("1", 18)
-                .mul(config.collateralRatio)
-                .div(ONE),
-            });
-          });
-
-          it(`should fail to mint when both round down`, async () => {
-            await failPreviewMint({
-              bond,
-              mintAmount: utils.parseUnits("1", 18).sub(1),
-              collateralToDeposit: utils
-                .parseUnits("1", 18)
-                .mul(config.collateralRatio)
-                .div(ONE)
-                .sub(1),
-            });
-          });
-
-          it("should not mint more than max supply", async () => {
-            await expect(
-              bond.mint(config.targetBondSupply.add(1))
-            ).to.be.revertedWith("ERC20Capped: cap exceeded");
-          });
-
-          it("should not mint after maturity", async () => {
-            await ethers.provider.send("evm_mine", [config.maturityDate]);
-            await expect(bond.mint(config.targetBondSupply)).to.be.revertedWith(
-              "BondPastMaturity"
-            );
-          });
-
-          it("should return amount owed scaled to mint amount", async () => {
-            await expect(bond.mint(config.targetBondSupply));
-            expect(await bond.amountOwed()).to.equal(
-              downscaleAmount(config.targetBondSupply, decimals)
-            );
-          });
-        });
-        describe("uncollateralized", async () => {
-          beforeEach(async () => {
-            bond = bondWithTokens.uncollateralized.bond;
-            config = bondWithTokens.uncollateralized.config;
-          });
-          it("should revert when called by non-minter", async () => {
-            await expect(bond.connect(attacker).mint(0)).to.be.revertedWith(
-              `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${mintRole}`
-            );
-          });
-
-          it(`should preview mint and mint with quarter target`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: config.targetBondSupply.div(4),
-              collateralToDeposit: ZERO,
-            });
-          });
-
-          it(`should preview mint and mint with target`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: config.targetBondSupply,
-              collateralToDeposit: ZERO,
-            });
-          });
-
-          it(`should preview mint and mint when collateral rounds up`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: utils.parseUnits("1", 18).sub(3),
-              collateralToDeposit: ZERO,
-            });
-          });
-
-          it(`should preview mint and mint with zero target`, async () => {
-            await previewMintAndMint({
-              bond,
-              collateralToken,
-              mintAmount: ZERO,
-              collateralToDeposit: ZERO,
-            });
-          });
-
-          it("should not mint more than max supply", async () => {
-            await expect(
-              bond.mint(config.targetBondSupply.add(1))
-            ).to.be.revertedWith("ERC20Capped: cap exceeded");
-          });
-
-          it("should not mint after maturity", async () => {
-            await ethers.provider.send("evm_mine", [config.maturityDate]);
-            await expect(bond.mint(config.targetBondSupply)).to.be.revertedWith(
-              "BondPastMaturity"
-            );
-          });
-
-          it("should return amount owed scaled to mint amount", async () => {
-            await expect(bond.mint(config.targetBondSupply));
-            expect(await bond.amountOwed()).to.equal(
-              downscaleAmount(config.targetBondSupply, decimals)
-            );
-          });
-        });
-        describe("malicious", async () => {
-          beforeEach(async () => {
-            bond = bondWithTokens.malicious.bond;
-            config = bondWithTokens.malicious.config;
-            await collateralToken
-              // attaching here as a special case - usually the "collateralToken"
-              // assigned in the `beforeEach` is correct, but here we're using
-              // a malicious token
-              .attach(await bond.collateralToken())
-              .approve(bond.address, getTargetCollateral(config));
-          });
-          it("should not mint tokens when no collateral is transferred", async () => {
-            await expect(bond.mint(config.targetBondSupply)).to.be.revertedWith(
-              "UnexpectedTokenOperation"
-            );
-          });
-        });
-      });
-      describe("pay", async () => {
+      describe.only("pay", async () => {
         describe("non-convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
@@ -766,7 +433,6 @@ describe("Bond", () => {
               bond.address,
               getTargetCollateral(config)
             );
-            await expect(bond.mint(config.targetBondSupply)).to.not.be.reverted;
             await paymentToken.approve(
               bond.address,
               config.targetBondSupply
@@ -819,13 +485,6 @@ describe("Bond", () => {
             await expect(bond.pay(ZERO)).to.be.revertedWith("ZeroAmount");
           });
 
-          it("should fail on fully paid bonds attempt to mint", async () => {
-            await (await bond.pay(getTargetPayment(config, decimals))).wait();
-            await expect(bond.mint(ONE)).to.be.revertedWith(
-              "BondsCanNoLongerBeMinted"
-            );
-          });
-
           it("should return amount owed scaled to payment amount", async () => {
             const thirdSupply = config.targetBondSupply
               .div(3)
@@ -869,7 +528,6 @@ describe("Bond", () => {
               bond.address,
               getTargetCollateral(config)
             );
-            await bond.mint(config.targetBondSupply);
           });
           it(`should make excess collateral available to withdraw when zero amount are burned`, async () => {
             await burnAndWithdraw({
@@ -1053,7 +711,6 @@ describe("Bond", () => {
               bond.address,
               getTargetCollateral(config)
             );
-            await bond.mint(config.targetBondSupply);
           });
 
           it("should make zero collateral available to withdraw when zero bonds are burned", async () => {
@@ -1198,7 +855,6 @@ describe("Bond", () => {
               bond.address,
               getTargetCollateral(UncollateralizedBondConfig)
             );
-            await bond.mint(config.targetBondSupply);
           });
           it(`should have zero collateral available to withdraw when they are burned`, async () => {
             await burnAndWithdraw({
@@ -1276,7 +932,6 @@ describe("Bond", () => {
               bond.address,
               getTargetCollateral(config)
             );
-            await bond.mint(config.targetBondSupply);
             await bond.transfer(
               bondHolder.address,
               utils.parseUnits("4000", 18)
@@ -1493,7 +1148,6 @@ describe("Bond", () => {
               bond.address,
               getTargetCollateral(config)
             );
-            await bond.mint(config.targetBondSupply);
             await bond.transfer(
               bondHolder.address,
               utils.parseUnits("4000", 18)
@@ -1648,7 +1302,6 @@ describe("Bond", () => {
               bond.address,
               getTargetCollateral(config)
             );
-            await bond.mint(config.targetBondSupply);
             await bond.transfer(bondHolder.address, config.targetBondSupply);
           });
 

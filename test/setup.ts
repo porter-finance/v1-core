@@ -84,10 +84,10 @@ export const mint = async (
     .grantRole(mintRole, owner.address);
   await grantRoleTx.wait();
 
-  const mintTx = await bond
-    .connect(owner)
-    .mint(ethers.utils.parseUnits("50000000", 18));
-  return await mintTx.wait();
+  // const mintTx = await bond
+  //   .connect(owner)
+  //   .mint(ethers.utils.parseUnits("50000000", 18));
+  // return await mintTx.wait();
 };
 
 export const initiateAuction = async (
