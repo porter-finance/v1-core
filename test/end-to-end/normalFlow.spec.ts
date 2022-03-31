@@ -65,6 +65,7 @@ describe("e2e: Create -> Convert -> Pay -> Withdraw -> Mature -> Redeem", () => 
     const issuerRole = await factory.ISSUER_ROLE();
 
     await (await factory.grantRole(issuerRole, owner.address)).wait();
+    await (await factory.grantRole(issuerRole, attacker.address)).wait();
 
     /** 
       Create and deploy all tokens with corresponding decimals for DECIMALS_TO_TEST.
@@ -85,6 +86,18 @@ describe("e2e: Create -> Convert -> Pay -> Withdraw -> Mature -> Redeem", () => 
         const token = tokens.find((token) => token.decimals === decimals);
         if (token) {
           const { attackingToken, paymentToken, collateralToken } = token;
+
+          await collateralToken.approve(
+            factory.address,
+            getTargetCollateral(NonConvertibleBondConfig)
+              .add(getTargetCollateral(ConvertibleBondConfig))
+              .add(getTargetCollateral(UncollateralizedBondConfig))
+          );
+
+          await attackingToken
+            .connect(attacker)
+            .approve(factory.address, getTargetCollateral(MaliciousBondConfig));
+
           return {
             decimals,
             attackingToken,
@@ -140,17 +153,19 @@ describe("e2e: Create -> Convert -> Pay -> Withdraw -> Mature -> Redeem", () => 
             },
             malicious: {
               bond: await getBondContract(
-                factory.createBond(
-                  "Bond",
-                  "LUG",
-                  owner.address,
-                  MaliciousBondConfig.maturityDate,
-                  attackingToken.address,
-                  attackingToken.address,
-                  MaliciousBondConfig.collateralRatio,
-                  MaliciousBondConfig.convertibleRatio,
-                  MaliciousBondConfig.maxSupply
-                )
+                factory
+                  .connect(attacker)
+                  .createBond(
+                    "Bond",
+                    "LUG",
+                    attacker.address,
+                    MaliciousBondConfig.maturityDate,
+                    attackingToken.address,
+                    attackingToken.address,
+                    MaliciousBondConfig.collateralRatio,
+                    MaliciousBondConfig.convertibleRatio,
+                    MaliciousBondConfig.maxSupply
+                  )
               ),
               config: MaliciousBondConfig,
             },
@@ -222,9 +237,10 @@ describe("e2e: Create -> Convert -> Pay -> Withdraw -> Mature -> Redeem", () => 
             expect(await factory.isBond(bond.address)).to.be.equal(true);
           });
 
-          it("should have no minted coins", async () => {
-            expect(await bond.balanceOf(owner.address)).to.be.equal(0);
-            expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
+          it("should have minted total supply of coins", async () => {
+            expect(await bond.balanceOf(owner.address)).to.be.equal(
+              config.maxSupply
+            );
           });
 
           it("should have given issuer the default admin role", async () => {
@@ -414,9 +430,10 @@ describe("e2e: Create -> Convert -> Pay -> Withdraw -> Mature -> Redeem", () => 
             expect(await factory.isBond(bond.address)).to.be.equal(true);
           });
 
-          it("should have no minted coins", async () => {
-            expect(await bond.balanceOf(owner.address)).to.be.equal(0);
-            expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
+          it("should have minted total supply of coins", async () => {
+            expect(await bond.balanceOf(owner.address)).to.be.equal(
+              config.maxSupply
+            );
           });
 
           it("should have given issuer the default admin role", async () => {
@@ -463,14 +480,7 @@ describe("e2e: Create -> Convert -> Pay -> Withdraw -> Mature -> Redeem", () => 
             expect(await bond.symbol()).to.be.equal("LUG");
           });
         });
-        describe("issuer deposits collateral and mints bonds", async () => {
-          it("should let issuer approve collateral transfer", async () => {
-            await collateralToken.approve(
-              bond.address,
-              getTargetCollateral(config)
-            );
-          });
-        });
+
         describe("bond holder can convert part of their shares before maturity", async () => {
           it("should transfer bonds to bond holder", async () => {
             await bond.transfer(

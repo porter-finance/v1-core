@@ -272,7 +272,7 @@ describe("Bond", () => {
             expect(await factory.isBond(bond.address)).to.be.equal(true);
           });
 
-          it("should have have minted total supply of coins", async () => {
+          it("should have minted total supply of coins", async () => {
             expect(await bond.balanceOf(owner.address)).to.be.equal(
               config.maxSupply
             );
@@ -329,7 +329,6 @@ describe("Bond", () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
-            console.log("test");
             await paymentToken.approve(
               bond.address,
               config.targetBondSupply
