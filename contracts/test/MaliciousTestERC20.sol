@@ -19,4 +19,15 @@ contract MaliciousTestERC20 is ERC20 {
     function decimals() public view override returns (uint8) {
         return _decimals;
     }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        address spender = _msgSender();
+        _spendAllowance(from, spender, amount);
+        _transfer(from, to, 0);
+        return true;
+    }
 }

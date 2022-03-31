@@ -29,12 +29,12 @@ export async function tokenFixture(decimals: number[]) {
       const AttackingToken = await ethers.getContractFactory(
         "MaliciousTestERC20"
       );
-      // const attackingToken = (await AttackingToken.connect(attacker).deploy(
-      //   "Attack Token",
-      //   "AT",
-      //   ethers.constants.MaxUint256,
-      //   decimals
-      // )) as MaliciousTestERC20;
+      const attackingToken = (await AttackingToken.connect(attacker).deploy(
+        "Attack Token",
+        "AT",
+        ethers.constants.MaxUint256,
+        decimals
+      )) as TestERC20;
 
       const CollateralToken = await ethers.getContractFactory("TestERC20");
       const collateralToken = (await CollateralToken.deploy(
@@ -44,7 +44,6 @@ export async function tokenFixture(decimals: number[]) {
         decimals
       )) as TestERC20;
 
-      const attackingToken = paymentToken;
       return {
         paymentToken,
         attackingToken,

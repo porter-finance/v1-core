@@ -221,8 +221,6 @@ contract Bond is
         uint256 _convertibleRatio,
         uint256 maxSupply
     ) external initializer {
-        console.log("go");
-
         if (_collateralRatio < _convertibleRatio) {
             revert CollateralRatioLessThanConvertibleRatio();
         }
@@ -245,7 +243,7 @@ contract Bond is
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
         _grantRole(MINT_ROLE, owner);
-        _mintBonds(maxSupply);
+        _mintBonds(maxSupply, owner);
     }
 
     /**
@@ -551,12 +549,13 @@ contract Bond is
             therefore requires no collateral to mint bonds.
         @param bonds the amount of bonds to mint
     */
-    function _mintBonds(uint256 bonds) internal {
+    function _mintBonds(uint256 bonds, address owner) internal {
+        console.log(_msgSender());
         // uint256 collateralToDeposit = bonds.mulDivUp(collateralRatio, ONE);
 
-        _mint(_msgSender(), bonds);
+        _mint(owner, bonds);
 
-        emit Mint(_msgSender(), bonds);
+        emit Mint(owner, bonds);
 
         // if (collateralToDeposit > 0) {
         //     uint256 collateralDeposited = _safeTransferIn(

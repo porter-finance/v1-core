@@ -136,9 +136,9 @@ contract BondFactory is AccessControl {
             maxSupply.mulDivUp(collateralRatio, ONE)
         );
         // console.log(address(this));
-        IERC20Metadata(collateralToken).transferFrom(
+        IERC20Metadata(collateralToken).safeTransferFrom(
             msg.sender,
-            address(this),
+            clone,
             maxSupply.mulDivUp(collateralRatio, ONE)
         );
 
