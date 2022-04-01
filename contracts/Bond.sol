@@ -407,8 +407,7 @@ contract Bond is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         if (
-            address(token) == paymentToken ||
-            address(token) == collateralToken
+            address(token) == paymentToken || address(token) == collateralToken
         ) {
             revert SweepDisallowedForToken();
         }
@@ -544,6 +543,21 @@ contract Bond is
     */
     function totalPaid() public view returns (uint256) {
         return IERC20Metadata(paymentToken).balanceOf(address(this));
+    }
+
+    function withdrawExcessPayment() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (!isFullyPaid()) {
+            revert("nothing to withdraw");
+        }
+        uint256 overpaymentAmount = _upscale(totalPaid()) - totalSupply();
+
+        if (overpaymentAmount == 0) {
+            revert("nothing to withdraw");
+        }
+        IERC20Metadata(paymentToken).safeTransfer(
+            _msgSender(),
+            overpaymentAmount
+        );
     }
 
     /**
