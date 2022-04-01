@@ -4,74 +4,80 @@ pragma solidity 0.8.9;
 import {Bond} from "../Bond.sol";
 import {TestERC20} from "../test/TestERC20.sol";
 
-contract TestBond {
+contract EchidnaHelper {
     event AssertionFailed(string);
-    Bond public bond;
 
-    TestERC20 public paymentToken;
-    TestERC20 public collateralToken;
+    address internal deployer = address(0x41414141);
+    address internal issuer = address(0x42424242);
+    address internal attacker = address(0x43434343);
 
+    uint256 internal constant MAX_INT = 2**256 - 1;
+}
+
+/**
+    @dev This contract is used in Echidna Testing.
+        Instructions to run are located in the README
+        This was created for running in assertion mode where
+        each function is randomly called in different sequences
+        and with different values in order to prove one of the
+        assertions false. A quirk with the Bond contract is
+        since the contract is a proxy, we instantiate with
+        the initialize instead of the constructor. As a result
+        all previously external calls were changed to public.
+*/
+contract TestBond is Bond, EchidnaHelper {
     uint256 public constant MAX_SUPPLY = 50000000 ether;
     uint256 internal constant COLLATERAL_RATIO = 1.5 ether;
     uint256 internal constant CONVERTIBLE_RATIO = .5 ether;
-    uint256 internal constant ONE = 1e18;
-    uint256 internal constant MAX_INT = 2**256 - 1;
+    TestERC20 internal _paymentToken;
+    TestERC20 internal _collateralToken;
 
     constructor() {
-        paymentToken = new TestERC20("PT", "PT", MAX_INT, 18);
-        collateralToken = new TestERC20("CT", "CT", MAX_INT, 18);
+        _paymentToken = new TestERC20("PT", "PT", MAX_INT, 18);
+        _collateralToken = new TestERC20("CT", "CT", MAX_INT, 18);
 
-        bond = new Bond();
-        bond.initialize(
+        initialize(
             "bondName",
             "bondSymbol",
-            address(this),
+            issuer,
             block.timestamp + 365 days,
-            address(paymentToken),
-            address(collateralToken),
+            address(_paymentToken),
+            address(_collateralToken),
             COLLATERAL_RATIO,
             CONVERTIBLE_RATIO,
             MAX_SUPPLY
         );
-        collateralToken.transfer(address(this), MAX_INT);
-        paymentToken.transfer(address(this), MAX_INT);
+        _collateralToken.transfer(issuer, MAX_INT);
+        _paymentToken.transfer(issuer, MAX_INT);
     }
 
     function approvePaymentTokenForBond() public {
-        try paymentToken.approve(address(bond), MAX_INT) {} catch Error(
-            string memory reason
-        ) {
-            emit AssertionFailed(reason);
-        }
+        _paymentToken.approve(address(this), MAX_INT);
     }
 
     function approveCollateralTokenForBond() public {
-        try collateralToken.approve(address(bond), MAX_INT) {} catch Error(
-            string memory reason
-        ) {
-            emit AssertionFailed(reason);
-        }
+        _collateralToken.approve(address(this), MAX_INT);
+        assert(_collateralToken.allowance(msg.sender, address(this)) > 0);
     }
 
     function mintShares(uint256 shares) public {
         if (
-            collateralToken.allowance(address(this), address(bond)) >=
+            _collateralToken.allowance(msg.sender, address(this)) >=
             (MAX_SUPPLY * COLLATERAL_RATIO) / ONE
         ) {
-            uint256 balanceBefore = bond.balanceOf(address(this));
+            assert(false);
+            uint256 balanceBefore = balanceOf(msg.sender);
             shares = shares % MAX_SUPPLY;
-            try bond.mint(shares) {} catch Error(string memory reason) {
-                emit AssertionFailed(reason);
-            }
-            if (bond.balanceOf(address(this)) != balanceBefore + shares) {
+            mint(shares);
+            if (balanceOf(msg.sender) != balanceBefore + shares) {
                 emit AssertionFailed("shares invariant");
             }
-            if (bond.totalSupply() > MAX_SUPPLY) {
+            if (totalSupply() > MAX_SUPPLY) {
                 emit AssertionFailed("max supply invariant");
             }
             if (
-                collateralToken.balanceOf(address(bond)) <
-                (bond.totalSupply() * COLLATERAL_RATIO) / ONE
+                _collateralToken.balanceOf(address(this)) <
+                (totalSupply() * COLLATERAL_RATIO) / ONE
             ) {
                 emit AssertionFailed("invalid collateral in contract");
             }
@@ -81,33 +87,27 @@ contract TestBond {
     function mintSharesAlwaysReverts(uint256 sharesToMint) public {
         sharesToMint = sharesToMint % MAX_SUPPLY;
         if (
-            collateralToken.allowance(address(this), address(bond)) <
+            _collateralToken.allowance(msg.sender, address(this)) <
             (sharesToMint * COLLATERAL_RATIO) / ONE
         ) {
-            try bond.mint(sharesToMint) {
-                emit AssertionFailed("mint didn't always revert");
-            } catch {}
+            mint(sharesToMint);
         }
     }
 
     function convertShares(uint256 sharesToConvert) public {
         sharesToConvert = sharesToConvert % MAX_SUPPLY;
-        uint256 sharesBeforeConversion = bond.balanceOf(address(this));
+        uint256 sharesBeforeConversion = balanceOf(msg.sender);
         if (sharesBeforeConversion >= sharesToConvert) {
-            uint256 balanceBefore = collateralToken.balanceOf(address(this));
-            try bond.convert(sharesToConvert) {} catch Error(
-                string memory reason
-            ) {
-                emit AssertionFailed(reason);
-            }
+            uint256 balanceBefore = _collateralToken.balanceOf(msg.sender);
+            convert(sharesToConvert);
             if (
-                collateralToken.balanceOf(address(this)) !=
+                _collateralToken.balanceOf(msg.sender) !=
                 balanceBefore + (sharesToConvert * CONVERTIBLE_RATIO) / ONE
             ) {
                 emit AssertionFailed("convertShares collateral invariant");
             }
             if (
-                bond.balanceOf(address(this)) !=
+                balanceOf(msg.sender) !=
                 sharesBeforeConversion - sharesToConvert
             ) {
                 emit AssertionFailed("convertShares bond invariant");
@@ -115,29 +115,22 @@ contract TestBond {
         }
     }
 
-    function pay(uint256 amountToPay) public {
+    function payAmount(uint256 amountToPay) public {
         amountToPay = amountToPay % MAX_SUPPLY;
         if (
-            paymentToken.allowance(address(this), address(bond)) >
-            amountToPay &&
-            paymentToken.balanceOf(address(this)) > amountToPay
+            _paymentToken.allowance(msg.sender, address(this)) > amountToPay &&
+            _paymentToken.balanceOf(msg.sender) > amountToPay
         ) {
-            try bond.pay(amountToPay) {} catch Error(string memory reason) {
-                emit AssertionFailed(reason);
-            }
+            pay(amountToPay);
         }
     }
 
-    function redeem(uint256 amountToRedeem) public {
-        if (bond.balanceOf(address(this)) >= amountToRedeem) {
-            uint256 balanceBefore = paymentToken.balanceOf(address(this));
-            try bond.redeem(amountToRedeem) {} catch Error(
-                string memory reason
-            ) {
-                emit AssertionFailed(reason);
-            }
+    function redeemAmount(uint256 amountToRedeem) public {
+        if (balanceOf(msg.sender) >= amountToRedeem) {
+            uint256 balanceBefore = _paymentToken.balanceOf(msg.sender);
+            redeem(amountToRedeem);
             if (
-                paymentToken.balanceOf(address(this)) !=
+                _paymentToken.balanceOf(msg.sender) !=
                 balanceBefore + amountToRedeem
             ) {
                 emit AssertionFailed("redeem payment invariant");
@@ -146,10 +139,8 @@ contract TestBond {
     }
 
     function redeemAlwaysReverts(uint256 amountToRedeem) public {
-        if (bond.balanceOf(address(this)) < amountToRedeem) {
-            try bond.redeem(amountToRedeem) {
-                emit AssertionFailed("redeem doesn't always revert");
-            } catch {}
+        if (balanceOf(msg.sender) < amountToRedeem) {
+            redeem(amountToRedeem);
         }
     }
 }

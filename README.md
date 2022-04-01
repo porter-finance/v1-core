@@ -59,8 +59,8 @@ Running the fuzzing test suite with Echidna
 
 - Get latest release https://github.com/crytic/echidna
 - Install to `/usr/local/bin`
-- For M1 mac users, `export TERMINFO=/usr/share/terminfo`
-- Navigate to root of project and `echidna-test . --contract TestBond`
+- `npm run echidna`
+- change the config located at `echidna.config.yaml` to tweak execution
 
 ### Other useful commands
 
