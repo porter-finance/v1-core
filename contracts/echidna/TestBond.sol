@@ -4,143 +4,153 @@ pragma solidity 0.8.9;
 import {Bond} from "../Bond.sol";
 import {TestERC20} from "../test/TestERC20.sol";
 
-contract EchidnaHelper {
+contract TestBond {
     event AssertionFailed(string);
+    Bond public bond;
 
-    address internal deployer = address(0x41414141);
-    address internal issuer = address(0x42424242);
-    address internal attacker = address(0x43434343);
+    TestERC20 public paymentToken;
+    TestERC20 public collateralToken;
 
-    uint256 internal constant MAX_INT = 2**256 - 1;
-}
-
-/**
-    @dev This contract is used in Echidna Testing.
-        Instructions to run are located in the README
-        This was created for running in assertion mode where
-        each function is randomly called in different sequences
-        and with different values in order to prove one of the
-        assertions false. A quirk with the Bond contract is
-        since the contract is a proxy, we instantiate with
-        the initialize instead of the constructor. As a result
-        all previously external calls were changed to public.
-*/
-contract TestBond is Bond, EchidnaHelper {
     uint256 public constant MAX_SUPPLY = 50000000 ether;
     uint256 internal constant COLLATERAL_RATIO = 1.5 ether;
     uint256 internal constant CONVERTIBLE_RATIO = .5 ether;
-    TestERC20 internal _paymentToken;
-    TestERC20 internal _collateralToken;
+    uint256 internal constant ONE = 1e18;
+    uint256 internal constant MAX_INT = 2**256 - 1;
+    uint256 internal maturityDate;
 
     constructor() {
-        _paymentToken = new TestERC20("PT", "PT", MAX_INT, 18);
-        _collateralToken = new TestERC20("CT", "CT", MAX_INT, 18);
+        maturityDate = block.timestamp + 365 days;
 
-        initialize(
+        paymentToken = new TestERC20("PT", "PT", MAX_INT, 6);
+        collateralToken = new TestERC20("CT", "CT", MAX_INT, 18);
+
+        bond = new Bond();
+        bond.initialize(
             "bondName",
             "bondSymbol",
-            issuer,
-            block.timestamp + 365 days,
-            address(_paymentToken),
-            address(_collateralToken),
+            address(this),
+            maturityDate,
+            address(paymentToken),
+            address(collateralToken),
             COLLATERAL_RATIO,
             CONVERTIBLE_RATIO,
             MAX_SUPPLY
         );
-        _collateralToken.transfer(issuer, MAX_INT);
-        _paymentToken.transfer(issuer, MAX_INT);
+        collateralToken.transfer(address(this), MAX_INT);
+        paymentToken.transfer(address(this), MAX_INT);
     }
 
     function approvePaymentTokenForBond() public {
-        _paymentToken.approve(address(this), MAX_INT);
+        try paymentToken.approve(address(bond), MAX_INT) {} catch Error(
+            string memory reason
+        ) {
+            emit AssertionFailed(reason);
+        }
+
+        checkGeneralInvariants();
     }
 
     function approveCollateralTokenForBond() public {
-        _collateralToken.approve(address(this), MAX_INT);
-        assert(_collateralToken.allowance(msg.sender, address(this)) > 0);
-    }
-
-    function mintShares(uint256 shares) public {
-        if (
-            _collateralToken.allowance(msg.sender, address(this)) >=
-            (MAX_SUPPLY * COLLATERAL_RATIO) / ONE
+        try collateralToken.approve(address(bond), MAX_INT) {} catch Error(
+            string memory reason
         ) {
-            assert(false);
-            uint256 balanceBefore = balanceOf(msg.sender);
-            shares = shares % MAX_SUPPLY;
-            mint(shares);
-            if (balanceOf(msg.sender) != balanceBefore + shares) {
-                emit AssertionFailed("shares invariant");
-            }
-            if (totalSupply() > MAX_SUPPLY) {
-                emit AssertionFailed("max supply invariant");
-            }
-            if (
-                _collateralToken.balanceOf(address(this)) <
-                (totalSupply() * COLLATERAL_RATIO) / ONE
-            ) {
-                emit AssertionFailed("invalid collateral in contract");
-            }
+            emit AssertionFailed(reason);
         }
+
+        checkGeneralInvariants();
     }
 
-    function mintSharesAlwaysReverts(uint256 sharesToMint) public {
-        sharesToMint = sharesToMint % MAX_SUPPLY;
+    function mintBonds(uint256 amount) public {
+        amount = amount % MAX_SUPPLY;
         if (
-            _collateralToken.allowance(msg.sender, address(this)) <
-            (sharesToMint * COLLATERAL_RATIO) / ONE
+            collateralToken.allowance(address(this), address(bond)) <
+            (amount * COLLATERAL_RATIO) / ONE
         ) {
-            mint(sharesToMint);
-        }
-    }
-
-    function convertShares(uint256 sharesToConvert) public {
-        sharesToConvert = sharesToConvert % MAX_SUPPLY;
-        uint256 sharesBeforeConversion = balanceOf(msg.sender);
-        if (sharesBeforeConversion >= sharesToConvert) {
-            uint256 balanceBefore = _collateralToken.balanceOf(msg.sender);
-            convert(sharesToConvert);
-            if (
-                _collateralToken.balanceOf(msg.sender) !=
-                balanceBefore + (sharesToConvert * CONVERTIBLE_RATIO) / ONE
-            ) {
-                emit AssertionFailed("convertShares collateral invariant");
-            }
-            if (
-                balanceOf(msg.sender) !=
-                sharesBeforeConversion - sharesToConvert
-            ) {
-                emit AssertionFailed("convertShares bond invariant");
+            try bond.mint(amount) {
+                emit AssertionFailed("mintBonds//did not revert");
+            } catch {}
+        } else {
+            try bond.mint(amount) {} catch Error(string memory reason) {
+                emit AssertionFailed(reason);
             }
         }
+
+        checkGeneralInvariants();
     }
 
-    function payAmount(uint256 amountToPay) public {
-        amountToPay = amountToPay % MAX_SUPPLY;
+    function convertBonds(uint256 amount) public {
+        amount = amount % MAX_SUPPLY;
+        uint256 sharesOwned = bond.balanceOf(address(this));
+
+        if (sharesOwned < amount || block.timestamp >= maturityDate) {
+            try bond.convert(amount) {
+                emit AssertionFailed("convertBonds//did not revert");
+            } catch {}
+        } else {
+            try bond.convert(amount) {} catch Error(string memory reason) {
+                emit AssertionFailed(reason);
+            }
+        }
+        if (bond.balanceOf(address(this)) != sharesOwned - amount) {
+            emit AssertionFailed("convertBonds//bond invariant");
+        }
+
+        checkGeneralInvariants();
+    }
+
+    function payPayment(uint256 amount) public {
+        amount = amount % MAX_SUPPLY;
         if (
-            _paymentToken.allowance(msg.sender, address(this)) > amountToPay &&
-            _paymentToken.balanceOf(msg.sender) > amountToPay
+            paymentToken.allowance(address(this), address(bond)) > amount &&
+            paymentToken.balanceOf(address(this)) > amount
         ) {
-            pay(amountToPay);
-        }
-    }
-
-    function redeemAmount(uint256 amountToRedeem) public {
-        if (balanceOf(msg.sender) >= amountToRedeem) {
-            uint256 balanceBefore = _paymentToken.balanceOf(msg.sender);
-            redeem(amountToRedeem);
-            if (
-                _paymentToken.balanceOf(msg.sender) !=
-                balanceBefore + amountToRedeem
-            ) {
-                emit AssertionFailed("redeem payment invariant");
+            try bond.pay(amount) {} catch Error(string memory reason) {
+                emit AssertionFailed(reason);
+            }
+            if (paymentToken.balanceOf(address(this)) > bond.totalSupply()) {
+                emit AssertionFailed("payPayment//payment invariant");
             }
         }
+
+        checkGeneralInvariants();
     }
 
-    function redeemAlwaysReverts(uint256 amountToRedeem) public {
-        if (balanceOf(msg.sender) < amountToRedeem) {
-            redeem(amountToRedeem);
+    function redeemBonds(uint256 amountToRedeem) public {
+        if (
+            bond.balanceOf(address(this)) < amountToRedeem ||
+            block.timestamp < maturityDate
+        ) {
+            try bond.redeem(amountToRedeem) {
+                emit AssertionFailed("redeemBonds//did not revert");
+            } catch {}
+        } else {
+            try bond.redeem(amountToRedeem) {} catch Error(
+                string memory reason
+            ) {
+                emit AssertionFailed(reason);
+            }
+        }
+        checkGeneralInvariants();
+    }
+
+    function withdrawCollateral() public {
+        try bond.withdrawCollateral() {} catch Error(string memory reason) {
+            emit AssertionFailed(reason);
+        }
+        checkGeneralInvariants();
+    }
+
+    function convertAndWithdraw(uint256 amount) public {}
+
+    function checkGeneralInvariants() internal {
+        if (bond.totalSupply() > MAX_SUPPLY) {
+            emit AssertionFailed("generalInvariants//max supply invariant");
+        }
+        if (
+            collateralToken.balanceOf(address(bond)) <
+            (bond.totalSupply() * COLLATERAL_RATIO) / ONE
+        ) {
+            emit AssertionFailed("generalInvariants//collateral invariant");
         }
     }
 }

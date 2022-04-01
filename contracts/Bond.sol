@@ -226,7 +226,7 @@ contract Bond is
         uint256 _collateralRatio,
         uint256 _convertibleRatio,
         uint256 _maxSupply
-    ) public initializer {
+    ) external initializer {
         if (_collateralRatio < _convertibleRatio) {
             revert CollateralRatioLessThanConvertibleRatio();
         }
@@ -263,7 +263,7 @@ contract Bond is
         @param bonds the amount of bonds to mint
     */
     function mint(uint256 bonds)
-        public
+        external
         onlyRole(MINT_ROLE)
         beforeMaturity
         notFullyPaid
@@ -299,7 +299,7 @@ contract Bond is
             The bond must be convertible and not past maturity
         @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
     */
-    function convert(uint256 bonds) public nonReentrant beforeMaturity {
+    function convert(uint256 bonds) external nonReentrant beforeMaturity {
         uint256 collateralToSend = previewConvertBeforeMaturity(bonds);
         if (collateralToSend == 0) {
             revert ZeroAmount();
@@ -320,7 +320,11 @@ contract Bond is
         @notice Withdraw collateral from bond contract
             the amount of collateral available to be withdrawn depends on the collateralRatio and the convertibleRatio
     */
-    function withdrawCollateral() public nonReentrant onlyRole(WITHDRAW_ROLE) {
+    function withdrawCollateral()
+        external
+        nonReentrant
+        onlyRole(WITHDRAW_ROLE)
+    {
         uint256 collateralToSend = previewWithdraw();
 
         IERC20Metadata(collateralToken).safeTransfer(
@@ -340,7 +344,7 @@ contract Bond is
         @dev emits Payment event
         @param amount the number of payment tokens to pay
     */
-    function pay(uint256 amount) public nonReentrant beforeMaturity {
+    function pay(uint256 amount) external nonReentrant beforeMaturity {
         if (isFullyPaid()) {
             revert PaymentMet();
         }
@@ -364,7 +368,7 @@ contract Bond is
         @notice this function burns bonds in return for the token borrowed against the bond
         @param bonds the amount of bonds to redeem and burn
     */
-    function redeem(uint256 bonds) public nonReentrant afterMaturityOrPaid {
+    function redeem(uint256 bonds) external nonReentrant afterMaturityOrPaid {
         // calculate amount before burning as the preview function uses totalSupply.
         (
             uint256 paymentTokensToSend,
@@ -407,7 +411,7 @@ contract Bond is
         @param token send the entire token balance of this address to the owner
     */
     function sweep(IERC20Metadata token)
-        public
+        external
         nonReentrant
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
