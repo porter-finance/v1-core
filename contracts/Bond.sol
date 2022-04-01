@@ -5,8 +5,9 @@ import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/toke
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import {EvenSaferERC20} from "./utils/EvenSaferERC20.sol";
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 
 /**
@@ -23,7 +24,9 @@ contract Bond is
     ERC20BurnableUpgradeable,
     ReentrancyGuard
 {
+    using EvenSaferERC20 for IERC20Metadata;
     using SafeERC20 for IERC20Metadata;
+
     using FixedPointMathLib for uint256;
 
     /**
@@ -153,7 +156,7 @@ contract Bond is
     error ZeroAmount();
 
     /// @notice unexpected amount returned on external token transfer
-    error UnexpectedTokenOperation();
+    error UnexpectedTokenOperation2();
 
     /// @dev used to confirm the bond has not yet matured
     modifier beforeMaturity() {
@@ -286,9 +289,9 @@ contract Bond is
         // that would break in the case of a token taking a fee.
         // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
         // if reentrency is exploited here what can they do? Just pay over the maximum amount?
-        uint256 amountPaid = _safeTransferIn(
-            IERC20Metadata(paymentToken),
+        uint256 amountPaid = IERC20Metadata(paymentToken).safeTransferIn(
             _msgSender(),
+            address(this),
             amount
         );
         emit Payment(_msgSender(), amountPaid);
@@ -509,29 +512,6 @@ contract Bond is
     }
 
     /**
-        @dev returns the balance of this contract before and after a transfer into it
-            safeTransferFrom is used to revert on any non-success return from the transfer
-            the actual delta of tokens is returned to keep accurate balance in the case where the token has a fee
-        @param token the ERC20 token being transferred from
-        @param from the sender
-        @param value the total number of tokens being transferred
-    */
-    function _safeTransferIn(
-        IERC20Metadata token,
-        address from,
-        uint256 value
-    ) internal returns (uint256) {
-        uint256 balanceBefore = token.balanceOf(address(this));
-        token.safeTransferFrom(from, address(this), value);
-
-        uint256 balanceAfter = token.balanceOf(address(this));
-        if (balanceAfter <= balanceBefore) {
-            revert UnexpectedTokenOperation();
-        }
-        return balanceAfter - balanceBefore;
-    }
-
-    /**
         @dev uses the decimals on the token to return a scale factor for the passed in token
             tokens that don't implement the `decimals` method are not supported.
             tokens with more than 18 decimals are not supported
@@ -546,7 +526,7 @@ contract Bond is
         uint256 tokenDecimals = IERC20Metadata(token).decimals();
 
         if (tokenDecimals > 18) {
-            revert UnexpectedTokenOperation();
+            revert UnexpectedTokenOperation2();
         }
         uint256 decimalsDifference = 18 - tokenDecimals;
         return ONE * 10**decimalsDifference;

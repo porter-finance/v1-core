@@ -3,9 +3,10 @@ pragma solidity 0.8.9;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {EvenSaferERC20} from "./utils/EvenSaferERC20.sol";
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Bond.sol";
 
@@ -17,7 +18,7 @@ import "./Bond.sol";
         see OpenZeppelin's "Clones" proxy
 */
 contract BondFactory is AccessControl {
-    using SafeERC20 for IERC20Metadata;
+    using EvenSaferERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
     /// @notice the role required to issue bonds
@@ -124,11 +125,21 @@ contract BondFactory is AccessControl {
 
         isBond[clone] = true;
 
-        IERC20Metadata(collateralToken).safeTransferFrom(
-            owner,
-            clone,
-            maxSupply.mulDivUp(collateralRatio, ONE)
-        );
+        uint256 collateralToDeposit = maxSupply.mulDivUp(collateralRatio, ONE);
+
+        if (collateralToDeposit > 0) {
+            IERC20Metadata(collateralToken).safeTransferIn(
+                owner,
+                clone,
+                collateralToDeposit
+            );
+
+            // emit CollateralDeposit(
+            //     _msgSender(),
+            //     collateralToken,
+            //     collateralDeposited
+            // );
+        }
 
         Bond(clone).initialize(
             name,

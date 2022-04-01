@@ -24,8 +24,6 @@ import {
   NonConvertibleBondConfig,
   ConvertibleBondConfig,
   UncollateralizedBondConfig,
-  ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
-  MaliciousBondConfig,
 } from "./constants";
 
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
@@ -62,12 +60,10 @@ describe("Bond", () => {
   let factory: BondFactory;
   // roles used with access control
   let withdrawRole: BytesLike;
-  let mintRole: BytesLike;
   // this is a list of bonds created with the specific decimal tokens
   let bonds: BondWithTokens[];
   let roles: {
     defaultAdminRole: string;
-    mintRole: string;
     withdrawRole: string;
   };
   // function to retrieve the bonds and tokens by decimal used
@@ -116,10 +112,6 @@ describe("Bond", () => {
               .add(getTargetCollateral(ConvertibleBondConfig))
               .add(getTargetCollateral(UncollateralizedBondConfig))
           );
-
-          await attackingToken
-            .connect(attacker)
-            .approve(factory.address, getTargetCollateral(MaliciousBondConfig));
 
           return {
             decimals,
@@ -174,24 +166,6 @@ describe("Bond", () => {
               ),
               config: UncollateralizedBondConfig,
             },
-            malicious: {
-              bond: await getBondContract(
-                factory
-                  .connect(attacker)
-                  .createBond(
-                    "Bond",
-                    "LUG",
-                    attacker.address,
-                    MaliciousBondConfig.maturityDate,
-                    attackingToken.address,
-                    attackingToken.address,
-                    MaliciousBondConfig.collateralRatio,
-                    MaliciousBondConfig.convertibleRatio,
-                    MaliciousBondConfig.maxSupply
-                  )
-              ),
-              config: MaliciousBondConfig,
-            },
           };
         }
       })
@@ -203,7 +177,6 @@ describe("Bond", () => {
       const { nonConvertible } = bonds[0];
       roles = {
         defaultAdminRole: await nonConvertible.bond.DEFAULT_ADMIN_ROLE(),
-        mintRole: await nonConvertible.bond.MINT_ROLE(),
         withdrawRole: await nonConvertible.bond.WITHDRAW_ROLE(),
       };
     }
@@ -220,7 +193,7 @@ describe("Bond", () => {
     [owner, bondHolder, attacker] = await ethers.getSigners();
     // this is the bonds used in the getBond function
     ({ bonds, factory, roles } = await loadFixture(fixture));
-    ({ mintRole, withdrawRole } = roles);
+    ({ withdrawRole } = roles);
   });
 
   /**
@@ -288,15 +261,6 @@ describe("Bond", () => {
             expect(
               await bond.hasRole(
                 await bond.getRoleAdmin(withdrawRole),
-                owner.address
-              )
-            ).to.be.equal(true);
-          });
-
-          it("should return the issuer as the role admin for the mint role", async () => {
-            expect(
-              await bond.hasRole(
-                await bond.getRoleAdmin(mintRole),
                 owner.address
               )
             ).to.be.equal(true);
