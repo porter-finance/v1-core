@@ -166,7 +166,7 @@ contract BondFactory is AccessControl {
         address clone,
         address collateralToken,
         uint256 collateralToDeposit
-    ) internal returns (uint256) {
+    ) internal returns (uint256 amountDeposited) {
         if (collateralToDeposit > 0) {
             return
                 IERC20Metadata(collateralToken).safeTransferIn(

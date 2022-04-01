@@ -155,8 +155,8 @@ contract Bond is
     /// @notice attempted to perform an action that would do nothing
     error ZeroAmount();
 
-    /// @notice unexpected amount returned on external token transfer
-    error UnexpectedTokenOperation2();
+    /// @notice Decimals with more than 18 digits are not supported
+    error DecimalsOver18();
 
     /// @dev used to confirm the bond has not yet matured
     modifier beforeMaturity() {
@@ -526,7 +526,7 @@ contract Bond is
         uint256 tokenDecimals = IERC20Metadata(token).decimals();
 
         if (tokenDecimals > 18) {
-            revert UnexpectedTokenOperation2();
+            revert DecimalsOver18();
         }
         uint256 decimalsDifference = 18 - tokenDecimals;
         return ONE * 10**decimalsDifference;
