@@ -44,7 +44,6 @@ describe("BondFactory", async () => {
     return factory.createBond(
       "Bond",
       "LUG",
-      owner.address,
       BondConfig.maturityDate,
       paymentToken.address,
       collateralToken.address,
@@ -70,6 +69,16 @@ describe("BondFactory", async () => {
         .to.emit(factory, "AllowListEnabled")
         .withArgs(false);
       expect(await factory.isAllowListEnabled()).to.be.equal(false);
+      await collateralToken.transfer(
+        user.address,
+        await collateralToken.balanceOf(owner.address)
+      );
+      collateralToken
+        .connect(user)
+        .approve(
+          factory.address,
+          await collateralToken.balanceOf(user.address)
+        );
       await expect(createBond(factory.connect(user))).to.emit(
         factory,
         "BondCreated"
@@ -102,6 +111,16 @@ describe("BondFactory", async () => {
         .to.emit(factory, "AllowListEnabled")
         .withArgs(false);
       expect(await factory.isAllowListEnabled()).to.be.equal(false);
+      await collateralToken.transfer(
+        user.address,
+        await collateralToken.balanceOf(owner.address)
+      );
+      collateralToken
+        .connect(user)
+        .approve(
+          factory.address,
+          await collateralToken.balanceOf(user.address)
+        );
       await expect(createBond(factory.connect(user))).to.emit(
         factory,
         "BondCreated"

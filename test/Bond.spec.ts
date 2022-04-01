@@ -123,7 +123,6 @@ describe("Bond", () => {
                 factory.createBond(
                   "Bond",
                   "LUG",
-                  owner.address,
                   NonConvertibleBondConfig.maturityDate,
                   paymentToken.address,
                   collateralToken.address,
@@ -139,7 +138,6 @@ describe("Bond", () => {
                 factory.createBond(
                   "Bond",
                   "LUG",
-                  owner.address,
                   ConvertibleBondConfig.maturityDate,
                   paymentToken.address,
                   collateralToken.address,
@@ -155,7 +153,6 @@ describe("Bond", () => {
                 factory.createBond(
                   "Bond",
                   "LUG",
-                  owner.address,
                   UncollateralizedBondConfig.maturityDate,
                   paymentToken.address,
                   collateralToken.address,

@@ -102,7 +102,6 @@ contract BondFactory is AccessControl {
         @notice Creates a bond
         @param name Name of the bond
         @param symbol Ticker symbol for the bond
-        @param owner Owner of the bond
         @param maturityDate Timestamp of when the bond matures
         @param collateralToken Address of the collateral to use for the bond
         @param collateralRatio Ratio of bond: collateral token
@@ -115,7 +114,6 @@ contract BondFactory is AccessControl {
     function createBond(
         string memory name,
         string memory symbol,
-        address owner,
         uint256 maturityDate,
         address paymentToken,
         address collateralToken,
@@ -128,7 +126,7 @@ contract BondFactory is AccessControl {
         isBond[clone] = true;
 
         uint256 collateralDeposited = _deposit(
-            owner,
+            _msgSender(),
             clone,
             collateralToken,
             maxSupply.mulDivUp(collateralRatio, ONE)
@@ -137,7 +135,7 @@ contract BondFactory is AccessControl {
         Bond(clone).initialize(
             name,
             symbol,
-            owner,
+            _msgSender(),
             maturityDate,
             paymentToken,
             collateralToken,
@@ -150,7 +148,7 @@ contract BondFactory is AccessControl {
             clone,
             name,
             symbol,
-            owner,
+            _msgSender(),
             maturityDate,
             paymentToken,
             collateralToken,

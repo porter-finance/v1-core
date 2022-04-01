@@ -52,7 +52,6 @@ export const createBond = async (
       .createBond(
         bondName,
         bondSymbol,
-        owner.address,
         ConvertibleBondConfig.maturityDate,
         paymentToken.address,
         nativeToken.address,
