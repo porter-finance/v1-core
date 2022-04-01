@@ -40,7 +40,7 @@ contract BondFactory is AccessControl {
 
     /// @notice when enabled, issuance is restricted to those with the ISSUER_ROLE
     bool public isAllowListEnabled = true;
-    uint256 allowance;
+
     uint256 internal constant ONE = 1e18;
 
     /**
@@ -52,6 +52,7 @@ contract BondFactory is AccessControl {
     /**
         @notice Emitted when a new bond is created
         @param newBond The address of the newley deployed bond
+        @param collateralDeposited amount of collateral deposited for the bond
         Inherit createBond
     */
     event BondCreated(
@@ -64,13 +65,14 @@ contract BondFactory is AccessControl {
         address indexed collateralToken,
         uint256 collateralRatio,
         uint256 convertibleRatio,
-        uint256 maxSupply
+        uint256 maxSupply,
+        uint256 collateralDeposited
     );
 
     /// @dev If allow list is enabled, only allow listed issuers are able to call functions
     modifier onlyIssuer() {
         if (isAllowListEnabled) {
-            _checkRole(ISSUER_ROLE, msg.sender);
+            _checkRole(ISSUER_ROLE, _msgSender());
         }
         _;
     }
@@ -80,7 +82,7 @@ contract BondFactory is AccessControl {
         // this grants the user deploying this contract the DEFAULT_ADMIN_ROLE
         // which gives them the ability to call grantRole to grant access to
         // the ISSUER_ROLE
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
     /**
@@ -125,21 +127,12 @@ contract BondFactory is AccessControl {
 
         isBond[clone] = true;
 
-        uint256 collateralToDeposit = maxSupply.mulDivUp(collateralRatio, ONE);
-
-        if (collateralToDeposit > 0) {
-            IERC20Metadata(collateralToken).safeTransferIn(
-                owner,
-                clone,
-                collateralToDeposit
-            );
-
-            // emit CollateralDeposit(
-            //     _msgSender(),
-            //     collateralToken,
-            //     collateralDeposited
-            // );
-        }
+        uint256 collateralDeposited = _deposit(
+            owner,
+            clone,
+            collateralToken,
+            maxSupply.mulDivUp(collateralRatio, ONE)
+        );
 
         Bond(clone).initialize(
             name,
@@ -163,7 +156,25 @@ contract BondFactory is AccessControl {
             collateralToken,
             collateralRatio,
             convertibleRatio,
-            maxSupply
+            maxSupply,
+            collateralDeposited
         );
+    }
+
+    function _deposit(
+        address owner,
+        address clone,
+        address collateralToken,
+        uint256 collateralToDeposit
+    ) internal returns (uint256) {
+        if (collateralToDeposit > 0) {
+            return
+                IERC20Metadata(collateralToken).safeTransferIn(
+                    owner,
+                    clone,
+                    collateralToDeposit
+                );
+        }
+        return 0;
     }
 }
