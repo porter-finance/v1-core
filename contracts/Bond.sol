@@ -162,6 +162,9 @@ contract Bond is
     /// @notice Decimals with more than 18 digits are not supported
     error DecimalsOver18();
 
+    /// @notice there is no overpayment in the token thats avaliable to be withdrawn
+    error NoPaymentToWithdraw();
+
     /// @dev used to confirm the bond has not yet matured
     modifier beforeMaturity() {
         if (isMature()) {
@@ -476,7 +479,7 @@ contract Bond is
     function withdrawExcessPayment() external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 overpaymentAmount = _upscale(paymentBalance()) - totalSupply();
         if (overpaymentAmount <= 0) {
-            revert("nothing to withdraw");
+            revert NoPaymentToWithdraw();
         }
         IERC20Metadata(paymentToken).safeTransfer(
             _msgSender(),
