@@ -132,6 +132,12 @@ contract Bond is
         uint256 amountOfCollateralTokens
     );
 
+    event ExcessPaymentWithdraw(
+        address indexed from,
+        address indexed token,
+        uint256 indexed amount
+    );
+
     /// @notice operation restricted because the bond has matured
     error BondPastMaturity();
 
@@ -474,6 +480,11 @@ contract Bond is
         }
         IERC20Metadata(paymentToken).safeTransfer(
             _msgSender(),
+            overpaymentAmount
+        );
+        emit ExcessPaymentWithdraw(
+            _msgSender(),
+            paymentToken,
             overpaymentAmount
         );
     }
