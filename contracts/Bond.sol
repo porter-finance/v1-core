@@ -275,18 +275,14 @@ contract Bond is
         @dev emits Payment event
         @param amount the number of payment tokens to pay
     */
-    function pay(uint256 amount) external nonReentrant beforeMaturity {
+    function pay(uint256 amount) external nonReentrant {
         if (isFullyPaid()) {
             revert PaymentMet();
         }
         if (amount == 0) {
             revert ZeroAmount();
         }
-        // @audit-info
-        // I'm not sure how we can fix this here. We could check that _upscale(totalPaid() + amount) >= totalSupply() but
-        // that would break in the case of a token taking a fee.
-        // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
-        // if reentrency is exploited here what can they do? Just pay over the maximum amount?
+
         IERC20Metadata(paymentToken).safeTransferFrom(
             _msgSender(),
             address(this),
