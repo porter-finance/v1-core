@@ -477,19 +477,16 @@ contract Bond is
     }
 
     function withdrawExcessPayment() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        uint256 overpaymentAmount = _upscale(paymentBalance()) - totalSupply();
-        if (overpaymentAmount <= 0) {
+        uint256 overpayment = overpaymentAmount();
+        if (overpayment <= 0) {
             revert NoPaymentToWithdraw();
         }
-        IERC20Metadata(paymentToken).safeTransfer(
-            _msgSender(),
-            overpaymentAmount
-        );
-        emit ExcessPaymentWithdraw(
-            _msgSender(),
-            paymentToken,
-            overpaymentAmount
-        );
+        IERC20Metadata(paymentToken).safeTransfer(_msgSender(), overpayment);
+        emit ExcessPaymentWithdraw(_msgSender(), paymentToken, overpayment);
+    }
+
+    function overpaymentAmount() public view returns (uint256 amoung) {
+        return _upscale(paymentBalance()) - totalSupply();
     }
 
     /**
