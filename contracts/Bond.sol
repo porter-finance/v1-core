@@ -480,7 +480,7 @@ contract Bond is
         @notice withdraws any overpaid payment token 
     */
     function withdrawExcessPayment() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        uint256 overpayment = overpaymentAmount();
+        uint256 overpayment = amountOverPaid();
         if (overpayment <= 0) {
             revert NoPaymentToWithdraw();
         }
@@ -492,9 +492,6 @@ contract Bond is
         @notice gets the amount that was overpaid and can be withdrawn 
         @return overpayment amount that was overpaid 
     */
-    function overpaymentAmount() public view returns (uint256 overpayment) {
-        return _upscale(paymentBalance()) - totalSupply();
-    }
 
     /**
         @notice gets the external balance of the ERC20 collateral token
@@ -528,8 +525,20 @@ contract Bond is
         @notice the amount of payment tokens required to fully pay the contract
     */
     function amountOwed() public view returns (uint256) {
+        if (totalSupply() <= _upscale(paymentBalance())) {
+            return 0;
+        }
         uint256 amountUnpaid = totalSupply() - _upscale(paymentBalance());
         return amountUnpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
+    }
+
+    function amountOverPaid() public view returns (uint256 overpayment) {
+        if (totalSupply() >= _upscale(paymentBalance())) {
+            return 0;
+        }
+        uint256 amountOverpaid = _upscale(paymentBalance()) - totalSupply();
+        return
+            amountOverpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
     }
 
     /**
