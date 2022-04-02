@@ -468,7 +468,7 @@ contract Bond is
     }
 
     function withdrawExcessPayment() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        uint256 overpaymentAmount = _upscale(totalPaid()) - totalSupply();
+        uint256 overpaymentAmount = _upscale(paymentBalance()) - totalSupply();
         if (overpaymentAmount <= 0) {
             revert("nothing to withdraw");
         }
