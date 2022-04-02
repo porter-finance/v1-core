@@ -18,7 +18,7 @@ import "./Bond.sol";
         see OpenZeppelin's "Clones" proxy
 */
 contract BondFactory is AccessControl {
-    using EvenSaferERC20 for IERC20Metadata;
+    using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
     /// @notice the role required to issue bonds
@@ -52,7 +52,6 @@ contract BondFactory is AccessControl {
     /**
         @notice Emitted when a new bond is created
         @param newBond The address of the newley deployed bond
-        @param collateralDeposited amount of collateral deposited for the bond
         Inherit createBond
     */
     event BondCreated(
@@ -65,9 +64,11 @@ contract BondFactory is AccessControl {
         address indexed collateralToken,
         uint256 collateralRatio,
         uint256 convertibleRatio,
-        uint256 maxSupply,
-        uint256 collateralDeposited
+        uint256 maxSupply
     );
+
+    /// @notice fails if the collateral token takes a fee
+    error InvalidDeposit();
 
     /// @dev If allow list is enabled, only allow listed issuers are able to call functions
     modifier onlyIssuer() {
@@ -125,7 +126,7 @@ contract BondFactory is AccessControl {
 
         isBond[clone] = true;
 
-        uint256 collateralDeposited = _deposit(
+        _deposit(
             _msgSender(),
             clone,
             collateralToken,
@@ -154,8 +155,7 @@ contract BondFactory is AccessControl {
             collateralToken,
             collateralRatio,
             convertibleRatio,
-            maxSupply,
-            collateralDeposited
+            maxSupply
         );
     }
 
@@ -164,15 +164,19 @@ contract BondFactory is AccessControl {
         address clone,
         address collateralToken,
         uint256 collateralToDeposit
-    ) internal returns (uint256 amountDeposited) {
-        if (collateralToDeposit > 0) {
-            return
-                IERC20Metadata(collateralToken).safeTransferIn(
-                    owner,
-                    clone,
-                    collateralToDeposit
-                );
+    ) internal {
+        IERC20Metadata(collateralToken).safeTransferFrom(
+            owner,
+            clone,
+            collateralToDeposit
+        );
+        uint256 amountDeposited = IERC20Metadata(collateralToken).balanceOf(
+            clone
+        );
+        // greater than instead of != for the case where the collateral is sent to the
+        // clone address before creation
+        if (collateralToDeposit > amountDeposited) {
+            revert InvalidDeposit();
         }
-        return 0;
     }
 }
