@@ -468,12 +468,8 @@ contract Bond is
     }
 
     function withdrawExcessPayment() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (!isFullyPaid()) {
-            revert("nothing to withdraw");
-        }
         uint256 overpaymentAmount = _upscale(totalPaid()) - totalSupply();
-
-        if (overpaymentAmount == 0) {
+        if (overpaymentAmount <= 0) {
             revert("nothing to withdraw");
         }
         IERC20Metadata(paymentToken).safeTransfer(
