@@ -7,7 +7,6 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {EvenSaferERC20} from "./utils/EvenSaferERC20.sol";
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 
 /**
@@ -24,7 +23,6 @@ contract Bond is
     ERC20BurnableUpgradeable,
     ReentrancyGuard
 {
-    using EvenSaferERC20 for IERC20Metadata;
     using SafeERC20 for IERC20Metadata;
 
     using FixedPointMathLib for uint256;
@@ -112,9 +110,8 @@ contract Bond is
     /**
         @notice emitted when a portion of the bond's principal is paid
         @param from the address depositing payment
-        @param amount the amount of payment deposited
     */
-    event Payment(address indexed from, uint256 amount);
+    event Payment(address indexed from);
 
     /**
         @notice emitted when a bond is redeemed
@@ -289,12 +286,12 @@ contract Bond is
         // that would break in the case of a token taking a fee.
         // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
         // if reentrency is exploited here what can they do? Just pay over the maximum amount?
-        uint256 amountPaid = IERC20Metadata(paymentToken).safeTransferIn(
+        IERC20Metadata(paymentToken).safeTransferFrom(
             _msgSender(),
             address(this),
             amount
         );
-        emit Payment(_msgSender(), amountPaid);
+        emit Payment(_msgSender());
     }
 
     /**
