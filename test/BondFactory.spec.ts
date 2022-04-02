@@ -34,9 +34,27 @@ describe("BondFactory", async () => {
     ISSUER_ROLE = await factory.ISSUER_ROLE();
   });
 
-  async function createBond(factory: BondFactory) {
+  async function createBond(factory: BondFactory, params: any = {}) {
+    const {
+      maturityDate,
+      paymentToken: payToken,
+      collateralToken: collToken,
+      collateralRatio,
+      convertibleRatio,
+      maxSupply,
+    } = params;
+
     BondConfig.collateralRatio = utils.parseUnits("0.5", 18);
     BondConfig.convertibleRatio = utils.parseUnits("0.5", 18);
+    const testMaturityDate = maturityDate || BondConfig.maturityDate;
+    const testPaymentToken = payToken || paymentToken.address;
+    const testCollateralToken = collToken || collateralToken.address;
+
+    const testCollateralRatio = collateralRatio || BondConfig.collateralRatio;
+    const testConvertibleRatio =
+      convertibleRatio || BondConfig.convertibleRatio;
+    const testMaxSupply = maxSupply || BondConfig.maxSupply;
+
     await collateralToken.approve(
       factory.address,
       getTargetCollateral(BondConfig)
@@ -44,14 +62,17 @@ describe("BondFactory", async () => {
     return factory.createBond(
       "Bond",
       "LUG",
-      BondConfig.maturityDate,
-      paymentToken.address,
-      collateralToken.address,
-      BondConfig.collateralRatio,
-      BondConfig.convertibleRatio,
-      BondConfig.maxSupply
+      testMaturityDate,
+      testPaymentToken,
+      testCollateralToken,
+      testCollateralRatio,
+      testConvertibleRatio,
+      testMaxSupply
     );
   }
+
+  // what mint tests do we need?
+  // check that the correct amount of collateral is withdrawn
 
   describe("#createBond", async () => {
     it("should allow only approved issuers to create a bond", async () => {
@@ -62,6 +83,36 @@ describe("BondFactory", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
 
       await expect(createBond(factory)).to.emit(factory, "BondCreated");
+    });
+
+    it("should revert on less collateral than convertible ratio", async () => {
+      await factory.grantRole(ISSUER_ROLE, owner.address);
+      await expect(
+        createBond(factory, {
+          collateralRatio: utils.parseUnits(".25", 18),
+          convertibleRatio: utils.parseUnits(".5", 18),
+        })
+      ).to.be.revertedWith("CollateralRatioLessThanConvertibleRatio");
+    });
+
+    // it("should revert on too big of a token", async () => {
+    //   await factory.grantRole(ISSUER_ROLE, owner.address);
+    //   const token = (await tokenFixture([20])).tokens.find(
+    //     (token) => token.decimals === 20
+    //   );
+    //   const { paymentToken } = token;
+    //   await expect(
+    //     createBond(factory, { paymentToken })
+    //   ).to.be.revertedWith("CollateralRatioLessThanConvertibleRatio");
+    // });
+
+    it("should revert on a token without decimals", async () => {
+      await factory.grantRole(ISSUER_ROLE, owner.address);
+      await expect(
+        createBond(factory, { collateralToken: factory.address })
+      ).to.be.revertedWith("function selector was not recognized");
+
+      // WIll there be an error  payment token is less?
     });
 
     it("should allow anyone to call createBond with allow list disabled", async () => {
