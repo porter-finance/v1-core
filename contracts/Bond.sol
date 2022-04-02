@@ -395,7 +395,7 @@ contract Bond is
         @return the amount of collateral received
      */
     function previewWithdraw() public view returns (uint256) {
-        uint256 tokensCoveredByPayment = _upscale(totalPaid());
+        uint256 tokensCoveredByPayment = _upscale(paymentBalance());
         uint256 collateralTokensRequired;
         if (tokensCoveredByPayment >= totalSupply()) {
             collateralTokensRequired = 0;
@@ -422,11 +422,11 @@ contract Bond is
                 : collateralTokensRequired;
         }
 
-        if (totalRequiredCollateral >= totalCollateral()) {
+        if (totalRequiredCollateral >= collateralBalance()) {
             return 0;
         }
 
-        return totalCollateral() - totalRequiredCollateral;
+        return collateralBalance() - totalRequiredCollateral;
     }
 
     /**
@@ -441,12 +441,12 @@ contract Bond is
         view
         returns (uint256, uint256)
     {
-        uint256 paidAmount = _upscale(totalPaid());
+        uint256 paidAmount = _upscale(paymentBalance());
         if (isFullyPaid()) {
             paidAmount = totalSupply();
         }
         uint256 paymentTokensToSend = bonds.mulDivDown(
-            totalPaid(),
+            paymentBalance(),
             totalSupply()
         );
 
@@ -463,7 +463,7 @@ contract Bond is
         @notice gets the external balance of the ERC20 payment token
         @return the amount of paymentTokens in the contract
     */
-    function totalPaid() public view returns (uint256) {
+    function paymentBalance() public view returns (uint256) {
         return IERC20Metadata(paymentToken).balanceOf(address(this));
     }
 
@@ -482,7 +482,7 @@ contract Bond is
         @notice gets the external balance of the ERC20 collateral token
         @return the amount of collateralTokens in the contract
     */
-    function totalCollateral() public view returns (uint256) {
+    function collateralBalance() public view returns (uint256) {
         return IERC20Metadata(collateralToken).balanceOf(address(this));
     }
 
@@ -495,7 +495,7 @@ contract Bond is
         if (totalSupply() == 0) {
             return false;
         }
-        return _upscale(totalPaid()) >= totalSupply();
+        return _upscale(paymentBalance()) >= totalSupply();
     }
 
     /**
@@ -510,7 +510,7 @@ contract Bond is
         @notice the amount of payment tokens required to fully pay the contract
     */
     function amountOwed() public view returns (uint256) {
-        uint256 amountUnpaid = totalSupply() - _upscale(totalPaid());
+        uint256 amountUnpaid = totalSupply() - _upscale(paymentBalance());
         return amountUnpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
     }
 
