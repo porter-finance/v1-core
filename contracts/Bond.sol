@@ -110,8 +110,9 @@ contract Bond is
     /**
         @notice emitted when a portion of the bond's principal is paid
         @param from the address depositing payment
+        @param amount Amount paid. The amount could be incorrect if the payment token takes a fee on transfer. 
     */
-    event Payment(address indexed from);
+    event Payment(address indexed from, uint256 amount);
 
     /**
         @notice emitted when a bond is redeemed
@@ -291,7 +292,7 @@ contract Bond is
             address(this),
             amount
         );
-        emit Payment(_msgSender());
+        emit Payment(_msgSender(), amount);
     }
 
     /**
