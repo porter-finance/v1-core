@@ -284,6 +284,59 @@ describe("Bond", () => {
           });
         });
       });
+      describe("#withdrawExcessPayment", async () => {
+        // excess payment should be withdrawable if bond is overpaid
+        // excess payment should be withdrawable when bonds are burned
+        // excess payment should be withdrawable when bonds are converted
+        // can't withdraw if payment is not excesss
+        // can not withdraw if payment equals payment amount
+        // user can create bond, pay 50%, burn bonds, then withdraw payment
+        //
+        describe.only("non-convertible", async () => {
+          beforeEach(async () => {
+            bond = bondWithTokens.nonConvertible.bond;
+            config = bondWithTokens.nonConvertible.config;
+            await paymentToken.approve(
+              bond.address,
+              ethers.constants.MaxUint256
+            );
+          });
+
+          it("can't withdraw if payment is not excesss", async () => {
+            expect(await bond.amountOverPaid()).to.equal(0);
+            await paymentToken.transfer(bond.address, await bond.amountOwed());
+            expect(await bond.amountOverPaid()).to.equal(0);
+          });
+
+          it("excess payment should be withdrawable if bond is overpaid", async () => {
+            await paymentToken.transfer(
+              bond.address,
+              (await bond.amountOwed()).add(1)
+            );
+            expect(await bond.amountOverPaid()).to.equal(1);
+            await bond.withdrawExcessPayment();
+            expect(await bond.amountOverPaid()).to.equal(0);
+          });
+          it("excess payment should be withdrawable when bonds are burned", async () => {});
+          it("excess payment should be withdrawable when bonds are converted", async () => {});
+          it("can not withdraw if payment equals payment amount ", async () => {});
+          it("user can create bond, pay 50%, burn bonds, then withdraw payment", async () => {});
+        });
+        describe("convertible", async () => {
+          // beforeEach(async () => {
+          //   bond = bondWithTokens.nonConvertible.bond;
+          //   config = bondWithTokens.nonConvertible.config;
+          //   await paymentToken.approve(
+          //     bond.address,
+          //     ethers.constants.MaxUint256,
+          //   );
+          // });
+          // it("", async () => {})
+          // it("", async () => {})
+          // it("", async () => {})
+          // it("", async () => {})
+        });
+      });
 
       describe("pay", async () => {
         describe("non-convertible", async () => {
