@@ -476,6 +476,9 @@ contract Bond is
         return IERC20Metadata(paymentToken).balanceOf(address(this));
     }
 
+    /**
+        @notice withdraws any overpaid payment token 
+    */
     function withdrawExcessPayment() external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 overpayment = overpaymentAmount();
         if (overpayment <= 0) {
@@ -485,7 +488,11 @@ contract Bond is
         emit ExcessPaymentWithdraw(_msgSender(), paymentToken, overpayment);
     }
 
-    function overpaymentAmount() public view returns (uint256 amoung) {
+    /**
+        @notice gets the amount that was overpaid and can be withdrawn 
+        @return overpayment amount that was overpaid 
+    */
+    function overpaymentAmount() public view returns (uint256 overpayment) {
         return _upscale(paymentBalance()) - totalSupply();
     }
 
