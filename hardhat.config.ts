@@ -9,6 +9,8 @@ import "solidity-coverage"; // adds 'coverage' task
 import "hardhat-deploy"; // runs scripts in the ./deploy folder
 import "@nomiclabs/hardhat-etherscan"; // adds 'verify' task
 import "@primitivefi/hardhat-dodoc"; // generates docs on compile
+import "hardhat-storage-layout"; // exports storage layout of contracts
+import "./tasks/storageLayout.ts"; // add 'storage-layout' task
 
 dotenv.config();
 
@@ -50,10 +52,6 @@ const config: HardhatUserConfig = {
       mining: {
         auto: true,
       },
-      // forking: {
-      //   url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-      //   blockNumber: 10333393,
-      // },
     },
   },
   gasReporter: {
