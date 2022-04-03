@@ -25,57 +25,35 @@ contract TestBond {
         collateralToken = new TestERC20("CT", "CT", MAX_INT, 18);
 
         bond = new Bond();
-        bond.initialize(
-            "bondName",
-            "bondSymbol",
-            address(this),
-            maturityDate,
-            address(paymentToken),
-            address(collateralToken),
-            COLLATERAL_RATIO,
-            CONVERTIBLE_RATIO,
-            MAX_SUPPLY
+        try
+            bond.initialize(
+                "bondName",
+                "bondSymbol",
+                address(this),
+                maturityDate,
+                address(paymentToken),
+                address(collateralToken),
+                COLLATERAL_RATIO,
+                CONVERTIBLE_RATIO,
+                MAX_SUPPLY
+            )
+        {} catch Error(string memory reason) {
+            emit AssertionFailed(reason);
+        }
+
+        /**
+            The BondFactory withdraws this collateral when creating a bond under
+            normal circumstances, but we are initializing the bond directly here.
+        */
+        collateralToken.transfer(
+            address(bond),
+            (MAX_SUPPLY * COLLATERAL_RATIO) / ONE
         );
-        collateralToken.transfer(address(this), MAX_INT);
-        paymentToken.transfer(address(this), MAX_INT);
+        paymentToken.transfer(address(this), MAX_SUPPLY);
     }
 
     function approvePaymentTokenForBond() public {
-        try paymentToken.approve(address(bond), MAX_INT) {} catch Error(
-            string memory reason
-        ) {
-            emit AssertionFailed(reason);
-        }
-
-        checkGeneralInvariants();
-    }
-
-    function approveCollateralTokenForBond() public {
-        try collateralToken.approve(address(bond), MAX_INT) {} catch Error(
-            string memory reason
-        ) {
-            emit AssertionFailed(reason);
-        }
-
-        checkGeneralInvariants();
-    }
-
-    function mintBonds(uint256 amount) public {
-        amount = amount % MAX_SUPPLY;
-        if (
-            collateralToken.allowance(address(this), address(bond)) <
-            (amount * COLLATERAL_RATIO) / ONE
-        ) {
-            try bond.mint(amount) {
-                emit AssertionFailed("mintBonds//did not revert");
-            } catch {}
-        } else {
-            try bond.mint(amount) {} catch Error(string memory reason) {
-                emit AssertionFailed(reason);
-            }
-        }
-
-        checkGeneralInvariants();
+        paymentToken.approve(address(bond), MAX_INT);
     }
 
     function convertBonds(uint256 amount) public {
@@ -90,9 +68,9 @@ contract TestBond {
             try bond.convert(amount) {} catch Error(string memory reason) {
                 emit AssertionFailed(reason);
             }
-        }
-        if (bond.balanceOf(address(this)) != sharesOwned - amount) {
-            emit AssertionFailed("convertBonds//bond invariant");
+            if (bond.balanceOf(address(this)) != sharesOwned - amount) {
+                emit AssertionFailed("convertBonds//bond invariant");
+            }
         }
 
         checkGeneralInvariants();
@@ -107,7 +85,7 @@ contract TestBond {
             try bond.pay(amount) {} catch Error(string memory reason) {
                 emit AssertionFailed(reason);
             }
-            if (paymentToken.balanceOf(address(this)) > bond.totalSupply()) {
+            if (paymentToken.balanceOf(address(bond)) > bond.totalSupply()) {
                 emit AssertionFailed("payPayment//payment invariant");
             }
         }
@@ -139,8 +117,6 @@ contract TestBond {
         }
         checkGeneralInvariants();
     }
-
-    function convertAndWithdraw(uint256 amount) public {}
 
     function checkGeneralInvariants() internal {
         if (bond.totalSupply() > MAX_SUPPLY) {
