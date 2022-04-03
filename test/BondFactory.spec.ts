@@ -8,14 +8,15 @@ import {
   FIFTY_MILLION,
   THREE_YEARS_FROM_NOW_IN_SECONDS,
   ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
+  ZERO,
 } from "./constants";
 import { getTargetCollateral } from "./utilities";
 
 const { ethers } = require("hardhat");
 
 const BondConfig: BondConfigType = {
-  collateralRatio: BigNumber.from(0),
-  convertibleRatio: BigNumber.from(0),
+  collateralRatio: ZERO,
+  convertibleRatio: ZERO,
   maturityDate: THREE_YEARS_FROM_NOW_IN_SECONDS,
   maxSupply: utils.parseUnits(FIFTY_MILLION, 18),
 };
@@ -142,7 +143,7 @@ describe("BondFactory", async () => {
     it("should not withdraw collateral for convert bonds", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
       const startingBalance = await collateralToken.balanceOf(owner.address);
-      createBond(factory, { collateralRatio: 0, convertibleRatio: 0 });
+      createBond(factory, { collateralRatio: ZERO, convertibleRatio: ZERO });
       const endingBalance = await collateralToken.balanceOf(owner.address);
       expect(endingBalance).to.equal(startingBalance);
     });
