@@ -339,7 +339,7 @@ describe("Bond", () => {
             expect(await bond.amountOverPaid()).to.equal(halfPayment);
           });
         });
-        describe.only("convertible", async () => {
+        describe("convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.convertible.bond;
             config = bondWithTokens.convertible.config;
