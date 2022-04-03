@@ -2,9 +2,15 @@
 
 A custom ERC20 token that can be used to issue bonds.The contract handles issuance, payment, conversion, and redemption of bonds.
 
+
 ## Events
 
 ### Approval
+
+
+
+
+
 
 <table>
   <tr>
@@ -24,6 +30,9 @@ A custom ERC20 token that can be used to issue bonds.The contract handles issuan
 ### CollateralDeposit
 
 emitted when a collateral is deposited for a bond
+
+
+
 
 <table>
   <tr>
@@ -50,6 +59,9 @@ emitted when a collateral is deposited for a bond
 
 emitted when collateral is withdrawn
 
+
+
+
 <table>
   <tr>
     <td>address <code>indexed</code></td>
@@ -74,6 +86,9 @@ emitted when collateral is withdrawn
 ### Convert
 
 emitted when bond tokens are converted by a borrower
+
+
+
 
 <table>
   <tr>
@@ -106,6 +121,9 @@ emitted when bond tokens are converted by a borrower
 
 emitted when a portion of the bond&#39;s principal is paid
 
+
+
+
 <table>
   <tr>
     <td>address <code>indexed</code></td>
@@ -124,6 +142,9 @@ emitted when a portion of the bond&#39;s principal is paid
 ### Redeem
 
 emitted when a bond is redeemed
+
+
+
 
 <table>
   <tr>
@@ -166,6 +187,11 @@ emitted when a bond is redeemed
 
 ### RoleAdminChanged
 
+
+
+
+
+
 <table>
   <tr>
     <td>bytes32 <code>indexed</code></td>
@@ -182,6 +208,11 @@ emitted when a bond is redeemed
 </table>
 
 ### RoleGranted
+
+
+
+
+
 
 <table>
   <tr>
@@ -200,6 +231,11 @@ emitted when a bond is redeemed
 
 ### RoleRevoked
 
+
+
+
+
+
 <table>
   <tr>
     <td>bytes32 <code>indexed</code></td>
@@ -217,6 +253,11 @@ emitted when a bond is redeemed
 
 ### Transfer
 
+
+
+
+
+
 <table>
   <tr>
     <td>address <code>indexed</code></td>
@@ -232,41 +273,55 @@ emitted when a bond is redeemed
       </tr>
 </table>
 
+
+
 ## Errors
 
 ### BondNotYetMaturedOrPaid
+* operation restricted because the bond is not yet matured or paid
 
-- operation restricted because the bond is not yet matured or paid
+
 
 ### BondPastMaturity
+* operation restricted because the bond has matured
 
-- operation restricted because the bond has matured
+
 
 ### CollateralRatioLessThanConvertibleRatio
+* collateralRatio must be greater than convertibleRatio
 
-- collateralRatio must be greater than convertibleRatio
+
 
 ### DecimalsOver18
+* Decimals with more than 18 digits are not supported
 
-- Decimals with more than 18 digits are not supported
+
 
 ### InvalidMaturityDate
+* maturity date is not valid
 
-- maturity date is not valid
+
 
 ### PaymentMet
+* attempted to pay after payment was met
 
-- attempted to pay after payment was met
+
 
 ### SweepDisallowedForToken
+* attempted to sweep a token used in the contract
 
-- attempted to sweep a token used in the contract
+
 
 ### ZeroAmount
+* attempted to perform an action that would do nothing
 
-- attempted to perform an action that would do nothing
+
+
+
+
 
 ## Methods
+
 
 ### DEFAULT_ADMIN_ROLE
 
@@ -274,7 +329,11 @@ emitted when a bond is redeemed
 function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 ```
 
+
+
+
 #### Returns
+
 
 <table>
   <tr>
@@ -291,7 +350,9 @@ function WITHDRAW_ROLE() external view returns (bytes32)
 
 this role permits the withdraw of collateral from the contract
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -305,6 +366,8 @@ this role permits the withdraw of collateral from the contract
 ```solidity
 function allowance(address owner, address spender) external view returns (uint256)
 ```
+
+
 
 #### Parameters
 
@@ -321,6 +384,7 @@ function allowance(address owner, address spender) external view returns (uint25
 
 #### Returns
 
+
 <table>
   <tr>
     <td>
@@ -336,7 +400,9 @@ function amountOwed() external view returns (uint256)
 
 the amount of payment tokens required to fully pay the contract
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -350,6 +416,8 @@ the amount of payment tokens required to fully pay the contract
 ```solidity
 function approve(address spender, uint256 amount) external nonpayable returns (bool)
 ```
+
+
 
 #### Parameters
 
@@ -366,6 +434,7 @@ function approve(address spender, uint256 amount) external nonpayable returns (b
 
 #### Returns
 
+
 <table>
   <tr>
     <td>
@@ -379,6 +448,8 @@ function approve(address spender, uint256 amount) external nonpayable returns (b
 function balanceOf(address account) external view returns (uint256)
 ```
 
+
+
 #### Parameters
 
 <table>
@@ -389,6 +460,7 @@ function balanceOf(address account) external view returns (uint256)
 </table>
 
 #### Returns
+
 
 <table>
   <tr>
@@ -403,6 +475,8 @@ function balanceOf(address account) external view returns (uint256)
 function burn(uint256 amount) external nonpayable
 ```
 
+
+
 #### Parameters
 
 <table>
@@ -412,11 +486,14 @@ function burn(uint256 amount) external nonpayable
       </tr>
 </table>
 
+
 ### burnFrom
 
 ```solidity
 function burnFrom(address account, uint256 amount) external nonpayable
 ```
+
+
 
 #### Parameters
 
@@ -431,6 +508,7 @@ function burnFrom(address account, uint256 amount) external nonpayable
       </tr>
 </table>
 
+
 ### collateralBalance
 
 ```solidity
@@ -439,7 +517,9 @@ function collateralBalance() external view returns (uint256)
 
 gets the external balance of the ERC20 collateral token
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -458,7 +538,9 @@ function collateralRatio() external view returns (uint256)
 
 the ratio of collateral tokens per bond with
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -475,7 +557,9 @@ function collateralToken() external view returns (address)
 
 the address of the ERC20 token used as collateral backing the bond
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -503,6 +587,7 @@ Bond holder can convert their bond to underlying collateral at the convertible r
       </tr>
 </table>
 
+
 ### convertibleRatio
 
 ```solidity
@@ -511,7 +596,9 @@ function convertibleRatio() external view returns (uint256)
 
 the ratio of ERC20 tokens the bonds will convert into
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -526,7 +613,11 @@ the ratio of ERC20 tokens the bonds will convert into
 function decimals() external view returns (uint8)
 ```
 
+
+
+
 #### Returns
+
 
 <table>
   <tr>
@@ -540,6 +631,8 @@ function decimals() external view returns (uint8)
 ```solidity
 function decreaseAllowance(address spender, uint256 subtractedValue) external nonpayable returns (bool)
 ```
+
+
 
 #### Parameters
 
@@ -556,6 +649,7 @@ function decreaseAllowance(address spender, uint256 subtractedValue) external no
 
 #### Returns
 
+
 <table>
   <tr>
     <td>
@@ -569,6 +663,8 @@ function decreaseAllowance(address spender, uint256 subtractedValue) external no
 function getRoleAdmin(bytes32 role) external view returns (bytes32)
 ```
 
+
+
 #### Parameters
 
 <table>
@@ -579,6 +675,7 @@ function getRoleAdmin(bytes32 role) external view returns (bytes32)
 </table>
 
 #### Returns
+
 
 <table>
   <tr>
@@ -593,6 +690,8 @@ function getRoleAdmin(bytes32 role) external view returns (bytes32)
 function grantRole(bytes32 role, address account) external nonpayable
 ```
 
+
+
 #### Parameters
 
 <table>
@@ -606,11 +705,14 @@ function grantRole(bytes32 role, address account) external nonpayable
       </tr>
 </table>
 
+
 ### hasRole
 
 ```solidity
 function hasRole(bytes32 role, address account) external view returns (bool)
 ```
+
+
 
 #### Parameters
 
@@ -627,6 +729,7 @@ function hasRole(bytes32 role, address account) external view returns (bool)
 
 #### Returns
 
+
 <table>
   <tr>
     <td>
@@ -639,6 +742,8 @@ function hasRole(bytes32 role, address account) external view returns (bool)
 ```solidity
 function increaseAllowance(address spender, uint256 addedValue) external nonpayable returns (bool)
 ```
+
+
 
 #### Parameters
 
@@ -654,6 +759,7 @@ function increaseAllowance(address spender, uint256 addedValue) external nonpaya
 </table>
 
 #### Returns
+
 
 <table>
   <tr>
@@ -727,6 +833,7 @@ this function is called one time during initial bond creation and sets up the co
       </tr>
 </table>
 
+
 ### isFullyPaid
 
 ```solidity
@@ -735,7 +842,9 @@ function isFullyPaid() external view returns (bool)
 
 checks if the balance of payment token covers the bond supply
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -754,7 +863,9 @@ function isMature() external view returns (bool)
 
 checks if the maturity date has passed (including current block timestamp)
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -773,7 +884,9 @@ function maturityDate() external view returns (uint256)
 
 A date in the future set at bond creation at which the bond will mature. Before this date, a bond token can be converted if convertible, but cannot be redeemed. Before this date, a bond token can be redeemed if the bond has been fully paid After this date, a bond token can be redeemed for the payment token, but cannot be converted.
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -788,7 +901,11 @@ A date in the future set at bond creation at which the bond will mature. Before 
 function name() external view returns (string)
 ```
 
+
+
+
 #### Returns
+
 
 <table>
   <tr>
@@ -816,6 +933,7 @@ allows the issuer to pay the bond by transferring payment token
       </tr>
 </table>
 
+
 ### paymentBalance
 
 ```solidity
@@ -824,7 +942,9 @@ function paymentBalance() external view returns (uint256)
 
 gets the external balance of the ERC20 payment token
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -843,7 +963,9 @@ function paymentToken() external view returns (address)
 
 The address of the ERC20 token this bond will be redeemable for at maturity which is paid by the borrower to unlock their collateral
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -872,6 +994,7 @@ the amount of collateral the given bonds would convert into if able
 </table>
 
 #### Returns
+
 
 <table>
   <tr>
@@ -903,6 +1026,7 @@ the amount of collateral and payment tokens the bonds would redeem for at maturi
 
 #### Returns
 
+
 <table>
   <tr>
     <td>
@@ -924,9 +1048,11 @@ the amount of collateral and payment tokens the bonds would redeem for at maturi
 function previewWithdraw() external view returns (uint256)
 ```
 
-the amount of collateral that the issuer would be able to withdraw from the contract
+the amount of collateral that the issuer would be able to  withdraw from the contract
+
 
 #### Returns
+
 
 <table>
   <tr>
@@ -956,11 +1082,14 @@ this function burns bonds in return for the token borrowed against the bond
       </tr>
 </table>
 
+
 ### renounceRole
 
 ```solidity
 function renounceRole(bytes32 role, address account) external nonpayable
 ```
+
+
 
 #### Parameters
 
@@ -974,6 +1103,7 @@ function renounceRole(bytes32 role, address account) external nonpayable
     <td>account</td>
       </tr>
 </table>
+
 
 ### revokeRole
 
@@ -981,6 +1111,8 @@ function renounceRole(bytes32 role, address account) external nonpayable
 function revokeRole(bytes32 role, address account) external nonpayable
 ```
 
+
+
 #### Parameters
 
 <table>
@@ -994,11 +1126,14 @@ function revokeRole(bytes32 role, address account) external nonpayable
       </tr>
 </table>
 
+
 ### supportsInterface
 
 ```solidity
 function supportsInterface(bytes4 interfaceId) external view returns (bool)
 ```
+
+
 
 #### Parameters
 
@@ -1010,6 +1145,7 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 </table>
 
 #### Returns
+
 
 <table>
   <tr>
@@ -1037,13 +1173,18 @@ sends tokens to the issuer that were sent to this contract
       </tr>
 </table>
 
+
 ### symbol
 
 ```solidity
 function symbol() external view returns (string)
 ```
 
+
+
+
 #### Returns
+
 
 <table>
   <tr>
@@ -1058,7 +1199,11 @@ function symbol() external view returns (string)
 function totalSupply() external view returns (uint256)
 ```
 
+
+
+
 #### Returns
+
 
 <table>
   <tr>
@@ -1072,6 +1217,8 @@ function totalSupply() external view returns (uint256)
 ```solidity
 function transfer(address to, uint256 amount) external nonpayable returns (bool)
 ```
+
+
 
 #### Parameters
 
@@ -1088,6 +1235,7 @@ function transfer(address to, uint256 amount) external nonpayable returns (bool)
 
 #### Returns
 
+
 <table>
   <tr>
     <td>
@@ -1100,6 +1248,8 @@ function transfer(address to, uint256 amount) external nonpayable returns (bool)
 ```solidity
 function transferFrom(address from, address to, uint256 amount) external nonpayable returns (bool)
 ```
+
+
 
 #### Parameters
 
@@ -1120,6 +1270,7 @@ function transferFrom(address from, address to, uint256 amount) external nonpaya
 
 #### Returns
 
+
 <table>
   <tr>
     <td>
@@ -1134,3 +1285,7 @@ function withdrawCollateral() external nonpayable
 ```
 
 Withdraw collateral from bond contract the amount of collateral available to be withdrawn depends on the collateralRatio and the convertibleRatio
+
+
+
+

@@ -2,11 +2,15 @@
 
 This factory contract issues new bond contracts
 
+
 ## Events
 
 ### AllowListEnabled
 
 Emitted when the allow list is toggled on or off
+
+
+
 
 <table>
   <tr>
@@ -20,6 +24,9 @@ Emitted when the allow list is toggled on or off
 ### BondCreated
 
 Emitted when a new bond is created
+
+
+
 
 <table>
   <tr>
@@ -68,6 +75,11 @@ Emitted when a new bond is created
 
 ### RoleAdminChanged
 
+
+
+
+
+
 <table>
   <tr>
     <td>bytes32 <code>indexed</code></td>
@@ -84,6 +96,11 @@ Emitted when a new bond is created
 </table>
 
 ### RoleGranted
+
+
+
+
+
 
 <table>
   <tr>
@@ -102,6 +119,11 @@ Emitted when a new bond is created
 
 ### RoleRevoked
 
+
+
+
+
+
 <table>
   <tr>
     <td>bytes32 <code>indexed</code></td>
@@ -117,13 +139,20 @@ Emitted when a new bond is created
       </tr>
 </table>
 
+
+
 ## Errors
 
 ### InvalidDeposit
+* fails if the collateral token takes a fee
 
-- fails if the collateral token takes a fee
+
+
+
+
 
 ## Methods
+
 
 ### DEFAULT_ADMIN_ROLE
 
@@ -131,7 +160,11 @@ Emitted when a new bond is created
 function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 ```
 
+
+
+
 #### Returns
+
 
 <table>
   <tr>
@@ -148,7 +181,9 @@ function ISSUER_ROLE() external view returns (bytes32)
 
 the role required to issue bonds
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -220,6 +255,7 @@ Creates a bond
 
 #### Returns
 
+
 <table>
   <tr>
     <td>
@@ -233,6 +269,8 @@ Creates a bond
 function getRoleAdmin(bytes32 role) external view returns (bytes32)
 ```
 
+
+
 #### Parameters
 
 <table>
@@ -243,6 +281,7 @@ function getRoleAdmin(bytes32 role) external view returns (bytes32)
 </table>
 
 #### Returns
+
 
 <table>
   <tr>
@@ -257,6 +296,8 @@ function getRoleAdmin(bytes32 role) external view returns (bytes32)
 function grantRole(bytes32 role, address account) external nonpayable
 ```
 
+
+
 #### Parameters
 
 <table>
@@ -270,11 +311,14 @@ function grantRole(bytes32 role, address account) external nonpayable
       </tr>
 </table>
 
+
 ### hasRole
 
 ```solidity
 function hasRole(bytes32 role, address account) external view returns (bool)
 ```
+
+
 
 #### Parameters
 
@@ -290,6 +334,7 @@ function hasRole(bytes32 role, address account) external view returns (bool)
 </table>
 
 #### Returns
+
 
 <table>
   <tr>
@@ -306,7 +351,9 @@ function isAllowListEnabled() external view returns (bool)
 
 when enabled, issuance is restricted to those with the ISSUER_ROLE
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -334,6 +381,7 @@ Check if a specific address is a porter bond created by this factory
 
 #### Returns
 
+
 <table>
   <tr>
     <td>
@@ -347,6 +395,8 @@ Check if a specific address is a porter bond created by this factory
 function renounceRole(bytes32 role, address account) external nonpayable
 ```
 
+
+
 #### Parameters
 
 <table>
@@ -359,6 +409,7 @@ function renounceRole(bytes32 role, address account) external nonpayable
     <td>account</td>
       </tr>
 </table>
+
 
 ### revokeRole
 
@@ -366,6 +417,8 @@ function renounceRole(bytes32 role, address account) external nonpayable
 function revokeRole(bytes32 role, address account) external nonpayable
 ```
 
+
+
 #### Parameters
 
 <table>
@@ -378,6 +431,7 @@ function revokeRole(bytes32 role, address account) external nonpayable
     <td>account</td>
       </tr>
 </table>
+
 
 ### setIsAllowListEnabled
 
@@ -398,11 +452,14 @@ Turns the allow list on or off
       </tr>
 </table>
 
+
 ### supportsInterface
 
 ```solidity
 function supportsInterface(bytes4 interfaceId) external view returns (bool)
 ```
+
+
 
 #### Parameters
 
@@ -414,6 +471,7 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 </table>
 
 #### Returns
+
 
 <table>
   <tr>
@@ -430,7 +488,9 @@ function tokenImplementation() external view returns (address)
 
 Address where the bond implementation contract is stored
 
+
 #### Returns
+
 
 <table>
   <tr>
@@ -438,3 +498,5 @@ Address where the bond implementation contract is stored
       address    </td>
       </tr>
 </table>
+
+
