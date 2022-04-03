@@ -489,11 +489,6 @@ contract Bond is
     }
 
     /**
-        @notice gets the amount that was overpaid and can be withdrawn 
-        @return overpayment amount that was overpaid 
-    */
-
-    /**
         @notice gets the external balance of the ERC20 collateral token
         @return the amount of collateralTokens in the contract
     */
@@ -532,13 +527,16 @@ contract Bond is
         return amountUnpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
     }
 
+    /**
+        @notice gets the amount that was overpaid and can be withdrawn 
+        @return overpayment amount that was overpaid 
+    */
     function amountOverPaid() public view returns (uint256 overpayment) {
         if (totalSupply() >= _upscale(paymentBalance())) {
             return 0;
         }
         uint256 amountOverpaid = _upscale(paymentBalance()) - totalSupply();
-        return
-            amountOverpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
+        return _downscale(amountOverpaid);
     }
 
     /**
