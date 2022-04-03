@@ -12,7 +12,7 @@
 ### {{key}}
 
 
-{{@if (val.notice)}}{{val.notice}}{{/if}}
+{{@if (val.notice)}}{{ val.notice}}{{/if}}
 
 
 {{@if (val.details)}}*{{val.details}}*{{/if}}
@@ -26,7 +26,9 @@
     <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
     <td>{{key}}</td>
     {{@if (val.description)}}
-    <td>{{val.description}}</td>
+    <td>
+    {{val.description}}
+    </td>
     {{/if}}
   </tr>
 {{/foreach}}
@@ -41,7 +43,9 @@
 ## Errors
 
 {{@foreach(it.errors) => key, val}}
-### {{key}}{{@if (val.notice)}} - {{val.notice}}{{/if}}
+### {{key}}
+
+{{@if (val.notice)}}* {{val.notice}}{{/if}}
 
 {{@if (val.details)}}*{{val.details}}*{{/if}}
 
@@ -54,7 +58,9 @@
     <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
     <td>{{key}}</td>
     {{@if (val.description)}}
-    <td>{{val.description}}</td>
+    <td>
+    {{val.description}}
+    </td>
     {{/if}}
   </tr>
 {{/foreach}}
@@ -91,7 +97,9 @@
     <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
     <td>{{key}}</td>
     {{@if (val.description)}}
-    <td>{{val.description}}</td>
+    <td>
+    {{val.description}}
+    </td>
     {{/if}}
   </tr>
 {{/foreach}}
@@ -105,10 +113,13 @@
 <table>
 {{@foreach(val.outputs) => key, val}}
   <tr>
-    <td>{{val.type}} {{@if (val.indexed)}}<code>indexed</code>{{/if}}</td>
-    {{@if (val.key == "_0" && val.key == "_1")}}<td>{{key}}</td>{{/if}}
+    <td>
+      <code>{{val.type}}</code>
+    </td>
     {{@if (val.description)}}
-    <td>{{val.description}}</td>
+    <td>
+    {{val.description}}
+    </td>
     {{/if}}
   </tr>
 {{/foreach}}
