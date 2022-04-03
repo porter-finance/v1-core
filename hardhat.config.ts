@@ -64,6 +64,7 @@ const config: HardhatUserConfig = {
   },
   dodoc: {
     include: ["Bond", "BondFactory"],
+    exclude: ["TestBond"],
     runOnCompile: true,
     templatePath: "./template.sqrl",
   },
