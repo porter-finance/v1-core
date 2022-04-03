@@ -4,13 +4,16 @@ import { BondFactory, TestERC20 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
 import { BondConfigType } from "./interfaces";
-import { FIFTY_MILLION, THREE_YEARS_FROM_NOW_IN_SECONDS } from "./constants";
+import {
+  FIFTY_MILLION,
+  THREE_YEARS_FROM_NOW_IN_SECONDS,
+  ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
+} from "./constants";
 import { getTargetCollateral } from "./utilities";
 
 const { ethers } = require("hardhat");
 
 const BondConfig: BondConfigType = {
-  targetBondSupply: utils.parseUnits(FIFTY_MILLION, 18), // 50 million bonds
   collateralRatio: BigNumber.from(0),
   convertibleRatio: BigNumber.from(0),
   maturityDate: THREE_YEARS_FROM_NOW_IN_SECONDS,
@@ -74,7 +77,7 @@ describe("BondFactory", async () => {
   // what mint tests do we need?
   // check that the correct amount of collateral is withdrawn
 
-  describe("#createBond", async () => {
+  describe.only("#createBond", async () => {
     it("should allow only approved issuers to create a bond", async () => {
       await expect(createBond(factory)).to.be.revertedWith(
         `AccessControl: account ${owner.address.toLowerCase()} is missing role ${ISSUER_ROLE}`
@@ -95,13 +98,63 @@ describe("BondFactory", async () => {
       ).to.be.revertedWith("CollateralRatioLessThanConvertibleRatio");
     });
 
-    it("should revert on too big of a token", async () => {});
-    it("should revert on a maturity date already passed", async () => {});
-    it("should revert on a maturity date current timestamp", async () => {});
-    it("should revert on a maturity date 10 years in the future", async () => {});
-    it("should mint max supply to the caller", async () => {});
-    it("should not require collateral for convert bonds", async () => {});
-    it("should withdraw the correct amount of collateral on creation", async () => {});
+    it("should revert on too big of a token", async () => {
+      await factory.grantRole(ISSUER_ROLE, owner.address);
+      await expect(createBond(factory, {})).to.be.revertedWith(
+        "CollateralRatioLessThanConvertibleRatio"
+      );
+    });
+
+    describe("Should revert on invalid maturity date", async () => {
+      it("should revert on a maturity date already passed", async () => {
+        await factory.grantRole(ISSUER_ROLE, owner.address);
+        await expect(
+          createBond(factory, { maturityDate: BigNumber.from(1) })
+        ).to.be.revertedWith("InvalidMaturityDate");
+      });
+
+      it("should revert on a maturity date current timestamp", async () => {
+        if (!owner?.provider) {
+          throw new Error("no provider");
+        }
+        const currentTimestamp = (await owner.provider.getBlock("latest"))
+          .timestamp;
+
+        await factory.grantRole(ISSUER_ROLE, owner.address);
+        await expect(
+          createBond(factory, { maturityDate: currentTimestamp })
+        ).to.be.revertedWith("InvalidMaturityDate");
+      });
+      it("should revert on a maturity date 10 years in the future", async () => {
+        await factory.grantRole(ISSUER_ROLE, owner.address);
+        await expect(
+          createBond(factory, {
+            maturityDate: ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
+          })
+        ).to.be.revertedWith("InvalidMaturityDate");
+      });
+    });
+
+    it("should mint max supply to the caller", async () => {
+      await factory.grantRole(ISSUER_ROLE, owner.address);
+      await createBond(factory);
+    });
+    it("should not withdraw collateral for convert bonds", async () => {
+      await factory.grantRole(ISSUER_ROLE, owner.address);
+      const startingBalance = await collateralToken.balanceOf(owner.address);
+      createBond(factory, { collateralRatio: 0, convertibleRatio: 0 });
+      const endingBalance = await collateralToken.balanceOf(owner.address);
+      expect(endingBalance).to.equal(startingBalance);
+    });
+    it("should withdraw the correct amount of collateral on creation", async () => {
+      await factory.grantRole(ISSUER_ROLE, owner.address);
+      const startingBalance = await collateralToken.balanceOf(owner.address);
+
+      await createBond(factory, {});
+      const endingBalance = await collateralToken.balanceOf(owner.address);
+      const collateralTransfered = startingBalance.sub(endingBalance);
+      // expect(collateralTransfered).to.equal(Bond)
+    });
 
     it("should revert on a token without decimals", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
