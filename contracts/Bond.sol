@@ -153,9 +153,6 @@ contract Bond is
     /// @notice attempted to perform an action that would do nothing
     error ZeroAmount();
 
-    /// @notice Decimals with more than 18 digits are not supported
-    error DecimalsOver18();
-
     /// @dev used to confirm the bond has not yet matured
     modifier beforeMaturity() {
         if (isMature()) {
@@ -196,16 +193,6 @@ contract Bond is
         uint256 _convertibleRatio,
         uint256 maxSupply
     ) external initializer {
-        if (_collateralRatio < _convertibleRatio) {
-            revert CollateralRatioLessThanConvertibleRatio();
-        }
-        if (
-            _maturityDate <= block.timestamp ||
-            _maturityDate > block.timestamp + 3650 days
-        ) {
-            revert InvalidMaturityDate();
-        }
-
         __ERC20_init(bondName, bondSymbol);
 
         maturityDate = _maturityDate;
@@ -213,7 +200,6 @@ contract Bond is
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
-        _computeScalingFactor(paymentToken);
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
@@ -521,9 +507,6 @@ contract Bond is
     {
         uint256 tokenDecimals = IERC20Metadata(token).decimals();
 
-        if (tokenDecimals > 18) {
-            revert DecimalsOver18();
-        }
         uint256 decimalsDifference = 18 - tokenDecimals;
         return ONE * 10**decimalsDifference;
     }
