@@ -292,7 +292,7 @@ describe("Bond", () => {
         // can not withdraw if payment equals payment amount
         // user can create bond, pay 50%, burn bonds, then withdraw payment
         //
-        describe.only("non-convertible", async () => {
+        describe("non-convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
@@ -317,24 +317,49 @@ describe("Bond", () => {
             await bond.withdrawExcessPayment();
             expect(await bond.amountOverPaid()).to.equal(0);
           });
-          it("excess payment should be withdrawable when bonds are burned", async () => {});
-          it("excess payment should be withdrawable when bonds are converted", async () => {});
-          it("can not withdraw if payment equals payment amount ", async () => {});
-          it("user can create bond, pay 50%, burn bonds, then withdraw payment", async () => {});
+          it("excess payment should be withdrawable when bonds are redeemed", async () => {
+            const bonds = await bond.balanceOf(owner.address);
+            const fullpayment = await bond.amountOwed();
+            await paymentToken.transfer(bond.address, fullpayment.mul(2));
+            expect(await bond.amountOverPaid()).to.equal(fullpayment);
+            const [paymentOnRedeem] = await bond.previewRedeemAtMaturity(bonds);
+            expect(paymentOnRedeem).to.equal(fullpayment);
+            await bond.redeem(bonds);
+
+            expect(await bond.amountOverPaid()).to.equal(fullpayment);
+            await bond.withdrawExcessPayment();
+            expect(await bond.amountOverPaid()).to.equal(0);
+          });
+          it("user can create bond, pay 50%, burn bonds, then withdraw payment", async () => {
+            const bonds = await bond.balanceOf(owner.address);
+            const halfPayment = (await bond.amountOwed()).div(2);
+            await paymentToken.transfer(bond.address, halfPayment);
+            expect(await bond.amountOverPaid()).to.equal(0);
+            await bond.burn(bonds);
+            expect(await bond.amountOverPaid()).to.equal(halfPayment);
+          });
         });
-        describe("convertible", async () => {
-          // beforeEach(async () => {
-          //   bond = bondWithTokens.nonConvertible.bond;
-          //   config = bondWithTokens.nonConvertible.config;
-          //   await paymentToken.approve(
-          //     bond.address,
-          //     ethers.constants.MaxUint256,
-          //   );
-          // });
-          // it("", async () => {})
-          // it("", async () => {})
-          // it("", async () => {})
-          // it("", async () => {})
+        describe.only("convertible", async () => {
+          beforeEach(async () => {
+            bond = bondWithTokens.convertible.bond;
+            config = bondWithTokens.convertible.config;
+            await paymentToken.approve(
+              bond.address,
+              ethers.constants.MaxUint256
+            );
+          });
+          it("excess payment should be withdrawable when bonds are converted", async () => {
+            const halfbonds = (await bond.balanceOf(owner.address)).div(2);
+            const fullpayment = await bond.amountOwed();
+            await paymentToken.transfer(bond.address, fullpayment);
+            expect(await bond.amountOverPaid()).to.equal(0);
+            await bond.convert(halfbonds);
+            expect(await bond.amountOverPaid()).to.equal(fullpayment.div(2));
+            await bond.convert(halfbonds);
+            expect(await bond.amountOverPaid()).to.equal(fullpayment);
+            await bond.withdrawExcessPayment();
+            expect(await bond.amountOverPaid()).to.equal(0);
+          });
         });
       });
 
