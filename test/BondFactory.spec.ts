@@ -95,16 +95,13 @@ describe("BondFactory", async () => {
       ).to.be.revertedWith("CollateralRatioLessThanConvertibleRatio");
     });
 
-    // it("should revert on too big of a token", async () => {
-    //   await factory.grantRole(ISSUER_ROLE, owner.address);
-    //   const token = (await tokenFixture([20])).tokens.find(
-    //     (token) => token.decimals === 20
-    //   );
-    //   const { paymentToken } = token;
-    //   await expect(
-    //     createBond(factory, { paymentToken })
-    //   ).to.be.revertedWith("CollateralRatioLessThanConvertibleRatio");
-    // });
+    it("should revert on too big of a token", async () => {});
+    it("should revert on a maturity date already passed", async () => {});
+    it("should revert on a maturity date current timestamp", async () => {});
+    it("should revert on a maturity date 10 years in the future", async () => {});
+    it("should mint max supply to the caller", async () => {});
+    it("should not require collateral for convert bonds", async () => {});
+    it("should withdraw the correct amount of collateral on creation", async () => {});
 
     it("should revert on a token without decimals", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
