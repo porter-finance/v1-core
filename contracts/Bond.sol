@@ -455,7 +455,7 @@ contract Bond is
             paidAmount = totalSupply();
         }
         uint256 paymentTokensToSend = bonds.mulDivDown(
-            paymentBalance(),
+            _downscale(paidAmount),
             totalSupply()
         );
 
@@ -569,5 +569,9 @@ contract Bond is
     */
     function _upscale(uint256 amount) internal view returns (uint256) {
         return amount.mulDivUp(_computeScalingFactor(paymentToken), ONE);
+    }
+
+    function _downscale(uint256 amount) internal view returns (uint256) {
+        return amount.mulDivDown(ONE, _computeScalingFactor(paymentToken));
     }
 }
