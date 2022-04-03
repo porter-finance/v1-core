@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
-import {ERC20BurnableUpgradeable, ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 
 /**
@@ -16,16 +15,16 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
     @notice A custom ERC20 token that can be used to issue bonds.
     @notice The contract handles issuance, payment, conversion, and redemption of bonds.
     @dev External calls to tokens used for collateral and payment are used throughout to transfer and check balances
-    there is risk that these tokens are malicious and each one should be carefully inspected before being trusted. 
+        there is risk that these tokens are malicious and each one should be carefully inspected before being trusted. 
+    @dev does not inherit from ERC20Upgradeable or Initializable since ERC20BurnableUpgradeable inherits from them
 */
 contract Bond is
-    Initializable,
-    ERC20Upgradeable,
     AccessControlUpgradeable,
     ERC20BurnableUpgradeable,
     ReentrancyGuard
 {
     using SafeERC20 for IERC20Metadata;
+
     using FixedPointMathLib for uint256;
 
     /**
@@ -62,24 +61,11 @@ contract Bond is
     uint256 public convertibleRatio;
 
     /**
-        @notice the max amount of bonds able to be minted and cannot be changed
-        @dev checked in the `mint` function to limit `totalSupply` exceeding this number
-    */
-    uint256 public maxSupply;
-
-    /**
         @notice this role permits the withdraw of collateral from the contract
         @dev this is assigned to owner in `initialize`
             the owner can assign other addresses with this role to enable their withdraw
     */
     bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
-
-    /**
-        @notice this role permits the minting of bonds
-        @dev this is assigned to owner in `initialize`
-            the owner can assign other addresses with this role to enable their minting
-    */
-    bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
 
     uint256 internal constant ONE = 1e18;
 
@@ -94,13 +80,6 @@ contract Bond is
         address indexed token,
         uint256 amount
     );
-
-    /**
-        @notice emitted when bonds are minted
-        @param from the address minting
-        @param amount the amount of bonds minted
-    */
-    event Mint(address indexed from, uint256 amount);
 
     /**
         @notice emitted when bond tokens are converted by a borrower
@@ -131,7 +110,7 @@ contract Bond is
     /**
         @notice emitted when a portion of the bond's principal is paid
         @param from the address depositing payment
-        @param amount the amount of payment deposited
+        @param amount Amount paid. The amount could be incorrect if the payment token takes a fee on transfer. 
     */
     event Payment(address indexed from, uint256 amount);
 
@@ -155,30 +134,27 @@ contract Bond is
 
     /// @notice operation restricted because the bond has matured
     error BondPastMaturity();
+
     /// @notice operation restricted because the bond is not yet matured or paid
     error BondNotYetMaturedOrPaid();
 
     /// @notice maturity date is not valid
     error InvalidMaturityDate();
+
     /// @notice collateralRatio must be greater than convertibleRatio
     error CollateralRatioLessThanConvertibleRatio();
 
-    /// @notice attempted to mint bonds that would exceeded maxSupply
-    error BondSupplyExceeded();
-
     /// @notice attempted to pay after payment was met
     error PaymentMet();
-
-    /// @notice this bond has been paid so more bonds can not be minted
-    error BondsCanNoLongerBeMinted();
 
     /// @notice attempted to sweep a token used in the contract
     error SweepDisallowedForToken();
 
     /// @notice attempted to perform an action that would do nothing
     error ZeroAmount();
-    /// @notice unexpected amount returned on external token transfer
-    error UnexpectedTokenOperation();
+
+    /// @notice Decimals with more than 18 digits are not supported
+    error DecimalsOver18();
 
     /// @dev used to confirm the bond has not yet matured
     modifier beforeMaturity() {
@@ -196,17 +172,10 @@ contract Bond is
         _;
     }
 
-    /// @dev used to confirm that the bond has not been fully paid
-    modifier notFullyPaid() {
-        if (isFullyPaid()) {
-            revert BondsCanNoLongerBeMinted();
-        }
-        _;
-    }
-
     /**
         @notice this function is called one time during initial bond creation and sets up the configuration for the bond
         @dev New bond contract deployed via clone
+        @dev Not calling __AccessControl_init or __ERC20Burnable_init here because they currently generate an empty function 
         @param bondName passed into the ERC20 token
         @param bondSymbol passed into the ERC20 token
         @param owner ownership of this contract transferred to this address
@@ -225,7 +194,7 @@ contract Bond is
         address _collateralToken,
         uint256 _collateralRatio,
         uint256 _convertibleRatio,
-        uint256 _maxSupply
+        uint256 maxSupply
     ) external initializer {
         if (_collateralRatio < _convertibleRatio) {
             revert CollateralRatioLessThanConvertibleRatio();
@@ -238,60 +207,17 @@ contract Bond is
         }
 
         __ERC20_init(bondName, bondSymbol);
-        __ERC20Burnable_init();
 
         maturityDate = _maturityDate;
         paymentToken = _paymentToken;
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
-        maxSupply = _maxSupply;
-
         _computeScalingFactor(paymentToken);
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
-        _grantRole(MINT_ROLE, owner);
-    }
-
-    /**
-        @notice mints the amount of specified bonds by transferring in collateral
-        @dev Bonds to mint is bounded by maxSupply
-            Mint event is always emitted.
-            CollateralDeposit is emitted unless the bond is uncollateralized and
-            therefore requires no collateral to mint bonds.
-        @param bonds the amount of bonds to mint
-    */
-    function mint(uint256 bonds)
-        external
-        onlyRole(MINT_ROLE)
-        beforeMaturity
-        notFullyPaid
-        nonReentrant
-    {
-        if (totalSupply() + bonds > maxSupply) {
-            revert BondSupplyExceeded();
-        }
-
-        uint256 collateralToDeposit = previewMintBeforeMaturity(bonds);
-
-        _mint(_msgSender(), bonds);
-
-        emit Mint(_msgSender(), bonds);
-
-        if (collateralToDeposit > 0) {
-            uint256 collateralDeposited = _safeTransferIn(
-                IERC20Metadata(collateralToken),
-                _msgSender(),
-                collateralToDeposit
-            );
-
-            emit CollateralDeposit(
-                _msgSender(),
-                collateralToken,
-                collateralDeposited
-            );
-        }
+        _mint(owner, maxSupply);
     }
 
     /**
@@ -300,8 +226,8 @@ contract Bond is
         @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
     */
     function convert(uint256 bonds) external nonReentrant beforeMaturity {
-        uint256 collateralToSend = previewConvertBeforeMaturity(bonds);
-        if (collateralToSend == 0) {
+        uint256 convertibleTokensToSend = previewConvertBeforeMaturity(bonds);
+        if (convertibleTokensToSend == 0) {
             revert ZeroAmount();
         }
 
@@ -310,10 +236,15 @@ contract Bond is
         //  Reentrancy possibility: the bonds are already burnt - if there weren't enough bonds to burn, an error is thrown
         IERC20Metadata(collateralToken).safeTransfer(
             _msgSender(),
-            collateralToSend
+            convertibleTokensToSend
         );
 
-        emit Convert(_msgSender(), collateralToken, bonds, collateralToSend);
+        emit Convert(
+            _msgSender(),
+            collateralToken,
+            bonds,
+            convertibleTokensToSend
+        );
     }
 
     /**
@@ -352,16 +283,16 @@ contract Bond is
             revert ZeroAmount();
         }
         // @audit-info
-        // I'm not sure how we can fix this here. We could check that _upscale(totalPaid() + amount) >= totalSupply() but
+        // I'm not sure how we can fix this here. We could check that _upscale(paymentBalance() + amount) >= totalSupply() but
         // that would break in the case of a token taking a fee.
         // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
         // if reentrency is exploited here what can they do? Just pay over the maximum amount?
-        uint256 amountPaid = _safeTransferIn(
-            IERC20Metadata(paymentToken),
+        IERC20Metadata(paymentToken).safeTransferFrom(
             _msgSender(),
+            address(this),
             amount
         );
-        emit Payment(_msgSender(), amountPaid);
+        emit Payment(_msgSender(), amount);
     }
 
     /**
@@ -416,27 +347,11 @@ contract Bond is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         if (
-            address(token) == paymentToken ||
-            address(token) == address(this) ||
-            address(token) == collateralToken
+            address(token) == paymentToken || address(token) == collateralToken
         ) {
             revert SweepDisallowedForToken();
         }
         token.safeTransfer(msg.sender, token.balanceOf(address(this)));
-    }
-
-    /**
-        @notice preview the amount of collateral tokens required to mint the given bond tokens
-        @dev this function rounds up the amount of required collateral for the number of bonds to mint
-        @param bonds the amount of desired bonds to mint
-        @return amount of collateral required
-    */
-    function previewMintBeforeMaturity(uint256 bonds)
-        public
-        view
-        returns (uint256)
-    {
-        return bonds.mulDivUp(collateralRatio, ONE);
     }
 
     /**
@@ -472,7 +387,7 @@ contract Bond is
                 to cover convertibleRatio = 0
             bond IS paid AND NOT mature
                 to cover collateralRatio = 0 (bonds need not be backed by collateral)
-                to cover convertibleRatio = total supply * collateral ratio
+                to cover convertibleRatio = total supply * convertibleRatio ratio
 
             bond is NOT paid AND NOT mature:
                 to cover collateralRatio = total uncovered supply * collateralRatio
@@ -484,7 +399,7 @@ contract Bond is
         @return the amount of collateral received
      */
     function previewWithdraw() public view returns (uint256) {
-        uint256 tokensCoveredByPayment = _upscale(totalPaid());
+        uint256 tokensCoveredByPayment = _upscale(paymentBalance());
         uint256 collateralTokensRequired;
         if (tokensCoveredByPayment >= totalSupply()) {
             collateralTokensRequired = 0;
@@ -511,11 +426,11 @@ contract Bond is
                 : collateralTokensRequired;
         }
 
-        if (totalRequiredCollateral >= totalCollateral()) {
+        if (totalRequiredCollateral >= collateralBalance()) {
             return 0;
         }
 
-        return totalCollateral() - totalRequiredCollateral;
+        return collateralBalance() - totalRequiredCollateral;
     }
 
     /**
@@ -530,12 +445,12 @@ contract Bond is
         view
         returns (uint256, uint256)
     {
-        uint256 paidAmount = _upscale(totalPaid());
+        uint256 paidAmount = _upscale(paymentBalance());
         if (isFullyPaid()) {
             paidAmount = totalSupply();
         }
         uint256 paymentTokensToSend = bonds.mulDivDown(
-            totalPaid(),
+            paymentBalance(),
             totalSupply()
         );
 
@@ -552,7 +467,7 @@ contract Bond is
         @notice gets the external balance of the ERC20 payment token
         @return the amount of paymentTokens in the contract
     */
-    function totalPaid() public view returns (uint256) {
+    function paymentBalance() public view returns (uint256) {
         return IERC20Metadata(paymentToken).balanceOf(address(this));
     }
 
@@ -560,7 +475,7 @@ contract Bond is
         @notice gets the external balance of the ERC20 collateral token
         @return the amount of collateralTokens in the contract
     */
-    function totalCollateral() public view returns (uint256) {
+    function collateralBalance() public view returns (uint256) {
         return IERC20Metadata(collateralToken).balanceOf(address(this));
     }
 
@@ -573,7 +488,7 @@ contract Bond is
         if (totalSupply() == 0) {
             return false;
         }
-        return _upscale(totalPaid()) >= totalSupply();
+        return _upscale(paymentBalance()) >= totalSupply();
     }
 
     /**
@@ -588,31 +503,8 @@ contract Bond is
         @notice the amount of payment tokens required to fully pay the contract
     */
     function amountOwed() public view returns (uint256) {
-        uint256 amountUnpaid = totalSupply() - _upscale(totalPaid());
+        uint256 amountUnpaid = totalSupply() - _upscale(paymentBalance());
         return amountUnpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
-    }
-
-    /**
-        @dev returns the balance of this contract before and after a transfer into it
-            safeTransferFrom is used to revert on any non-success return from the transfer
-            the actual delta of tokens is returned to keep accurate balance in the case where the token has a fee
-        @param token the ERC20 token being transferred from
-        @param from the sender
-        @param value the total number of tokens being transferred
-    */
-    function _safeTransferIn(
-        IERC20Metadata token,
-        address from,
-        uint256 value
-    ) internal returns (uint256) {
-        uint256 balanceBefore = token.balanceOf(address(this));
-        token.safeTransferFrom(from, address(this), value);
-
-        uint256 balanceAfter = token.balanceOf(address(this));
-        if (balanceAfter <= balanceBefore) {
-            revert UnexpectedTokenOperation();
-        }
-        return balanceAfter - balanceBefore;
     }
 
     /**
@@ -630,7 +522,7 @@ contract Bond is
         uint256 tokenDecimals = IERC20Metadata(token).decimals();
 
         if (tokenDecimals > 18) {
-            revert UnexpectedTokenOperation();
+            revert DecimalsOver18();
         }
         uint256 decimalsDifference = 18 - tokenDecimals;
         return ONE * 10**decimalsDifference;
