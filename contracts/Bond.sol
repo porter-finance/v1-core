@@ -24,6 +24,7 @@ contract Bond is
     ReentrancyGuard
 {
     using SafeERC20 for IERC20Metadata;
+
     using FixedPointMathLib for uint256;
 
     /**
@@ -406,6 +407,7 @@ contract Bond is
             collateralTokensRequired = (totalSupply() - tokensCoveredByPayment)
                 .mulDivUp(collateralRatio, ONE);
         }
+
         uint256 convertibleTokensRequired = totalSupply().mulDivUp(
             convertibleRatio,
             ONE

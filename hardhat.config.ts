@@ -10,6 +10,7 @@ import "hardhat-deploy"; // runs scripts in the ./deploy folder
 import "@nomiclabs/hardhat-etherscan"; // adds 'verify' task
 import "@primitivefi/hardhat-dodoc"; // generates docs on compile
 import "hardhat-storage-layout"; // exports storage layout of contracts
+
 import "./tasks/storageLayout.ts"; // add 'storage-layout' task
 
 dotenv.config();

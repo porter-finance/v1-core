@@ -144,6 +144,7 @@ contract BondFactory is AccessControl {
             convertibleRatio,
             maxSupply
         );
+
         emit BondCreated(
             clone,
             name,
