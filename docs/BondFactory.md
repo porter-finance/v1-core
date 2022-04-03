@@ -131,17 +131,17 @@ Emitted when a new bond is created
 function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 ```
 
-    #### Returns
+#### Returns
 
-  <table>
-      <tr>
-      <td>
-        <code>bytes32</code>
-      </td>
-          </tr>
-    </table>
-  
-  ### ISSUER_ROLE
+<table>
+  <tr>
+    <td>
+      <code>bytes32</code>
+    </td>
+      </tr>
+</table>
+
+### ISSUER_ROLE
 
 ```solidity
 function ISSUER_ROLE() external view returns (bytes32)
@@ -149,17 +149,17 @@ function ISSUER_ROLE() external view returns (bytes32)
 
 the role required to issue bonds
 
-    #### Returns
+#### Returns
 
-  <table>
-      <tr>
-      <td>
-        <code>bytes32</code>
-      </td>
-          </tr>
-    </table>
-  
-  ### createBond
+<table>
+  <tr>
+    <td>
+      <code>bytes32</code>
+    </td>
+      </tr>
+</table>
+
+### createBond
 
 ```solidity
 function createBond(string name, string symbol, uint256 maturityDate, address paymentToken, address collateralToken, uint256 collateralRatio, uint256 convertibleRatio, uint256 maxSupply) external nonpayable returns (address clone)
@@ -167,144 +167,143 @@ function createBond(string name, string symbol, uint256 maturityDate, address pa
 
 Creates a bond
 
-    #### Parameters
+#### Parameters
 
-  <table>
-      <tr>
-      <td>string </td>
-      <td>name</td>
-            <td>
-      Name of the bond      </td>
-          </tr>
-      <tr>
-      <td>string </td>
-      <td>symbol</td>
-            <td>
-      Ticker symbol for the bond      </td>
-          </tr>
-      <tr>
-      <td>uint256 </td>
-      <td>maturityDate</td>
-            <td>
-      Timestamp of when the bond matures      </td>
-          </tr>
-      <tr>
-      <td>address </td>
-      <td>paymentToken</td>
-            <td>
-      Address of the token being paid      </td>
-          </tr>
-      <tr>
-      <td>address </td>
-      <td>collateralToken</td>
-            <td>
-      Address of the collateral to use for the bond      </td>
-          </tr>
-      <tr>
-      <td>uint256 </td>
-      <td>collateralRatio</td>
-            <td>
-      Ratio of bond: collateral token      </td>
-          </tr>
-      <tr>
-      <td>uint256 </td>
-      <td>convertibleRatio</td>
-            <td>
-      Ratio of bond:token that the bond can be converted into      </td>
-          </tr>
-      <tr>
-      <td>uint256 </td>
-      <td>maxSupply</td>
-            <td>
-      Max amount of tokens able to mint      </td>
-          </tr>
-    </table>
-  
-    #### Returns
+<table>
+  <tr>
+    <td>string </td>
+    <td>name</td>
+        <td>
+    Name of the bond    </td>
+      </tr>
+  <tr>
+    <td>string </td>
+    <td>symbol</td>
+        <td>
+    Ticker symbol for the bond    </td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>maturityDate</td>
+        <td>
+    Timestamp of when the bond matures    </td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>paymentToken</td>
+        <td>
+    Address of the token being paid    </td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>collateralToken</td>
+        <td>
+    Address of the collateral to use for the bond    </td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>collateralRatio</td>
+        <td>
+    Ratio of bond: collateral token    </td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>convertibleRatio</td>
+        <td>
+    Ratio of bond:token that the bond can be converted into    </td>
+      </tr>
+  <tr>
+    <td>uint256 </td>
+    <td>maxSupply</td>
+        <td>
+    Max amount of tokens able to mint    </td>
+      </tr>
+</table>
 
-  <table>
-      <tr>
-      <td>
-        <code>address</code>
-      </td>
-          </tr>
-    </table>
-  
-  ### getRoleAdmin
+#### Returns
+
+<table>
+  <tr>
+    <td>
+      <code>address</code>
+    </td>
+      </tr>
+</table>
+
+### getRoleAdmin
 
 ```solidity
 function getRoleAdmin(bytes32 role) external view returns (bytes32)
 ```
 
-    #### Parameters
+#### Parameters
 
-  <table>
-      <tr>
-      <td>bytes32 </td>
-      <td>role</td>
-          </tr>
-    </table>
-  
-    #### Returns
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+</table>
 
-  <table>
-      <tr>
-      <td>
-        <code>bytes32</code>
-      </td>
-          </tr>
-    </table>
-  
-  ### grantRole
+#### Returns
+
+<table>
+  <tr>
+    <td>
+      <code>bytes32</code>
+    </td>
+      </tr>
+</table>
+
+### grantRole
 
 ```solidity
 function grantRole(bytes32 role, address account) external nonpayable
 ```
 
-    #### Parameters
+#### Parameters
 
-  <table>
-      <tr>
-      <td>bytes32 </td>
-      <td>role</td>
-          </tr>
-      <tr>
-      <td>address </td>
-      <td>account</td>
-          </tr>
-    </table>
-  
-  
-  ### hasRole
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
+
+### hasRole
 
 ```solidity
 function hasRole(bytes32 role, address account) external view returns (bool)
 ```
 
-    #### Parameters
+#### Parameters
 
-  <table>
-      <tr>
-      <td>bytes32 </td>
-      <td>role</td>
-          </tr>
-      <tr>
-      <td>address </td>
-      <td>account</td>
-          </tr>
-    </table>
-  
-    #### Returns
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
 
-  <table>
-      <tr>
-      <td>
-        <code>bool</code>
-      </td>
-          </tr>
-    </table>
-  
-  ### isAllowListEnabled
+#### Returns
+
+<table>
+  <tr>
+    <td>
+      <code>bool</code>
+    </td>
+      </tr>
+</table>
+
+### isAllowListEnabled
 
 ```solidity
 function isAllowListEnabled() external view returns (bool)
@@ -312,17 +311,17 @@ function isAllowListEnabled() external view returns (bool)
 
 when enabled, issuance is restricted to those with the ISSUER_ROLE
 
-    #### Returns
+#### Returns
 
-  <table>
-      <tr>
-      <td>
-        <code>bool</code>
-      </td>
-          </tr>
-    </table>
-  
-  ### isBond
+<table>
+  <tr>
+    <td>
+      <code>bool</code>
+    </td>
+      </tr>
+</table>
+
+### isBond
 
 ```solidity
 function isBond(address) external view returns (bool)
@@ -330,66 +329,64 @@ function isBond(address) external view returns (bool)
 
 Check if a specific address is a porter bond created by this factory
 
-    #### Parameters
+#### Parameters
 
-  <table>
-      <tr>
-      <td>address </td>
-      <td>_0</td>
-          </tr>
-    </table>
-  
-    #### Returns
+<table>
+  <tr>
+    <td>address </td>
+    <td>_0</td>
+      </tr>
+</table>
 
-  <table>
-      <tr>
-      <td>
-        <code>bool</code>
-      </td>
-          </tr>
-    </table>
-  
-  ### renounceRole
+#### Returns
+
+<table>
+  <tr>
+    <td>
+      <code>bool</code>
+    </td>
+      </tr>
+</table>
+
+### renounceRole
 
 ```solidity
 function renounceRole(bytes32 role, address account) external nonpayable
 ```
 
-    #### Parameters
+#### Parameters
 
-  <table>
-      <tr>
-      <td>bytes32 </td>
-      <td>role</td>
-          </tr>
-      <tr>
-      <td>address </td>
-      <td>account</td>
-          </tr>
-    </table>
-  
-  
-  ### revokeRole
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
+
+### revokeRole
 
 ```solidity
 function revokeRole(bytes32 role, address account) external nonpayable
 ```
 
-    #### Parameters
+#### Parameters
 
-  <table>
-      <tr>
-      <td>bytes32 </td>
-      <td>role</td>
-          </tr>
-      <tr>
-      <td>address </td>
-      <td>account</td>
-          </tr>
-    </table>
-  
-  
-  ### setIsAllowListEnabled
+<table>
+  <tr>
+    <td>bytes32 </td>
+    <td>role</td>
+      </tr>
+  <tr>
+    <td>address </td>
+    <td>account</td>
+      </tr>
+</table>
+
+### setIsAllowListEnabled
 
 ```solidity
 function setIsAllowListEnabled(bool _isAllowListEnabled) external nonpayable
@@ -397,44 +394,43 @@ function setIsAllowListEnabled(bool _isAllowListEnabled) external nonpayable
 
 Turns the allow list on or off
 
-    #### Parameters
+#### Parameters
 
-  <table>
-      <tr>
-      <td>bool </td>
-      <td>_isAllowListEnabled</td>
-            <td>
-      If the allow list should be enabled or not      </td>
-          </tr>
-    </table>
-  
-  
-  ### supportsInterface
+<table>
+  <tr>
+    <td>bool </td>
+    <td>_isAllowListEnabled</td>
+        <td>
+    If the allow list should be enabled or not    </td>
+      </tr>
+</table>
+
+### supportsInterface
 
 ```solidity
 function supportsInterface(bytes4 interfaceId) external view returns (bool)
 ```
 
-    #### Parameters
+#### Parameters
 
-  <table>
-      <tr>
-      <td>bytes4 </td>
-      <td>interfaceId</td>
-          </tr>
-    </table>
-  
-    #### Returns
+<table>
+  <tr>
+    <td>bytes4 </td>
+    <td>interfaceId</td>
+      </tr>
+</table>
 
-  <table>
-      <tr>
-      <td>
-        <code>bool</code>
-      </td>
-          </tr>
-    </table>
-  
-  ### tokenImplementation
+#### Returns
+
+<table>
+  <tr>
+    <td>
+      <code>bool</code>
+    </td>
+      </tr>
+</table>
+
+### tokenImplementation
 
 ```solidity
 function tokenImplementation() external view returns (address)
@@ -442,12 +438,12 @@ function tokenImplementation() external view returns (address)
 
 Address where the bond implementation contract is stored
 
-    #### Returns
+#### Returns
 
-  <table>
-      <tr>
-      <td>
-        <code>address</code>
-      </td>
-          </tr>
-    </table>
+<table>
+  <tr>
+    <td>
+      <code>address</code>
+    </td>
+      </tr>
+</table>
