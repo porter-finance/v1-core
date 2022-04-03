@@ -136,8 +136,7 @@ function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 <table>
   <tr>
     <td>
-      <code>bytes32</code>
-    </td>
+      bytes32    </td>
       </tr>
 </table>
 
@@ -154,8 +153,7 @@ the role required to issue bonds
 <table>
   <tr>
     <td>
-      <code>bytes32</code>
-    </td>
+      bytes32    </td>
       </tr>
 </table>
 
@@ -225,8 +223,7 @@ Creates a bond
 <table>
   <tr>
     <td>
-      <code>address</code>
-    </td>
+      address    </td>
       </tr>
 </table>
 
@@ -250,8 +247,7 @@ function getRoleAdmin(bytes32 role) external view returns (bytes32)
 <table>
   <tr>
     <td>
-      <code>bytes32</code>
-    </td>
+      bytes32    </td>
       </tr>
 </table>
 
@@ -298,8 +294,7 @@ function hasRole(bytes32 role, address account) external view returns (bool)
 <table>
   <tr>
     <td>
-      <code>bool</code>
-    </td>
+      bool    </td>
       </tr>
 </table>
 
@@ -316,8 +311,7 @@ when enabled, issuance is restricted to those with the ISSUER_ROLE
 <table>
   <tr>
     <td>
-      <code>bool</code>
-    </td>
+      bool    </td>
       </tr>
 </table>
 
@@ -343,8 +337,7 @@ Check if a specific address is a porter bond created by this factory
 <table>
   <tr>
     <td>
-      <code>bool</code>
-    </td>
+      bool    </td>
       </tr>
 </table>
 
@@ -425,8 +418,7 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 <table>
   <tr>
     <td>
-      <code>bool</code>
-    </td>
+      bool    </td>
       </tr>
 </table>
 
@@ -443,7 +435,6 @@ Address where the bond implementation contract is stored
 <table>
   <tr>
     <td>
-      <code>address</code>
-    </td>
+      address    </td>
       </tr>
 </table>

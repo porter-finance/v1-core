@@ -114,7 +114,7 @@
 {{@foreach(val.outputs) => key, val}}
   <tr>
     <td>
-      <code>{{val.type}}</code>
+      {{val.type}}
     </td>
     {{@if (val.description)}}
     <td>
