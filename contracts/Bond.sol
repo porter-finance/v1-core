@@ -7,7 +7,6 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {EvenSaferERC20} from "./utils/EvenSaferERC20.sol";
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 
 /**
@@ -24,7 +23,6 @@ contract Bond is
     ERC20BurnableUpgradeable,
     ReentrancyGuard
 {
-    using EvenSaferERC20 for IERC20Metadata;
     using SafeERC20 for IERC20Metadata;
 
     using FixedPointMathLib for uint256;
@@ -112,7 +110,7 @@ contract Bond is
     /**
         @notice emitted when a portion of the bond's principal is paid
         @param from the address depositing payment
-        @param amount the amount of payment deposited
+        @param amount Amount paid. The amount could be incorrect if the payment token takes a fee on transfer. 
     */
     event Payment(address indexed from, uint256 amount);
 
@@ -285,16 +283,16 @@ contract Bond is
             revert ZeroAmount();
         }
         // @audit-info
-        // I'm not sure how we can fix this here. We could check that _upscale(totalPaid() + amount) >= totalSupply() but
+        // I'm not sure how we can fix this here. We could check that _upscale(paymentBalance() + amount) >= totalSupply() but
         // that would break in the case of a token taking a fee.
         // maybe we don't care about reentrency for this method? I was trying to think through potential exploits here, and
         // if reentrency is exploited here what can they do? Just pay over the maximum amount?
-        uint256 amountPaid = IERC20Metadata(paymentToken).safeTransferIn(
+        IERC20Metadata(paymentToken).safeTransferFrom(
             _msgSender(),
             address(this),
             amount
         );
-        emit Payment(_msgSender(), amountPaid);
+        emit Payment(_msgSender(), amount);
     }
 
     /**
@@ -349,9 +347,7 @@ contract Bond is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         if (
-            address(token) == paymentToken ||
-            address(token) == address(this) ||
-            address(token) == collateralToken
+            address(token) == paymentToken || address(token) == collateralToken
         ) {
             revert SweepDisallowedForToken();
         }
@@ -403,7 +399,7 @@ contract Bond is
         @return the amount of collateral received
      */
     function previewWithdraw() public view returns (uint256) {
-        uint256 tokensCoveredByPayment = _upscale(totalPaid());
+        uint256 tokensCoveredByPayment = _upscale(paymentBalance());
         uint256 collateralTokensRequired;
         if (tokensCoveredByPayment >= totalSupply()) {
             collateralTokensRequired = 0;
@@ -430,11 +426,11 @@ contract Bond is
                 : collateralTokensRequired;
         }
 
-        if (totalRequiredCollateral >= totalCollateral()) {
+        if (totalRequiredCollateral >= collateralBalance()) {
             return 0;
         }
 
-        return totalCollateral() - totalRequiredCollateral;
+        return collateralBalance() - totalRequiredCollateral;
     }
 
     /**
@@ -449,12 +445,12 @@ contract Bond is
         view
         returns (uint256, uint256)
     {
-        uint256 paidAmount = _upscale(totalPaid());
+        uint256 paidAmount = _upscale(paymentBalance());
         if (isFullyPaid()) {
             paidAmount = totalSupply();
         }
         uint256 paymentTokensToSend = bonds.mulDivDown(
-            totalPaid(),
+            paymentBalance(),
             totalSupply()
         );
 
@@ -471,7 +467,7 @@ contract Bond is
         @notice gets the external balance of the ERC20 payment token
         @return the amount of paymentTokens in the contract
     */
-    function totalPaid() public view returns (uint256) {
+    function paymentBalance() public view returns (uint256) {
         return IERC20Metadata(paymentToken).balanceOf(address(this));
     }
 
@@ -479,7 +475,7 @@ contract Bond is
         @notice gets the external balance of the ERC20 collateral token
         @return the amount of collateralTokens in the contract
     */
-    function totalCollateral() public view returns (uint256) {
+    function collateralBalance() public view returns (uint256) {
         return IERC20Metadata(collateralToken).balanceOf(address(this));
     }
 
@@ -492,7 +488,7 @@ contract Bond is
         if (totalSupply() == 0) {
             return false;
         }
-        return _upscale(totalPaid()) >= totalSupply();
+        return _upscale(paymentBalance()) >= totalSupply();
     }
 
     /**
@@ -507,7 +503,7 @@ contract Bond is
         @notice the amount of payment tokens required to fully pay the contract
     */
     function amountOwed() public view returns (uint256) {
-        uint256 amountUnpaid = totalSupply() - _upscale(totalPaid());
+        uint256 amountUnpaid = totalSupply() - _upscale(paymentBalance());
         return amountUnpaid.mulDivUp(ONE, _computeScalingFactor(paymentToken));
     }
 

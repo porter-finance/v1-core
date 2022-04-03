@@ -355,14 +355,14 @@ describe("Bond", () => {
             await (await bond.pay(thirdSupply)).wait();
             expect(await bond.amountOwed()).to.equal(
               downscaleAmount(config.targetBondSupply, decimals).sub(
-                await bond.totalPaid()
+                await bond.paymentBalance()
               )
             );
 
             await (await bond.pay(thirdSupply)).wait();
             expect(await bond.amountOwed()).to.equal(
               downscaleAmount(config.targetBondSupply, decimals).sub(
-                await bond.totalPaid()
+                await bond.paymentBalance()
               )
             );
 
@@ -958,7 +958,7 @@ describe("Bond", () => {
           it("should redeem unpaid bond at maturity for collateral token", async () => {
             const expectedCollateralToReceive = utils
               .parseUnits("4000", 18)
-              .mul(await bond.totalCollateral())
+              .mul(await bond.collateralBalance())
               .div(await bond.totalSupply());
             await ethers.provider.send("evm_mine", [config.maturityDate]);
             const {
@@ -1262,9 +1262,6 @@ describe("Bond", () => {
           });
 
           it("should disallow removal of tokens: collateral, payment, or itself", async () => {
-            await expect(bond.sweep(bond.address)).to.be.revertedWith(
-              "SweepDisallowedForToken"
-            );
             await expect(bond.sweep(paymentToken.address)).to.be.revertedWith(
               "SweepDisallowedForToken"
             );
