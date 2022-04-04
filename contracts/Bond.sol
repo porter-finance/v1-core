@@ -450,10 +450,9 @@ contract Bond is
         view
         returns (uint256, uint256)
     {
-        uint256 paidAmount = _upscale(paymentBalance());
-        if (isFullyPaid()) {
-            paidAmount = totalSupply();
-        }
+        uint256 paidAmount = isFullyPaid()
+            ? totalSupply()
+            : _upscale(paymentBalance());
         uint256 paymentTokensToSend = bonds.mulDivDown(
             _downscale(paidAmount),
             totalSupply()
