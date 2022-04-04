@@ -155,6 +155,15 @@ describe("BondFactory", async () => {
       );
     });
 
+    it.only(
+      "should handle minting a very very small amount of bonds correctly"
+    );
+    it.only(
+      "should mint a very large number of bonds and handle overflow correctly"
+    );
+    it.only("should handle a robust amount of imputs for the bond creation");
+    it.only("should work with any amount of decimals >= 18");
+
     it("should revert on a token without decimals", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
       await expect(
