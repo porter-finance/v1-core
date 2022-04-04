@@ -36,7 +36,6 @@ describe("BondFactory", async () => {
       await tokenFixture([18])
     ).tokens[0]);
 
-    console.log(await paymentToken.decimals());
     ISSUER_ROLE = await factory.ISSUER_ROLE();
   });
 

@@ -471,9 +471,6 @@ contract Bond is
         @return whether or not the bond is fully paid
     */
     function isFullyPaid() public view returns (bool) {
-        if (totalSupply() == 0) {
-            return false;
-        }
         return _upscale(paymentBalance()) >= totalSupply();
     }
 
