@@ -132,10 +132,16 @@ contract Bond is
         uint256 amountOfCollateralTokens
     );
 
+    /**
+     @notice emitted when payment over the required payment amount is withdrawn
+        @param from the caller withdrawing the excessPaymentAmount
+        @param token the paymentToken being withdrawn
+        @param amount the amount of paymentToken withdrawn
+    */
     event ExcessPaymentWithdraw(
         address indexed from,
         address indexed token,
-        uint256 indexed amount
+        uint256 amount
     );
 
     /// @notice operation restricted because the bond has matured
