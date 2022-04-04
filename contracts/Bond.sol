@@ -484,7 +484,11 @@ contract Bond is
     /**
         @notice withdraws any overpaid payment token 
     */
-    function withdrawExcessPayment() external onlyRole(WITHDRAW_ROLE) {
+    function withdrawExcessPayment()
+        external
+        nonReentrant
+        onlyRole(WITHDRAW_ROLE)
+    {
         uint256 overpayment = amountOverPaid();
         if (overpayment <= 0) {
             revert NoPaymentToWithdraw();
