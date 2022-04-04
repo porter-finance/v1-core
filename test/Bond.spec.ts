@@ -285,13 +285,6 @@ describe("Bond", () => {
         });
       });
       describe("#withdrawExcessPayment", async () => {
-        // excess payment should be withdrawable if bond is overpaid
-        // excess payment should be withdrawable when bonds are burned
-        // excess payment should be withdrawable when bonds are converted
-        // can't withdraw if payment is not excesss
-        // can not withdraw if payment equals payment amount
-        // user can create bond, pay 50%, burn bonds, then withdraw payment
-        //
         describe("non-convertible", async () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
