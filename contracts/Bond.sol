@@ -168,7 +168,7 @@ contract Bond is
     /// @notice Decimals with more than 18 digits are not supported
     error DecimalsOver18();
 
-    /// @notice there is no overpayment in the token thats avaliable to be withdrawn
+    /// @notice There is no excess payment token in the contract able to be withdrawn
     error NoPaymentToWithdraw();
 
     /// @dev used to confirm the bond has not yet matured
