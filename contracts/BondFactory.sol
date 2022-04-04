@@ -80,7 +80,7 @@ contract BondFactory is AccessControl {
     error CollateralRatioLessThanConvertibleRatio();
 
     /// @notice max bonds must be a positive number
-    error MaxBondsCantBeZero();
+    error ZeroBondsToMint();
 
     /// @dev If allow list is enabled, only allow listed issuers are able to call functions
     modifier onlyIssuer() {
@@ -135,7 +135,7 @@ contract BondFactory is AccessControl {
         uint256 maxBonds
     ) external onlyIssuer returns (address clone) {
         if (maxBonds == 0) {
-            revert MaxBondsCantBeZero();
+            revert ZeroBondsToMint();
         }
 
         if (collateralRatio < convertibleRatio) {

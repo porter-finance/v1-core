@@ -70,18 +70,6 @@ contract Bond is
     uint256 internal constant ONE = 1e18;
 
     /**
-        @notice emitted when a collateral is deposited for a bond
-        @param from the address depositing collateral
-        @param token the address of the collateral token
-        @param amount the number of the tokens deposited
-    */
-    event CollateralDeposit(
-        address indexed from,
-        address indexed token,
-        uint256 amount
-    );
-
-    /**
         @notice emitted when bond tokens are converted by a borrower
         @param from the address converting their tokens
         @param collateralToken the address of the collateral received
