@@ -184,18 +184,6 @@ describe("BondFactory", async () => {
     });
   });
 
-  // DAO wants to mint 1 bond. at a ratio of 1 USD per bond Thier collateral token is 8 digits.
-  // so the collateralization ratio should be 1e6/1e18 = 1e^-12
-  // there needs to be 1e6 collateralToken in the contract for every bond.
-  // 1 is maxSupply.
-  // 1e18 is max supply. Multiple the max supply * collateral ratio to get the number of tokens needed, to get 1e6
-  // 1 * 1e^-6 is not a good number.
-  // collateralization ratio will be
-  // what if we require maxSupply to be greater than 1*10^18
-  // this means for any number betweeen 1e6 and 1 there will be rounding that comes into play due to the USDC having less digits.
-  // 1e6 bondTokens would be backed by 1 USDC
-  // 1e5 would be backed by 1 USDC
-  // solution being to round up
   describe("grantRole", async () => {
     it("should fail if non owner tries to grantRole", async () => {
       await expect(factory.connect(user).grantRole(ISSUER_ROLE, owner.address))
