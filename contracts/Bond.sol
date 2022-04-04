@@ -121,7 +121,7 @@ contract Bond is
     );
 
     /**
-     @notice emitted when payment over the required payment amount is withdrawn
+        @notice emitted when payment over the required payment amount is withdrawn
         @param from the caller withdrawing the excessPaymentAmount
         @param token the paymentToken being withdrawn
         @param amount the amount of paymentToken withdrawn
