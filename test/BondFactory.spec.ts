@@ -142,12 +142,11 @@ describe("BondFactory", async () => {
     });
     it("should withdraw the correct amount of collateral on creation", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
-      const startingBalance = await collateralToken.balanceOf(owner.address);
-
-      await createBond(factory, {});
-      const endingBalance = await collateralToken.balanceOf(owner.address);
-      const collateralTransfered = startingBalance.sub(endingBalance);
-      // expect(collateralTransfered).to.equal(Bond)
+      await expect(createBond(factory, {})).to.changeTokenBalance(
+              collateralToken,
+              owner,
+              collateralToWithdraw
+            );
     });
 
     it("should revert on a token without decimals", async () => {

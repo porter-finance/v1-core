@@ -147,9 +147,10 @@ contract BondFactory is AccessControl {
         ) {
             revert InvalidMaturityDate();
         }
-        uint256 paymentDecimals = IERC20Metadata(paymentToken).decimals();
-        uint256 collateralDecimals = IERC20Metadata(collateralToken).decimals();
-        if (paymentDecimals > 18 || collateralDecimals > 18) {
+        if (
+            IERC20Metadata(paymentToken).decimals() > 18 ||
+            IERC20Metadata(collateralToken).decimals() > 18
+        ) {
             revert DecimalsOver18();
         }
 
