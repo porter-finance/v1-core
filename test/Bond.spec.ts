@@ -342,13 +342,13 @@ describe("Bond", () => {
             );
           });
           it("excess payment should be withdrawable when bonds are converted", async () => {
-            const halfbonds = (await bond.balanceOf(owner.address)).div(2);
+            const halfBonds = (await bond.balanceOf(owner.address)).div(2);
             const fullPayment = await bond.amountOwed();
             await paymentToken.transfer(bond.address, fullPayment);
             expect(await bond.amountOverPaid()).to.equal(0);
-            await bond.convert(halfbonds);
+            await bond.convert(halfBonds);
             expect(await bond.amountOverPaid()).to.equal(fullPayment.div(2));
-            await bond.convert(halfbonds);
+            await bond.convert(halfBonds);
             expect(await bond.amountOverPaid()).to.equal(fullPayment);
             await bond.withdrawExcessPayment();
             expect(await bond.amountOverPaid()).to.equal(0);
