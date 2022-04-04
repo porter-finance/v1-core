@@ -313,13 +313,13 @@ describe("Bond", () => {
           it("excess payment should be withdrawable when bonds are redeemed", async () => {
             const bonds = await bond.balanceOf(owner.address);
             const fullPayment = await bond.amountOwed();
-            await paymentToken.transfer(bond.address, fullpayment.mul(2));
-            expect(await bond.amountOverPaid()).to.equal(fullpayment);
+            await paymentToken.transfer(bond.address, fullPayment.mul(2));
+            expect(await bond.amountOverPaid()).to.equal(fullPayment);
             const [paymentOnRedeem] = await bond.previewRedeemAtMaturity(bonds);
-            expect(paymentOnRedeem).to.equal(fullpayment);
+            expect(paymentOnRedeem).to.equal(fullPayment);
             await bond.redeem(bonds);
 
-            expect(await bond.amountOverPaid()).to.equal(fullpayment);
+            expect(await bond.amountOverPaid()).to.equal(fullPayment);
             await bond.withdrawExcessPayment();
             expect(await bond.amountOverPaid()).to.equal(0);
           });
@@ -343,13 +343,13 @@ describe("Bond", () => {
           });
           it("excess payment should be withdrawable when bonds are converted", async () => {
             const halfbonds = (await bond.balanceOf(owner.address)).div(2);
-            const fullpayment = await bond.amountOwed();
-            await paymentToken.transfer(bond.address, fullpayment);
+            const fullPayment = await bond.amountOwed();
+            await paymentToken.transfer(bond.address, fullPayment);
             expect(await bond.amountOverPaid()).to.equal(0);
             await bond.convert(halfbonds);
-            expect(await bond.amountOverPaid()).to.equal(fullpayment.div(2));
+            expect(await bond.amountOverPaid()).to.equal(fullPayment.div(2));
             await bond.convert(halfbonds);
-            expect(await bond.amountOverPaid()).to.equal(fullpayment);
+            expect(await bond.amountOverPaid()).to.equal(fullPayment);
             await bond.withdrawExcessPayment();
             expect(await bond.amountOverPaid()).to.equal(0);
           });
