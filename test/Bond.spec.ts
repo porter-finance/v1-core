@@ -301,7 +301,7 @@ describe("Bond", () => {
             expect(await bond.amountOverPaid()).to.equal(0);
           });
 
-          it("excess payment should be withdrawable if bond is overpaid", async () => {
+          it("should withdraw excess payment when bond is overpaid", async () => {
             await paymentToken.transfer(
               bond.address,
               (await bond.amountOwed()).add(1)
@@ -310,7 +310,7 @@ describe("Bond", () => {
             await bond.withdrawExcessPayment();
             expect(await bond.amountOverPaid()).to.equal(0);
           });
-          it("excess payment should be withdrawable when bonds are redeemed", async () => {
+          it("should withdraw excess payment when bonds are redeemed", async () => {
             const bonds = await bond.balanceOf(owner.address);
             const fullPayment = await bond.amountOwed();
             await paymentToken.transfer(bond.address, fullPayment.mul(2));
@@ -323,7 +323,7 @@ describe("Bond", () => {
             await bond.withdrawExcessPayment();
             expect(await bond.amountOverPaid()).to.equal(0);
           });
-          it("user can create bond, pay 50%, burn bonds, then withdraw payment", async () => {
+          it("should have available overpayment when partially paid and all bonds are burnt", async () => {
             const bonds = await bond.balanceOf(owner.address);
             const halfPayment = (await bond.amountOwed()).div(2);
             await paymentToken.transfer(bond.address, halfPayment);
@@ -341,7 +341,7 @@ describe("Bond", () => {
               ethers.constants.MaxUint256
             );
           });
-          it("excess payment should be withdrawable when bonds are converted", async () => {
+          it("should withdraw excess payment when bonds are converted", async () => {
             const halfBonds = (await bond.balanceOf(owner.address)).div(2);
             const fullPayment = await bond.amountOwed();
             await paymentToken.transfer(bond.address, fullPayment);
