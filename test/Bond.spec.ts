@@ -302,7 +302,7 @@ describe("Bond", () => {
             );
           });
 
-          it("can't withdraw if payment is not excesss", async () => {
+          it("should withdraw zero payment when bond is not overpaid", async () => {
             expect(await bond.amountOverPaid()).to.equal(0);
             await paymentToken.transfer(bond.address, await bond.amountOwed());
             expect(await bond.amountOverPaid()).to.equal(0);
