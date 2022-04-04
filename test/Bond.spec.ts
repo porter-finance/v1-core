@@ -310,7 +310,7 @@ describe("Bond", () => {
             await bond.withdrawExcessPayment();
             expect(await bond.amountOverPaid()).to.equal(0);
           });
-          it("excess payment should be withdrawable when bonds are redeemed", async () => {
+          it("should withdraw excess payment when bonds are redeemed", async () => {
             const bonds = await bond.balanceOf(owner.address);
             const fullPayment = await bond.amountOwed();
             await paymentToken.transfer(bond.address, fullPayment.mul(2));
