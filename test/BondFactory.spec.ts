@@ -15,8 +15,8 @@ import { getTargetCollateral } from "./utilities";
 const { ethers } = require("hardhat");
 
 const BondConfig: BondConfigType = {
-  collateralRatio: ZERO,
-  convertibleRatio: ZERO,
+  collateralRatio: utils.parseUnits("2", 18),
+  convertibleRatio: utils.parseUnits("1", 18),
   maturityDate: THREE_YEARS_FROM_NOW_IN_SECONDS,
   maxSupply: utils.parseUnits(FIFTY_MILLION, 18),
 };
@@ -68,7 +68,7 @@ describe("BondFactory", async () => {
   }
 
   describe("#createBond", async () => {
-    it("should allow only approved issuers to create a bond", async () => {
+    it("should allow approved issuers to create a bond", async () => {
       await expect(createBond(factory)).to.be.revertedWith(
         `AccessControl: account ${owner.address.toLowerCase()} is missing role ${ISSUER_ROLE}`
       );
@@ -142,11 +142,17 @@ describe("BondFactory", async () => {
     });
     it("should withdraw the correct amount of collateral on creation", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
-      await expect(createBond(factory, {})).to.changeTokenBalance(
-              collateralToken,
-              owner,
-              collateralToWithdraw
-            );
+
+      const collateralTokensRequired = BondConfig.maxSupply
+        .mul(BondConfig.collateralRatio)
+        .mul(-1)
+        .div(utils.parseUnits("1", 18));
+
+      await expect(() => createBond(factory, {})).to.changeTokenBalance(
+        collateralToken,
+        owner,
+        collateralTokensRequired
+      );
     });
 
     it("should revert on a token without decimals", async () => {
@@ -178,6 +184,18 @@ describe("BondFactory", async () => {
     });
   });
 
+  // DAO wants to mint 1 bond. at a ratio of 1 USD per bond Thier collateral token is 8 digits.
+  // so the collateralization ratio should be 1e6/1e18 = 1e^-12
+  // there needs to be 1e6 collateralToken in the contract for every bond.
+  // 1 is maxSupply.
+  // 1e18 is max supply. Multiple the max supply * collateral ratio to get the number of tokens needed, to get 1e6
+  // 1 * 1e^-6 is not a good number.
+  // collateralization ratio will be
+  // what if we require maxSupply to be greater than 1*10^18
+  // this means for any number betweeen 1e6 and 1 there will be rounding that comes into play due to the USDC having less digits.
+  // 1e6 bondTokens would be backed by 1 USDC
+  // 1e5 would be backed by 1 USDC
+  // solution being to round up
   describe("grantRole", async () => {
     it("should fail if non owner tries to grantRole", async () => {
       await expect(factory.connect(user).grantRole(ISSUER_ROLE, owner.address))
