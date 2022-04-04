@@ -35,6 +35,8 @@ describe("BondFactory", async () => {
     ({ collateralToken, paymentToken } = await (
       await tokenFixture([18])
     ).tokens[0]);
+
+    console.log(await paymentToken.decimals());
     ISSUER_ROLE = await factory.ISSUER_ROLE();
   });
 
@@ -78,7 +80,7 @@ describe("BondFactory", async () => {
   // what mint tests do we need?
   // check that the correct amount of collateral is withdrawn
 
-  describe.only("#createBond", async () => {
+  describe("#createBond", async () => {
     it("should allow only approved issuers to create a bond", async () => {
       await expect(createBond(factory)).to.be.revertedWith(
         `AccessControl: account ${owner.address.toLowerCase()} is missing role ${ISSUER_ROLE}`
@@ -100,10 +102,14 @@ describe("BondFactory", async () => {
     });
 
     it("should revert on too big of a token", async () => {
+      const { paymentToken: bigPaymentToken } = await (
+        await tokenFixture([20])
+      ).tokens[1];
+
       await factory.grantRole(ISSUER_ROLE, owner.address);
-      await expect(createBond(factory, {})).to.be.revertedWith(
-        "CollateralRatioLessThanConvertibleRatio"
-      );
+      await expect(
+        createBond(factory, { paymentToken: bigPaymentToken.address })
+      ).to.be.revertedWith("DecimalsOver18()");
     });
 
     describe("Should revert on invalid maturity date", async () => {
