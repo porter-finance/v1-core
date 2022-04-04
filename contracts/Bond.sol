@@ -138,12 +138,6 @@ contract Bond is
     /// @notice operation restricted because the bond is not yet matured or paid
     error BondNotYetMaturedOrPaid();
 
-    /// @notice maturity date is not valid
-    error InvalidMaturityDate();
-
-    /// @notice collateralRatio must be greater than convertibleRatio
-    error CollateralRatioLessThanConvertibleRatio();
-
     /// @notice attempted to pay after payment was met
     error PaymentMet();
 
