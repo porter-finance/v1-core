@@ -40,25 +40,16 @@ describe("BondFactory", async () => {
   });
 
   async function createBond(factory: BondFactory, params: any = {}) {
-    const {
-      maturityDate,
-      paymentToken: payToken,
-      collateralToken: collToken,
-      collateralRatio,
-      convertibleRatio,
-      maxSupply,
-    } = params;
+    const testMaturityDate = params.maturityDate || BondConfig.maturityDate;
+    const testPaymentToken = params.paymentToken || paymentToken.address;
+    const testCollateralToken =
+      params.collateralToken || collateralToken.address;
 
-    BondConfig.collateralRatio = utils.parseUnits("0.5", 18);
-    BondConfig.convertibleRatio = utils.parseUnits("0.5", 18);
-    const testMaturityDate = maturityDate || BondConfig.maturityDate;
-    const testPaymentToken = payToken || paymentToken.address;
-    const testCollateralToken = collToken || collateralToken.address;
-
-    const testCollateralRatio = collateralRatio || BondConfig.collateralRatio;
+    const testCollateralRatio =
+      params.collateralRatio || BondConfig.collateralRatio;
     const testConvertibleRatio =
-      convertibleRatio || BondConfig.convertibleRatio;
-    const testMaxSupply = maxSupply || BondConfig.maxSupply;
+      params.convertibleRatio || BondConfig.convertibleRatio;
+    const testMaxSupply = params.maxSupply || BondConfig.maxSupply;
 
     await collateralToken.approve(
       factory.address,
@@ -75,9 +66,6 @@ describe("BondFactory", async () => {
       testMaxSupply
     );
   }
-
-  // what mint tests do we need?
-  // check that the correct amount of collateral is withdrawn
 
   describe("#createBond", async () => {
     it("should allow only approved issuers to create a bond", async () => {
@@ -111,7 +99,7 @@ describe("BondFactory", async () => {
       ).to.be.revertedWith("DecimalsOver18()");
     });
 
-    describe("Should revert on invalid maturity date", async () => {
+    describe("invalid maturity dates", async () => {
       it("should revert on a maturity date already passed", async () => {
         await factory.grantRole(ISSUER_ROLE, owner.address);
         await expect(
@@ -167,8 +155,6 @@ describe("BondFactory", async () => {
       await expect(
         createBond(factory, { collateralToken: factory.address })
       ).to.be.revertedWith("function selector was not recognized");
-
-      // WIll there be an error  payment token is less?
     });
 
     it("should allow anyone to call createBond with allow list disabled", async () => {
