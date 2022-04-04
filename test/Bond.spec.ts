@@ -319,7 +319,7 @@ describe("Bond", () => {
           });
           it("excess payment should be withdrawable when bonds are redeemed", async () => {
             const bonds = await bond.balanceOf(owner.address);
-            const fullpayment = await bond.amountOwed();
+            const fullPayment = await bond.amountOwed();
             await paymentToken.transfer(bond.address, fullpayment.mul(2));
             expect(await bond.amountOverPaid()).to.equal(fullpayment);
             const [paymentOnRedeem] = await bond.previewRedeemAtMaturity(bonds);
