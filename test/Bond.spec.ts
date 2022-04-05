@@ -697,7 +697,7 @@ describe("Bond", () => {
             // since we've burnt 1000 bonds, the collateral has been unlocked
             const unlockedCollateral = utils
               .parseUnits("1000", 18)
-              .mul(config.convertibleRatio)
+              .mul(await bond.convertibleRatio())
               .div(ONE);
             const collateralToReceive =
               totalWithdrawableCollateral.add(unlockedCollateral);
@@ -1052,7 +1052,9 @@ describe("Bond", () => {
             expect(
               await collateralToken.balanceOf(bondHolder.address)
             ).to.be.equal(
-              config.collateralRatio.mul(utils.parseUnits("4000", 18)).div(ONE)
+              (await bond.collateralRatio())
+                .mul(utils.parseUnits("4000", 18))
+                .div(ONE)
             );
           });
         });
@@ -1228,21 +1230,17 @@ describe("Bond", () => {
           it(`previews convert target converted`, async () => {
             expect(
               await bond.previewConvertBeforeMaturity(config.maxSupply)
-            ).to.equal(config.convertibleRatio.mul(config.maxSupply).div(ONE));
+            ).to.equal(config.convertibleRatio);
           });
 
           it(`previews convert double target converted`, async () => {
             expect(
               await bond.previewConvertBeforeMaturity(config.maxSupply.div(2))
-            ).to.equal(
-              config.convertibleRatio.mul(config.maxSupply.div(2)).div(ONE)
-            );
+            ).to.equal(config.convertibleTokenAmount.div(2));
           });
 
           it("should convert bond amount into collateral at convertibleRatio", async () => {
-            const expectedCollateralToWithdraw = config.maxSupply
-              .mul(config.convertibleRatio)
-              .div(ONE);
+            const expectedCollateralToWithdraw = config.convertibleRatio;
 
             const {
               from,
