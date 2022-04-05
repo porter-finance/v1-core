@@ -28,8 +28,6 @@ contract Bond is
 
     using FixedPointMathLib for uint256;
 
-    uint8 internal _decimals;
-
     /**
         @notice A date in the future set at bond creation at which the bond will mature.
             Before this date, a bond token can be converted if convertible, but cannot be redeemed.
@@ -198,8 +196,6 @@ contract Bond is
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
-        _decimals = IERC20Metadata(_paymentToken).decimals();
-
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
         _mint(owner, maxSupply);
@@ -512,6 +508,6 @@ contract Bond is
     }
 
     function decimals() public view override returns (uint8) {
-        return _decimals;
+        return IERC20Metadata(paymentToken).decimals();
     }
 }
