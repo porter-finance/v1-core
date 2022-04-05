@@ -14,8 +14,9 @@ import {
 const { ethers } = require("hardhat");
 
 const BondConfig: BondConfigType = {
-  convertibleTokenAmount: ZERO,
-  collateralTokenAmount: ZERO,
+  convertibleTokenAmount: utils.parseUnits("2", 18),
+  collateralTokenAmount: utils.parseUnits("1", 18),
+
   maturityDate: THREE_YEARS_FROM_NOW_IN_SECONDS,
   maxSupply: utils.parseUnits(FIFTY_MILLION.toString(), 18),
 };
@@ -76,7 +77,7 @@ describe("BondFactory", async () => {
   }
 
   describe("#createBond", async () => {
-    it("should allow only approved issuers to create a bond", async () => {
+    it("should allow approved issuers to create a bond", async () => {
       await expect(createBond(factory)).to.be.revertedWith(
         `AccessControl: account ${owner.address.toLowerCase()} is missing role ${ISSUER_ROLE}`
       );
@@ -151,14 +152,23 @@ describe("BondFactory", async () => {
       const endingBalance = await collateralToken.balanceOf(owner.address);
       expect(endingBalance).to.equal(startingBalance);
     });
-    // it("should withdraw the correct amount of collateral on creation", async () => {
-    //   await factory.grantRole(ISSUER_ROLE, owner.address);
-    //   await expect(createBond(factory, {})).to.changeTokenBalance(
-    //           collateralToken,
-    //           owner,
-    //           collateralToWithdraw
-    //         );
-    // });
+
+    it("should withdraw the correct amount of collateral on creation", async () => {
+      await factory.grantRole(ISSUER_ROLE, owner.address);
+
+      await expect(() => createBond(factory, {})).to.changeTokenBalance(
+        collateralToken,
+        owner,
+        BondConfig.collateralTokenAmount.mul(-1)
+      );
+    });
+
+    it("should handle minting a very very small amount of bonds correctly");
+    it(
+      "should mint a very large number of bonds and handle overflow correctly"
+    );
+    it("should handle a robust amount of imputs for the bond creation");
+    it("should work with any amount of decimals >= 18");
 
     it("should revert on a token without decimals", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
