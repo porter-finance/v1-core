@@ -74,8 +74,8 @@ contract BondFactory is AccessControl {
     /// @notice maturity date is not valid
     error InvalidMaturityDate();
 
-    /// @notice collateralRatio must be greater than convertibleRatio
-    error CollateralRatioLessThanConvertibleRatio();
+    /// @notice There must be more collateral tokens than convertible tokens
+    error CollateralTokenAmountLessThanConvertibleTokenAmount();
 
     /// @notice max bonds must be a positive number
     error ZeroBondsToMint();
@@ -137,7 +137,7 @@ contract BondFactory is AccessControl {
         }
 
         if (collateralTokenAmount < convertibleTokenAmount) {
-            revert CollateralRatioLessThanConvertibleRatio();
+            revert CollateralTokenAmountLessThanConvertibleTokenAmount();
         }
         if (
             maturityDate <= block.timestamp ||
