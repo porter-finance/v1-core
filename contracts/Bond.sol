@@ -28,7 +28,7 @@ contract Bond is
 
     using FixedPointMathLib for uint256;
 
-    uint8 private _decimals;
+    uint8 internal _decimals;
 
     /**
         @notice A date in the future set at bond creation at which the bond will mature.
