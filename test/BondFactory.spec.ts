@@ -14,9 +14,8 @@ import {
 const { ethers } = require("hardhat");
 
 const BondConfig: BondConfigType = {
-  convertibleTokenAmount: utils.parseUnits("2", 18),
-  collateralTokenAmount: utils.parseUnits("1", 18),
-
+  collateralTokenAmount: utils.parseUnits("2", 18),
+  convertibleTokenAmount: utils.parseUnits("1", 18),
   maturityDate: THREE_YEARS_FROM_NOW_IN_SECONDS,
   maxSupply: utils.parseUnits(FIFTY_MILLION.toString(), 18),
 };
