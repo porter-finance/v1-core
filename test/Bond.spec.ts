@@ -259,7 +259,7 @@ describe.only("Bond", () => {
             ).to.be.equal(true);
           });
 
-          // it("should return configured public parameters", async () => {
+          it("should return configured public parameters");
           //   expect(await bond.maturityDate()).to.be.equal(config.maturityDate);
           //   expect(await bond.collateralToken()).to.be.equal(
           //     collateralToken.address
@@ -584,8 +584,6 @@ describe.only("Bond", () => {
             );
             expect(await bond.totalSupply()).to.not.equal(0);
 
-            // console.log((await bond.totalSupply()).toString())
-            // console.log((await bond.collateralBalance()).toString())
             await expectTokenDelta(
               bond.withdrawCollateral,
               collateralToken,
@@ -1222,7 +1220,6 @@ describe.only("Bond", () => {
               bond.address,
               config.collateralTokenAmount
             );
-            // await bond.transfer(bondHolder.address, config.maxSupply);
           });
 
           it(`previews convert zero converted`, async () => {
