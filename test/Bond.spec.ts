@@ -792,14 +792,14 @@ describe("Bond", () => {
           });
         });
       });
-      describe.only("#redeem", async () => {
+      describe("#redeem", async () => {
         beforeEach(async () => {
           bond = bondWithTokens.nonConvertible.bond;
           config = bondWithTokens.nonConvertible.config;
           await paymentToken.approve(bond.address, config.maxSupply);
         });
 
-        describe("active state", async () => {
+        describe("Active state", async () => {
           it("should redeem for zero tokens when bond is Active", async () => {
             await bond.pay((await bond.amountOwed()).sub(1));
             await previewRedeem({
@@ -814,7 +814,7 @@ describe("Bond", () => {
             );
           });
         });
-        describe("defaulted state", async () => {
+        describe("Defaulted state", async () => {
           beforeEach(async () => {
             await ethers.provider.send("evm_mine", [config.maturityDate]);
           });
@@ -931,7 +931,7 @@ describe("Bond", () => {
             });
           });
         });
-        describe("paidEarly state", async () => {
+        describe("PaidEarly state", async () => {
           it("should redeem for payment token when bond is PaidEarly", async () => {
             await bond.pay(await bond.amountOwed());
             await previewRedeem({
@@ -963,10 +963,11 @@ describe("Bond", () => {
           });
         });
 
-        describe("paid state", async () => {
+        describe("Paid state", async () => {
           it("should redeem for payment token", async () => {
-            await (await bond.pay(config.maxSupply)).wait();
+            await bond.pay(config.maxSupply);
             await ethers.provider.send("evm_mine", [config.maturityDate]);
+
             await previewRedeem({
               bond,
               sharesToRedeem: utils.parseUnits("333", decimals),
