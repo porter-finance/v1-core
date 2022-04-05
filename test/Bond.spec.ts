@@ -4,7 +4,6 @@ import { TestERC20, Bond, BondFactory } from "../typechain";
 import {
   expectTokenDelta,
   getBondContract,
-  getTargetPayment,
   getEventArgumentsFromTransaction,
   burnAndWithdraw,
   payAndWithdraw,
@@ -224,8 +223,8 @@ describe("Bond", () => {
                 config.maturityDate,
                 paymentToken.address,
                 collateralToken.address,
-                utils.parseUnits(".25", 18),
-                utils.parseUnits(".5", 18),
+                utils.parseUnits(".25", decimals),
+                utils.parseUnits(".5", decimals),
                 config.maxSupply
               )
             ).to.be.revertedWith(
@@ -382,17 +381,14 @@ describe("Bond", () => {
           });
 
           it("should accept payment", async () => {
-            await expect(bond.pay(getTargetPayment(config, decimals))).to.emit(
-              bond,
-              "Payment"
-            );
+            await expect(bond.pay(config.maxSupply)).to.emit(bond, "Payment");
           });
 
           it("should fail if already paid", async () => {
             await bond.pay(config.maxSupply);
-            await expect(
-              bond.pay(getTargetPayment(config, decimals))
-            ).to.be.revertedWith("PaymentMet");
+            await expect(bond.pay(config.maxSupply)).to.be.revertedWith(
+              "PaymentMet"
+            );
           });
 
           it("should fail on zero payment amount", async () => {
@@ -470,33 +466,7 @@ describe("Bond", () => {
               paymentToken,
               paymentTokenAmount: utils.parseUnits("1000", decimals),
               collateralToReceive: utils
-                .parseUnits("1000", 18)
-                .mul(await bond.collateralRatio())
-                .div(ONE),
-            });
-          });
-
-          it(`should make excess collateral available to withdraw collateral in scaled magnitude`, async () => {
-            await payAndWithdraw({
-              bond,
-              paymentToken,
-              paymentTokenAmount: utils.parseUnits("1000", decimals).add(1),
-              collateralToReceive: utils
-                .parseUnits("1000", 18)
-                .add(utils.parseUnits("1", 18 - decimals))
-                .mul(await bond.collateralRatio())
-                .div(ONE),
-            });
-          });
-
-          it(`should make excess collateral available to withdraw collateral in scaled magnitude`, async () => {
-            await payAndWithdraw({
-              bond,
-              paymentToken,
-              paymentTokenAmount: utils.parseUnits("1000", decimals).sub(1),
-              collateralToReceive: utils
-                .parseUnits("1000", 18)
-                .sub(utils.parseUnits("1", 18 - decimals))
+                .parseUnits("1000", decimals)
                 .mul(await bond.collateralRatio())
                 .div(ONE),
             });
@@ -506,17 +476,17 @@ describe("Bond", () => {
             await payAndWithdraw({
               bond,
               paymentToken,
-              paymentTokenAmount: getTargetPayment(config, decimals),
+              paymentTokenAmount: config.maxSupply,
               collateralToReceive: config.collateralTokenAmount,
             });
           });
 
           it("should make excess collateral available to withdraw when payment token is fully paid", async () => {
-            await (await bond.burn(utils.parseUnits("1000", 18))).wait();
+            await (await bond.burn(utils.parseUnits("1000", decimals))).wait();
             await payAndWithdraw({
               bond,
               paymentToken,
-              paymentTokenAmount: getTargetPayment(config, decimals),
+              paymentTokenAmount: config.maxSupply,
               collateralToReceive: config.collateralTokenAmount,
             });
           });
@@ -525,7 +495,7 @@ describe("Bond", () => {
             await payAndWithdrawAtMaturity({
               bond,
               paymentToken,
-              paymentTokenAmount: getTargetPayment(config, decimals),
+              paymentTokenAmount: config.maxSupply,
               collateralToReceive: config.collateralTokenAmount,
               maturityDate: config.maturityDate,
             });
@@ -535,7 +505,7 @@ describe("Bond", () => {
             await payAndWithdrawAtMaturity({
               bond,
               paymentToken,
-              paymentTokenAmount: getTargetPayment(config, decimals),
+              paymentTokenAmount: config.maxSupply,
               collateralToReceive: config.collateralTokenAmount,
               maturityDate: config.maturityDate,
             });
@@ -555,7 +525,7 @@ describe("Bond", () => {
           });
 
           it("should allow all collateral to be withdrawn when fully paid", async () => {
-            const targetPayment = getTargetPayment(config, decimals);
+            const targetPayment = config.maxSupply;
             await paymentToken.approve(bond.address, targetPayment);
 
             await expectTokenDelta(
@@ -577,7 +547,7 @@ describe("Bond", () => {
           });
 
           it("should not change amount owed", async () => {
-            const targetPayment = getTargetPayment(config, decimals).div(2);
+            const targetPayment = config.maxSupply.div(2);
             await (
               await paymentToken.approve(bond.address, targetPayment)
             ).wait();
@@ -629,9 +599,9 @@ describe("Bond", () => {
           it("should make collateral available to withdraw when bonds are burned", async () => {
             await burnAndWithdraw({
               bond,
-              sharesToBurn: utils.parseUnits("1000", 18),
+              sharesToBurn: utils.parseUnits("1000", decimals),
               collateralToReceive: utils
-                .parseUnits("1000", 18)
+                .parseUnits("1000", decimals)
                 .mul(await bond.collateralRatio())
                 .div(ONE),
             });
@@ -643,20 +613,20 @@ describe("Bond", () => {
               paymentToken,
               paymentTokenAmount: utils.parseUnits("1000", decimals),
               collateralToReceive: utils
-                .parseUnits("1000", 18)
+                .parseUnits("1000", decimals)
                 .mul(await bond.collateralRatio())
                 .div(ONE),
             });
           });
 
           it("should make excess collateral available to withdraw when payment token is partially paid", async () => {
-            await (await bond.burn(utils.parseUnits("1000", 18))).wait();
+            await (await bond.burn(utils.parseUnits("1000", decimals))).wait();
             await payAndWithdraw({
               bond,
               paymentToken,
               paymentTokenAmount: utils.parseUnits("1000", decimals),
               collateralToReceive: utils
-                .parseUnits("2000", 18)
+                .parseUnits("2000", decimals)
                 .mul(await bond.collateralRatio())
                 .div(ONE),
             });
@@ -666,7 +636,7 @@ describe("Bond", () => {
             await payAndWithdraw({
               bond,
               paymentToken,
-              paymentTokenAmount: getTargetPayment(config, decimals),
+              paymentTokenAmount: config.maxSupply,
               collateralToReceive: config.collateralTokenAmount.sub(
                 config.convertibleTokenAmount
               ),
@@ -678,10 +648,10 @@ describe("Bond", () => {
             const totalWithdrawableCollateral = totalCollateralAvailable.sub(
               config.convertibleTokenAmount
             );
-            await (await bond.burn(utils.parseUnits("1000", 18))).wait();
+            await (await bond.burn(utils.parseUnits("1000", decimals))).wait();
             // since we've burnt 1000 bonds, the collateral has been unlocked
             const unlockedCollateral = utils
-              .parseUnits("1000", 18)
+              .parseUnits("1000", decimals)
               .mul(await bond.convertibleRatio())
               .div(ONE);
             const collateralToReceive =
@@ -689,7 +659,7 @@ describe("Bond", () => {
             await payAndWithdraw({
               bond,
               paymentToken,
-              paymentTokenAmount: getTargetPayment(config, decimals),
+              paymentTokenAmount: config.maxSupply,
               collateralToReceive,
             });
           });
@@ -698,14 +668,8 @@ describe("Bond", () => {
             await payAndWithdrawAtMaturity({
               bond,
               paymentToken,
-              paymentTokenAmount: config.maxSupply
-                .div(4)
-                .mul(utils.parseUnits("1", decimals))
-                .div(ONE),
-              collateralToReceive: config.maxSupply
-                .div(4)
-                .mul(await bond.collateralRatio())
-                .div(ONE),
+              paymentTokenAmount: config.maxSupply.div(4),
+              collateralToReceive: config.collateralTokenAmount.div(4),
               maturityDate: config.maturityDate,
             });
           });
@@ -714,14 +678,14 @@ describe("Bond", () => {
             await payAndWithdrawAtMaturity({
               bond,
               paymentToken,
-              paymentTokenAmount: getTargetPayment(config, decimals),
+              paymentTokenAmount: config.maxSupply,
               collateralToReceive: config.collateralTokenAmount,
               maturityDate: config.maturityDate,
             });
           });
 
           it("should not change amount owed", async () => {
-            const targetPayment = getTargetPayment(config, decimals).div(2);
+            const targetPayment = config.maxSupply.div(2);
             await (
               await paymentToken.approve(bond.address, targetPayment)
             ).wait();
@@ -794,7 +758,7 @@ describe("Bond", () => {
           });
 
           it("should not change amount owed", async () => {
-            const targetPayment = getTargetPayment(config, decimals).div(2);
+            const targetPayment = config.maxSupply.div(2);
             await (
               await paymentToken.approve(bond.address, targetPayment)
             ).wait();
@@ -837,16 +801,16 @@ describe("Bond", () => {
             );
             await bond.transfer(
               bondHolder.address,
-              utils.parseUnits("4000", 18)
+              utils.parseUnits("4000", decimals)
             );
             await paymentToken.approve(bond.address, config.maxSupply);
           });
 
           it("should redeem for payment token when bond is fully paid & not past maturity", async () => {
-            await bond.pay(getTargetPayment(config, decimals));
+            await bond.pay(config.maxSupply);
             await previewRedeem({
               bond,
-              sharesToRedeem: utils.parseUnits("1000", 18),
+              sharesToRedeem: utils.parseUnits("1000", decimals),
               paymentTokenToSend: utils.parseUnits("1000", decimals),
               collateralTokenToSend: ZERO,
             });
@@ -855,14 +819,14 @@ describe("Bond", () => {
               bondHolder,
               paymentToken,
               collateralToken,
-              sharesToRedeem: utils.parseUnits("1000", 18),
+              sharesToRedeem: utils.parseUnits("1000", decimals),
               paymentTokenToSend: utils.parseUnits("1000", decimals),
               collateralTokenToSend: ZERO,
             });
           });
 
           it("should redeem zero bonds for zero tokens when bond is fully paid & not past maturity", async () => {
-            await (await bond.pay(getTargetPayment(config, decimals))).wait();
+            await (await bond.pay(config.maxSupply)).wait();
             await previewRedeem({
               bond,
               sharesToRedeem: ZERO,
@@ -874,9 +838,7 @@ describe("Bond", () => {
           });
 
           it("should redeem for zero tokens when bond is not fully paid & not past maturity", async () => {
-            await (
-              await bond.pay(getTargetPayment(config, decimals).sub(1))
-            ).wait();
+            await (await bond.pay(config.maxSupply.sub(1))).wait();
             await previewRedeem({
               bond,
               sharesToRedeem: ZERO,
@@ -890,11 +852,11 @@ describe("Bond", () => {
           });
 
           it("should redeem for payment token when bond is fully paid & past maturity", async () => {
-            await (await bond.pay(getTargetPayment(config, decimals))).wait();
+            await (await bond.pay(config.maxSupply)).wait();
             await ethers.provider.send("evm_mine", [config.maturityDate]);
             await previewRedeem({
               bond,
-              sharesToRedeem: utils.parseUnits("333", 18),
+              sharesToRedeem: utils.parseUnits("333", decimals),
               paymentTokenToSend: utils.parseUnits("333", decimals),
               collateralTokenToSend: ZERO,
             });
@@ -904,7 +866,7 @@ describe("Bond", () => {
               bondHolder,
               paymentToken,
               collateralToken,
-              sharesToRedeem: utils.parseUnits("333", 18),
+              sharesToRedeem: utils.parseUnits("333", decimals),
               paymentTokenToSend: utils.parseUnits("333", decimals),
               collateralTokenToSend: ZERO,
             });
@@ -914,10 +876,10 @@ describe("Bond", () => {
             await ethers.provider.send("evm_mine", [config.maturityDate]);
             await previewRedeem({
               bond,
-              sharesToRedeem: utils.parseUnits("1000", 18),
+              sharesToRedeem: utils.parseUnits("1000", decimals),
               paymentTokenToSend: ZERO,
               collateralTokenToSend: utils
-                .parseUnits("1000", 18)
+                .parseUnits("1000", decimals)
                 .mul(await bond.collateralRatio())
                 .div(ONE),
             });
@@ -927,10 +889,10 @@ describe("Bond", () => {
               bondHolder,
               paymentToken,
               collateralToken,
-              sharesToRedeem: utils.parseUnits("1000", 18),
+              sharesToRedeem: utils.parseUnits("1000", decimals),
               paymentTokenToSend: ZERO,
               collateralTokenToSend: utils
-                .parseUnits("1000", 18)
+                .parseUnits("1000", decimals)
                 .mul(await bond.collateralRatio())
                 .div(ONE),
             });
@@ -954,7 +916,7 @@ describe("Bond", () => {
             await ethers.provider.send("evm_mine", [config.maturityDate]);
 
             const portionOfTotalBonds = utils
-              .parseUnits("4000", 18)
+              .parseUnits("4000", decimals)
               .mul(ONE)
               .div(config.maxSupply);
             const portionOfPaymentAmount = portionOfTotalBonds
@@ -963,20 +925,20 @@ describe("Bond", () => {
 
             // the amount of bonds not covered by the payment amount
             const totalUncoveredSupply = config.maxSupply.sub(
-              utils.parseUnits("4000", 18)
+              utils.parseUnits("4000", decimals)
             );
             const totalCollateralTokens = totalUncoveredSupply
               .mul(await bond.collateralRatio())
               .div(ONE);
             const portionOfCollateralAmount = totalCollateralTokens
-              .mul(utils.parseUnits("4000", 18))
+              .mul(utils.parseUnits("4000", decimals))
               .div(config.maxSupply);
             await redeemAndCheckTokens({
               bond,
               bondHolder,
               paymentToken,
               collateralToken,
-              sharesToRedeem: utils.parseUnits("4000", 18),
+              sharesToRedeem: utils.parseUnits("4000", decimals),
               paymentTokenToSend: portionOfPaymentAmount,
               collateralTokenToSend: portionOfCollateralAmount,
             });
@@ -988,9 +950,11 @@ describe("Bond", () => {
             await ethers.provider.send("evm_mine", [config.maturityDate]);
 
             expect(await bond.balanceOf(bondHolder.address)).to.be.equal(
-              utils.parseUnits("4000", 18)
+              utils.parseUnits("4000", decimals)
             );
-            await bond.connect(bondHolder).redeem(utils.parseUnits("4000", 18));
+            await bond
+              .connect(bondHolder)
+              .redeem(utils.parseUnits("4000", decimals));
             expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
             expect(
               await paymentToken.balanceOf(bondHolder.address)
@@ -999,7 +963,7 @@ describe("Bond", () => {
 
           it("should redeem unpaid bond at maturity for collateral token", async () => {
             const expectedCollateralToReceive = utils
-              .parseUnits("4000", 18)
+              .parseUnits("4000", decimals)
               .mul(await bond.collateralBalance())
               .div(await bond.totalSupply());
             await ethers.provider.send("evm_mine", [config.maturityDate]);
@@ -1013,13 +977,13 @@ describe("Bond", () => {
             } = await getEventArgumentsFromTransaction(
               await bond
                 .connect(bondHolder)
-                .redeem(utils.parseUnits("4000", 18)),
+                .redeem(utils.parseUnits("4000", decimals)),
               "Redeem"
             );
             expect(from).to.equal(bondHolder.address);
             expect(convertedCollateralToken).to.equal(collateralToken.address);
             expect(amountOfBondsRedeemed).to.equal(
-              utils.parseUnits("4000", 18)
+              utils.parseUnits("4000", decimals)
             );
             expect(amountOfPaymentTokensReceived).to.equal(0);
             expect(amountOfCollateralTokens).to.equal(
@@ -1036,7 +1000,7 @@ describe("Bond", () => {
               await collateralToken.balanceOf(bondHolder.address)
             ).to.be.equal(
               (await bond.collateralRatio())
-                .mul(utils.parseUnits("4000", 18))
+                .mul(utils.parseUnits("4000", decimals))
                 .div(ONE)
             );
           });
@@ -1051,16 +1015,16 @@ describe("Bond", () => {
             );
             await bond.transfer(
               bondHolder.address,
-              utils.parseUnits("4000", 18)
+              utils.parseUnits("4000", decimals)
             );
             await paymentToken.approve(bond.address, config.maxSupply);
           });
 
           it("should redeem for payment token when bond is fully paid & not past maturity", async () => {
-            await bond.pay(getTargetPayment(config, decimals));
+            await bond.pay(config.maxSupply);
             await previewRedeem({
               bond,
-              sharesToRedeem: utils.parseUnits("1000", 18),
+              sharesToRedeem: utils.parseUnits("1000", decimals),
               paymentTokenToSend: utils.parseUnits("1000", decimals),
               collateralTokenToSend: ZERO,
             });
@@ -1069,14 +1033,14 @@ describe("Bond", () => {
               bondHolder,
               paymentToken,
               collateralToken,
-              sharesToRedeem: utils.parseUnits("1000", 18),
+              sharesToRedeem: utils.parseUnits("1000", decimals),
               paymentTokenToSend: utils.parseUnits("1000", decimals),
               collateralTokenToSend: ZERO,
             });
           });
 
           it("should redeem zero bonds for zero tokens when bond is fully paid & not past maturity", async () => {
-            await (await bond.pay(getTargetPayment(config, decimals))).wait();
+            await (await bond.pay(config.maxSupply)).wait();
             await previewRedeem({
               bond,
               sharesToRedeem: ZERO,
@@ -1088,9 +1052,7 @@ describe("Bond", () => {
           });
 
           it("should redeem for zero tokens when bond is not fully paid & not past maturity", async () => {
-            await (
-              await bond.pay(getTargetPayment(config, decimals).sub(1))
-            ).wait();
+            await (await bond.pay(config.maxSupply.sub(1))).wait();
             await previewRedeem({
               bond,
               sharesToRedeem: ZERO,
@@ -1104,11 +1066,11 @@ describe("Bond", () => {
           });
 
           it("should redeem for payment token when bond is fully paid & past maturity", async () => {
-            await (await bond.pay(getTargetPayment(config, decimals))).wait();
+            await (await bond.pay(config.maxSupply)).wait();
             await ethers.provider.send("evm_mine", [config.maturityDate]);
             await previewRedeem({
               bond,
-              sharesToRedeem: utils.parseUnits("333", 18),
+              sharesToRedeem: utils.parseUnits("333", decimals),
               paymentTokenToSend: utils.parseUnits("333", decimals),
               collateralTokenToSend: ZERO,
             });
@@ -1118,7 +1080,7 @@ describe("Bond", () => {
               bondHolder,
               paymentToken,
               collateralToken,
-              sharesToRedeem: utils.parseUnits("333", 18),
+              sharesToRedeem: utils.parseUnits("333", decimals),
               paymentTokenToSend: utils.parseUnits("333", decimals),
               collateralTokenToSend: ZERO,
             });
@@ -1128,13 +1090,13 @@ describe("Bond", () => {
             await ethers.provider.send("evm_mine", [config.maturityDate]);
             await previewRedeem({
               bond,
-              sharesToRedeem: utils.parseUnits("1000", 18),
+              sharesToRedeem: utils.parseUnits("1000", decimals),
               paymentTokenToSend: ZERO,
               collateralTokenToSend: ZERO,
             });
 
             await expect(
-              bond.redeem(utils.parseUnits("1000", 18))
+              bond.redeem(utils.parseUnits("1000", decimals))
             ).to.be.revertedWith("ZeroAmount");
           });
 
@@ -1156,7 +1118,7 @@ describe("Bond", () => {
             await ethers.provider.send("evm_mine", [config.maturityDate]);
 
             const portionOfTotalBonds = utils
-              .parseUnits("4000", 18)
+              .parseUnits("4000", decimals)
               .mul(ONE)
               .div(config.maxSupply);
             const portionOfPaymentAmount = portionOfTotalBonds
@@ -1168,7 +1130,7 @@ describe("Bond", () => {
               bondHolder,
               paymentToken,
               collateralToken,
-              sharesToRedeem: utils.parseUnits("4000", 18),
+              sharesToRedeem: utils.parseUnits("4000", decimals),
               paymentTokenToSend: portionOfPaymentAmount,
               collateralTokenToSend: ZERO,
             });
@@ -1180,9 +1142,11 @@ describe("Bond", () => {
             await ethers.provider.send("evm_mine", [config.maturityDate]);
 
             expect(await bond.balanceOf(bondHolder.address)).to.be.equal(
-              utils.parseUnits("4000", 18)
+              utils.parseUnits("4000", decimals)
             );
-            await bond.connect(bondHolder).redeem(utils.parseUnits("4000", 18));
+            await bond
+              .connect(bondHolder)
+              .redeem(utils.parseUnits("4000", decimals));
             expect(await bond.balanceOf(bondHolder.address)).to.be.equal(0);
             expect(
               await paymentToken.balanceOf(bondHolder.address)
