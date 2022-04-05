@@ -122,8 +122,8 @@ describe("Bond", () => {
                   NonConvertibleBondConfig.maturityDate,
                   paymentToken.address,
                   collateralToken.address,
-                  NonConvertibleBondConfig.collateralRatio,
-                  NonConvertibleBondConfig.convertibleRatio,
+                  NonConvertibleBondConfig.collateralTokenAmount,
+                  NonConvertibleBondConfig.convertibleTokenAmount,
                   NonConvertibleBondConfig.maxSupply
                 )
               ),
@@ -137,8 +137,8 @@ describe("Bond", () => {
                   ConvertibleBondConfig.maturityDate,
                   paymentToken.address,
                   collateralToken.address,
-                  ConvertibleBondConfig.collateralRatio,
-                  ConvertibleBondConfig.convertibleRatio,
+                  ConvertibleBondConfig.collateralTokenAmount,
+                  ConvertibleBondConfig.convertibleTokenAmount,
                   ConvertibleBondConfig.maxSupply
                 )
               ),
@@ -152,8 +152,8 @@ describe("Bond", () => {
                   UncollateralizedBondConfig.maturityDate,
                   paymentToken.address,
                   collateralToken.address,
-                  UncollateralizedBondConfig.collateralRatio,
-                  UncollateralizedBondConfig.convertibleRatio,
+                  UncollateralizedBondConfig.collateralTokenAmount,
+                  UncollateralizedBondConfig.convertibleTokenAmount,
                   UncollateralizedBondConfig.maxSupply
                 )
               ),
@@ -1230,7 +1230,7 @@ describe("Bond", () => {
           it(`previews convert target converted`, async () => {
             expect(
               await bond.previewConvertBeforeMaturity(config.maxSupply)
-            ).to.equal(config.convertibleRatio);
+            ).to.equal(config.collateralTokenAmount);
           });
 
           it(`previews convert double target converted`, async () => {
@@ -1240,7 +1240,7 @@ describe("Bond", () => {
           });
 
           it("should convert bond amount into collateral at convertibleRatio", async () => {
-            const expectedCollateralToWithdraw = config.convertibleRatio;
+            const expectedCollateralToWithdraw = config.collateralTokenAmount;
 
             const {
               from,

@@ -10,18 +10,24 @@ import {
   ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
   ZERO,
 } from "./constants";
-import { getTargetCollateral } from "./utilities";
 
 const { ethers } = require("hardhat");
 
 const BondConfig: BondConfigType = {
   convertibleTokenAmount: ZERO,
   collateralTokenAmount: ZERO,
-  collateralRatio: ZERO,
-  convertibleRatio: ZERO,
   maturityDate: THREE_YEARS_FROM_NOW_IN_SECONDS,
   maxSupply: utils.parseUnits(FIFTY_MILLION.toString(), 18),
 };
+
+interface BondParams {
+  maturityDate?: any;
+  paymentToken?: any;
+  collateralToken?: any;
+  collateralTokenAmount?: any;
+  convertibleTokenAmount?: any;
+  maxSupply?: any;
+}
 
 describe("BondFactory", async () => {
   let factory: BondFactory;
@@ -41,21 +47,21 @@ describe("BondFactory", async () => {
     ISSUER_ROLE = await factory.ISSUER_ROLE();
   });
 
-  async function createBond(factory: BondFactory, params: any = {}) {
+  async function createBond(factory: BondFactory, params: BondParams = {}) {
     const testMaturityDate = params.maturityDate || BondConfig.maturityDate;
     const testPaymentToken = params.paymentToken || paymentToken.address;
     const testCollateralToken =
       params.collateralToken || collateralToken.address;
 
-    const testCollateralRatio =
-      params.collateralRatio || BondConfig.collateralRatio;
-    const testConvertibleRatio =
-      params.convertibleRatio || BondConfig.convertibleRatio;
+    const testCollateralTokenAmount =
+      params.collateralTokenAmount || BondConfig.collateralTokenAmount;
+    const testConvertibleTokenAmount =
+      params.convertibleTokenAmount || BondConfig.convertibleTokenAmount;
     const testMaxSupply = params.maxSupply || BondConfig.maxSupply;
 
     await collateralToken.approve(
       factory.address,
-      getTargetCollateral(BondConfig)
+      BondConfig.collateralTokenAmount
     );
     return factory.createBond(
       "Bond",
@@ -63,8 +69,8 @@ describe("BondFactory", async () => {
       testMaturityDate,
       testPaymentToken,
       testCollateralToken,
-      testCollateralRatio,
-      testConvertibleRatio,
+      testCollateralTokenAmount,
+      testConvertibleTokenAmount,
       testMaxSupply
     );
   }
@@ -84,8 +90,8 @@ describe("BondFactory", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
       await expect(
         createBond(factory, {
-          collateralRatio: utils.parseUnits(".25", 18),
-          convertibleRatio: utils.parseUnits(".5", 18),
+          collateralTokenAmount: 5000,
+          convertibleTokenAmount: 10000,
         })
       ).to.be.revertedWith("CollateralRatioLessThanConvertibleRatio");
     });
@@ -135,10 +141,13 @@ describe("BondFactory", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
       await createBond(factory);
     });
-    it("should not withdraw collateral for convert bonds", async () => {
+    it("should not withdraw collateral for zero collateral bonds", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
       const startingBalance = await collateralToken.balanceOf(owner.address);
-      createBond(factory, { collateralRatio: ZERO, convertibleRatio: ZERO });
+      createBond(factory, {
+        collateralTokenAmount: 0,
+        convertibleTokenAmount: 0,
+      });
       const endingBalance = await collateralToken.balanceOf(owner.address);
       expect(endingBalance).to.equal(startingBalance);
     });
