@@ -3,6 +3,7 @@ pragma solidity 0.8.9;
 
 import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -26,6 +27,8 @@ contract Bond is
     using SafeERC20 for IERC20Metadata;
 
     using FixedPointMathLib for uint256;
+
+    uint8 private _decimals;
 
     /**
         @notice A date in the future set at bond creation at which the bond will mature.
@@ -195,6 +198,7 @@ contract Bond is
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
+        _decimals = IERC20Metadata(_paymentToken).decimals();
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(WITHDRAW_ROLE, owner);
@@ -538,5 +542,9 @@ contract Bond is
 
     function _downscale(uint256 amount) internal view returns (uint256) {
         return amount.divWadDown(_computeScalingFactor(paymentToken));
+    }
+
+    function decimals() public view override returns (uint8) {
+        return _decimals;
     }
 }
