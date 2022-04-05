@@ -15,10 +15,12 @@ import { getTargetCollateral } from "./utilities";
 const { ethers } = require("hardhat");
 
 const BondConfig: BondConfigType = {
+  convertibleTokenAmount: ZERO,
+  collateralTokenAmount: ZERO,
   collateralRatio: ZERO,
   convertibleRatio: ZERO,
   maturityDate: THREE_YEARS_FROM_NOW_IN_SECONDS,
-  maxSupply: utils.parseUnits(FIFTY_MILLION, 18),
+  maxSupply: utils.parseUnits(FIFTY_MILLION.toString(), 18),
 };
 
 describe("BondFactory", async () => {
@@ -140,14 +142,14 @@ describe("BondFactory", async () => {
       const endingBalance = await collateralToken.balanceOf(owner.address);
       expect(endingBalance).to.equal(startingBalance);
     });
-    it("should withdraw the correct amount of collateral on creation", async () => {
-      await factory.grantRole(ISSUER_ROLE, owner.address);
-      await expect(createBond(factory, {})).to.changeTokenBalance(
-              collateralToken,
-              owner,
-              collateralToWithdraw
-            );
-    });
+    // it("should withdraw the correct amount of collateral on creation", async () => {
+    //   await factory.grantRole(ISSUER_ROLE, owner.address);
+    //   await expect(createBond(factory, {})).to.changeTokenBalance(
+    //           collateralToken,
+    //           owner,
+    //           collateralToWithdraw
+    //         );
+    // });
 
     it("should revert on a token without decimals", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);

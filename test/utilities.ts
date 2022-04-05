@@ -57,15 +57,15 @@ export const getBondContract = async (tx: Promise<any>): Promise<Bond> => {
 };
 
 export const getTargetCollateral = (bondConfig: BondConfigType): BigNumber => {
-  const { maxSupply, collateralRatio } = bondConfig;
+  const { maxSupply, collateralRatio, collateralTokenAmount } = bondConfig;
   return maxSupply.mul(collateralRatio).div(ONE);
 };
 
 export const getTargetConvertibleCollateral = (
   bondConfig: BondConfigType
 ): BigNumber => {
-  const { maxSupply, convertibleRatio } = bondConfig;
-  return maxSupply.mul(convertibleRatio).div(ONE);
+  const { convertibleTokenAmount } = bondConfig;
+  return convertibleTokenAmount;
 };
 
 export const getTargetPayment = (
