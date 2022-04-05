@@ -376,7 +376,7 @@ contract Bond is
         @return the amount of collateral received
      */
     function previewWithdraw() public view returns (uint256) {
-        uint256 tokensCoveredByPayment = (paymentBalance());
+        uint256 tokensCoveredByPayment = paymentBalance();
         uint256 collateralTokensRequired;
         if (tokensCoveredByPayment >= totalSupply()) {
             collateralTokensRequired = 0;
@@ -421,7 +421,7 @@ contract Bond is
         view
         returns (uint256, uint256)
     {
-        uint256 paidAmount = isFullyPaid() ? totalSupply() : (paymentBalance());
+        uint256 paidAmount = isFullyPaid() ? totalSupply() : paymentBalance();
         uint256 paymentTokensToSend = bonds.mulDivDown(
             (paidAmount),
             totalSupply()
@@ -473,7 +473,7 @@ contract Bond is
         @return whether or not the bond is fully paid
     */
     function isFullyPaid() public view returns (bool) {
-        return (paymentBalance()) >= totalSupply();
+        return paymentBalance() >= totalSupply();
     }
 
     /**
@@ -488,10 +488,10 @@ contract Bond is
         @notice the amount of payment tokens required to fully pay the contract
     */
     function amountOwed() public view returns (uint256) {
-        if (totalSupply() <= (paymentBalance())) {
+        if (totalSupply() <= paymentBalance()) {
             return 0;
         }
-        uint256 amountUnpaid = totalSupply() - (paymentBalance());
+        uint256 amountUnpaid = totalSupply() - paymentBalance();
         return (amountUnpaid);
     }
 
@@ -500,10 +500,10 @@ contract Bond is
         @return overpayment amount that was overpaid 
     */
     function amountOverPaid() public view returns (uint256 overpayment) {
-        if (totalSupply() >= (paymentBalance())) {
+        if (totalSupply() >= paymentBalance()) {
             return 0;
         }
-        uint256 amountOverpaid = (paymentBalance()) - totalSupply();
+        uint256 amountOverpaid = paymentBalance() - totalSupply();
         return (amountOverpaid);
     }
 
