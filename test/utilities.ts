@@ -64,10 +64,6 @@ export const getTargetPayment = (
   return maxSupply.mul(ethers.utils.parseUnits("1", decimals)).div(ONE);
 };
 
-export const downscaleAmount = (amount: BigNumber, decimals: BigNumberish) => {
-  return amount.mul(ethers.utils.parseUnits("1", decimals)).div(ONE);
-};
-
 /**
  * This function asserts a change of tokens occurs
  * @param tx a transaction to be executed

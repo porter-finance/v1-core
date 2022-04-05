@@ -10,7 +10,6 @@ import {
   payAndWithdraw,
   payAndWithdrawAtMaturity,
   previewRedeem,
-  downscaleAmount,
   redeemAndCheckTokens,
 } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -357,10 +356,7 @@ describe("Bond", () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
-            await paymentToken.approve(
-              bond.address,
-              config.maxSupply.mul(utils.parseUnits("1", decimals)).div(ONE)
-            );
+            await paymentToken.approve(bond.address, config.maxSupply);
           });
           it("should accept partial payment", async () => {
             const halfSupplyMinusOne = config.maxSupply
@@ -393,9 +389,7 @@ describe("Bond", () => {
           });
 
           it("should fail if already paid", async () => {
-            await bond.pay(
-              config.maxSupply.mul(utils.parseUnits("1", decimals)).div(ONE)
-            );
+            await bond.pay(config.maxSupply);
             await expect(
               bond.pay(getTargetPayment(config, decimals))
             ).to.be.revertedWith("PaymentMet");
@@ -406,36 +400,25 @@ describe("Bond", () => {
           });
 
           it("should return amount owed scaled to payment amount", async () => {
-            const thirdSupply = config.maxSupply
-              .div(3)
-              .mul(utils.parseUnits("1", decimals))
-              .div(ONE);
+            const thirdSupply = config.maxSupply.div(3);
 
+            expect(await bond.amountOwed()).to.equal(config.maxSupply);
+
+            await (await bond.pay(thirdSupply)).wait();
             expect(await bond.amountOwed()).to.equal(
-              downscaleAmount(config.maxSupply, decimals)
+              config.maxSupply.sub(await bond.paymentBalance())
             );
 
             await (await bond.pay(thirdSupply)).wait();
             expect(await bond.amountOwed()).to.equal(
-              downscaleAmount(config.maxSupply, decimals).sub(
-                await bond.paymentBalance()
-              )
-            );
-
-            await (await bond.pay(thirdSupply)).wait();
-            expect(await bond.amountOwed()).to.equal(
-              downscaleAmount(config.maxSupply, decimals).sub(
-                await bond.paymentBalance()
-              )
+              config.maxSupply.sub(await bond.paymentBalance())
             );
 
             await (await bond.pay(thirdSupply)).wait();
             expect(await bond.amountOwed()).to.equal(BigNumber.from(2));
 
             await expect(bond.pay(2)).to.emit(bond, "Payment");
-            expect(await bond.amountOwed()).to.equal(
-              downscaleAmount(ZERO, decimals)
-            );
+            expect(await bond.amountOwed()).to.equal(ZERO);
           });
         });
       });
@@ -1000,9 +983,7 @@ describe("Bond", () => {
           });
 
           it("should redeem bond at maturity for payment token", async () => {
-            await bond.pay(
-              config.maxSupply.mul(utils.parseUnits("1", decimals)).div(ONE)
-            );
+            await bond.pay(config.maxSupply);
             // Fast forward to expire
             await ethers.provider.send("evm_mine", [config.maturityDate]);
 
@@ -1194,9 +1175,7 @@ describe("Bond", () => {
           });
 
           it("should redeem bond at maturity for payment token", async () => {
-            await bond.pay(
-              config.maxSupply.mul(utils.parseUnits("1", decimals)).div(ONE)
-            );
+            await bond.pay(config.maxSupply);
             // Fast forward to expire
             await ethers.provider.send("evm_mine", [config.maturityDate]);
 
@@ -1263,7 +1242,7 @@ describe("Bond", () => {
             await bond.convert(config.maxSupply.div(2));
             expect(await bond.amountOwed()).to.be.equal(amountOwed.div(2));
             expect(await bond.amountOwed()).to.be.equal(
-              downscaleAmount(config.maxSupply.div(2), decimals)
+              config.maxSupply.div(2)
             );
           });
         });
