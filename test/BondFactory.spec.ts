@@ -145,13 +145,12 @@ describe("BondFactory", async () => {
 
       const collateralTokensRequired = BondConfig.maxSupply
         .mul(BondConfig.collateralRatio)
-        .mul(-1)
         .div(utils.parseUnits("1", 18));
 
       await expect(() => createBond(factory, {})).to.changeTokenBalance(
         collateralToken,
         owner,
-        collateralTokensRequired
+        collateralTokensRequired.mul(-1)
       );
     });
 
