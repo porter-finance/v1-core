@@ -47,7 +47,7 @@ const DECIMALS_TO_TEST = [6, 8, 18];
   Recommended to use your editors "fold all" and unfolding the test of interest.
   "command / ctrl + k" -> "command / ctrl 0" for Visual Studio Code
 */
-describe("Bond", () => {
+describe.only("Bond", () => {
   // owner deploys and is the "issuer"
   let owner: SignerWithAddress;
   // bondHolder is one who has the bonds and will redeem or convert them
@@ -574,14 +574,18 @@ describe("Bond", () => {
           it("should allow all collateral to be withdrawn when fully paid", async () => {
             const targetPayment = getTargetPayment(config, decimals);
             await paymentToken.approve(bond.address, targetPayment);
+
             await expectTokenDelta(
-              bond.pay.bind(this, targetPayment),
+              () => bond.pay(targetPayment),
               paymentToken,
               owner,
               bond.address,
               targetPayment
             );
             expect(await bond.totalSupply()).to.not.equal(0);
+
+            // console.log((await bond.totalSupply()).toString())
+            // console.log((await bond.collateralBalance()).toString())
             await expectTokenDelta(
               bond.withdrawCollateral,
               collateralToken,
@@ -1218,7 +1222,7 @@ describe("Bond", () => {
               bond.address,
               config.collateralTokenAmount
             );
-            await bond.transfer(bondHolder.address, config.maxSupply);
+            // await bond.transfer(bondHolder.address, config.maxSupply);
           });
 
           it(`previews convert zero converted`, async () => {
@@ -1230,7 +1234,7 @@ describe("Bond", () => {
           it(`previews convert target converted`, async () => {
             expect(
               await bond.previewConvertBeforeMaturity(config.maxSupply)
-            ).to.equal(config.collateralTokenAmount);
+            ).to.equal(config.convertibleTokenAmount);
           });
 
           it(`previews convert double target converted`, async () => {
@@ -1240,28 +1244,26 @@ describe("Bond", () => {
           });
 
           it("should convert bond amount into collateral at convertibleRatio", async () => {
-            const expectedCollateralToWithdraw = config.collateralTokenAmount;
-
             const {
               from,
               collateralToken: convertedCollateralToken,
               amountOfBondsConverted,
               amountOfCollateralTokens,
             } = await getEventArgumentsFromTransaction(
-              await bond.connect(bondHolder).convert(config.maxSupply),
+              await bond.convert(config.maxSupply),
               "Convert"
             );
-            expect(from).to.equal(bondHolder.address);
+            expect(from).to.equal(owner.address);
             expect(convertedCollateralToken).to.equal(collateralToken.address);
             expect(amountOfBondsConverted).to.equal(config.maxSupply);
             expect(amountOfCollateralTokens).to.equal(
-              expectedCollateralToWithdraw
+              config.convertibleTokenAmount
             );
           });
 
           it("should lower amount owed when bonds are converted", async () => {
             const amountOwed = await bond.amountOwed();
-            await bond.connect(bondHolder).convert(config.maxSupply.div(2));
+            await bond.convert(config.maxSupply.div(2));
             expect(await bond.amountOwed()).to.be.equal(amountOwed.div(2));
             expect(await bond.amountOwed()).to.be.equal(
               downscaleAmount(config.maxSupply.div(2), decimals)
