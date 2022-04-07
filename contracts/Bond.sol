@@ -215,6 +215,9 @@ contract Bond is
         @param bonds the number of bonds which will be burnt and converted into the collateral at the convertibleRatio
     */
     function convert(uint256 bonds) external nonReentrant beforeMaturity {
+        if (bonds == 0) {
+            revert ZeroAmount();
+        }
         uint256 convertibleTokensToSend = previewConvertBeforeMaturity(bonds);
         if (convertibleTokensToSend == 0) {
             revert ZeroAmount();
@@ -285,6 +288,9 @@ contract Bond is
         @param bonds the amount of bonds to redeem and burn
     */
     function redeem(uint256 bonds) external nonReentrant afterMaturityOrPaid {
+        if (bonds == 0) {
+            revert ZeroAmount();
+        }
         // calculate amount before burning as the preview function uses totalSupply.
         (
             uint256 paymentTokensToSend,
