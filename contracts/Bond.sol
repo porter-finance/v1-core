@@ -304,13 +304,13 @@ contract Bond is
         burn(bonds);
 
         // reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
-        if (paymentTokensToSend > 0) {
+        if (paymentTokensToSend != 0) {
             IERC20Metadata(paymentToken).safeTransfer(
                 _msgSender(),
                 paymentTokensToSend
             );
         }
-        if (collateralTokensToSend > 0) {
+        if (collateralTokensToSend != 0) {
             // reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
             IERC20Metadata(collateralToken).safeTransfer(
                 _msgSender(),
