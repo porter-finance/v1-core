@@ -131,6 +131,14 @@ contract Bond is
         uint256 amount
     );
 
+    /**
+        @notice emitted when payment over the required payment amount is withdrawn
+        @param from the caller who the tokens were sent to 
+        @param token the token that was swept 
+        @param amount the amount that was swept 
+    */
+    event TokenSweep(address from, IERC20Metadata token, uint256 amount);
+
     /// @notice operation restricted because the bond has matured
     error BondPastMaturity();
 
@@ -328,7 +336,9 @@ contract Bond is
         ) {
             revert SweepDisallowedForToken();
         }
-        token.safeTransfer(msg.sender, token.balanceOf(address(this)));
+        uint256 tokenBalance = token.balanceOf(address(this));
+        token.safeTransfer(msg.sender, tokenBalance);
+        emit TokenSweep(_msgSender(), token, tokenBalance);
     }
 
     /**
