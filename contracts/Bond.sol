@@ -337,7 +337,7 @@ contract Bond is
             revert SweepDisallowedForToken();
         }
         uint256 tokenBalance = token.balanceOf(address(this));
-        token.safeTransfer(msg.sender, tokenBalance);
+        token.safeTransfer(_msgSender(), tokenBalance);
         emit TokenSweep(_msgSender(), token, tokenBalance);
     }
 
