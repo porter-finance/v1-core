@@ -497,7 +497,7 @@ contract Bond is
     /**
         @notice the amount of payment tokens required to fully pay the contract
     */
-    function amountOwed() public view returns (uint256) {
+    function amountOwed() external view returns (uint256) {
         if (totalSupply() <= paymentBalance()) {
             return 0;
         }
