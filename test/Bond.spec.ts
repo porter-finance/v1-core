@@ -574,197 +574,81 @@ describe("Bond", () => {
             );
             expect(await collateralToken.balanceOf(bond.address)).to.equal(0);
           });
-        });
 
-        describe(`convertible`, async () => {
-          beforeEach(async () => {
-            bond = bondWithTokens.convertible.bond;
-            config = bondWithTokens.convertible.config;
-            await collateralToken.approve(
-              bond.address,
-              config.collateralTokenAmount
-            );
-          });
-
-          it("should make zero collateral available to withdraw when zero bonds are burned", async () => {
-            await burnAndWithdraw({
-              bond,
-              sharesToBurn: ZERO,
-              collateralToReceive: ZERO,
+          describe(`convertible`, async () => {
+            beforeEach(async () => {
+              bond = bondWithTokens.convertible.bond;
+              config = bondWithTokens.convertible.config;
+              await collateralToken.approve(
+                bond.address,
+                config.collateralTokenAmount
+              );
             });
-          });
 
-          it("should make collateral available to withdraw when bonds are burned", async () => {
-            await burnAndWithdraw({
-              bond,
-              sharesToBurn: utils.parseUnits("1000", decimals),
-              collateralToReceive: utils
-                .parseUnits("1000", decimals)
-                .mul(await bond.collateralRatio())
-                .div(ONE),
+            it("should make excess collateral available to withdraw when payment token is fully paid", async () => {
+              await payAndWithdraw({
+                bond,
+                paymentToken,
+                paymentTokenAmount: config.maxSupply,
+                collateralToReceive: config.collateralTokenAmount.sub(
+                  config.convertibleTokenAmount
+                ),
+              });
             });
-          });
 
-          it("should make excess collateral available to withdraw when payment token is partially paid", async () => {
-            await payAndWithdraw({
-              bond,
-              paymentToken,
-              paymentTokenAmount: utils.parseUnits("1000", decimals),
-              collateralToReceive: utils
-                .parseUnits("1000", decimals)
-                .mul(await bond.collateralRatio())
-                .div(ONE),
-            });
-          });
-
-          it("should make excess collateral available to withdraw when payment token is partially paid", async () => {
-            await (await bond.burn(utils.parseUnits("1000", decimals))).wait();
-            await payAndWithdraw({
-              bond,
-              paymentToken,
-              paymentTokenAmount: utils.parseUnits("1000", decimals),
-              collateralToReceive: utils
-                .parseUnits("2000", decimals)
-                .mul(await bond.collateralRatio())
-                .div(ONE),
-            });
-          });
-
-          it("should make excess collateral available to withdraw when payment token is fully paid", async () => {
-            await payAndWithdraw({
-              bond,
-              paymentToken,
-              paymentTokenAmount: config.maxSupply,
-              collateralToReceive: config.collateralTokenAmount.sub(
+            // this test seems flawed
+            it("should make excess collateral available to withdraw when payment token is fully paid", async () => {
+              const totalCollateralAvailable = config.collateralTokenAmount;
+              const totalWithdrawableCollateral = totalCollateralAvailable.sub(
                 config.convertibleTokenAmount
-              ),
+              );
+              await bond.burn(utils.parseUnits("1000", decimals));
+              // since we've burnt 1000 bonds, the collateral has been unlocked
+              const unlockedCollateral = utils
+                .parseUnits("1000", decimals)
+                .mul(await bond.convertibleRatio())
+                .div(ONE);
+              const collateralToReceive =
+                totalWithdrawableCollateral.add(unlockedCollateral);
+              await payAndWithdraw({
+                bond,
+                paymentToken,
+                paymentTokenAmount: config.maxSupply,
+                collateralToReceive,
+              });
             });
           });
-
-          it("should make excess collateral available to withdraw when payment token is fully paid", async () => {
-            const totalCollateralAvailable = config.collateralTokenAmount;
-            const totalWithdrawableCollateral = totalCollateralAvailable.sub(
-              config.convertibleTokenAmount
-            );
-            await (await bond.burn(utils.parseUnits("1000", decimals))).wait();
-            // since we've burnt 1000 bonds, the collateral has been unlocked
-            const unlockedCollateral = utils
-              .parseUnits("1000", decimals)
-              .mul(await bond.convertibleRatio())
-              .div(ONE);
-            const collateralToReceive =
-              totalWithdrawableCollateral.add(unlockedCollateral);
-            await payAndWithdraw({
-              bond,
-              paymentToken,
-              paymentTokenAmount: config.maxSupply,
-              collateralToReceive,
+          describe(`uncollateralized`, async () => {
+            beforeEach(async () => {
+              bond = bondWithTokens.uncollateralized.bond;
+              config = bondWithTokens.uncollateralized.config;
+              await collateralToken.approve(
+                bond.address,
+                config.collateralTokenAmount
+              );
             });
-          });
 
-          it("should not change amount owed", async () => {
-            const targetPayment = config.maxSupply.div(2);
-            await (
-              await paymentToken.approve(bond.address, targetPayment)
-            ).wait();
-            await (await bond.pay(targetPayment)).wait();
-            const amountOwed = await bond.amountOwed();
-            await (await bond.withdrawCollateral()).wait();
-            expect(await bond.amountOwed()).to.be.equal(amountOwed);
-          });
-
-          it("should revert when called by non-withdrawer", async () => {
-            await expect(
-              bond.connect(attacker).withdrawCollateral()
-            ).to.be.revertedWith(
-              `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
-            );
-          });
-
-          it("should grant and revoke withdraw role", async () => {
-            await bond.grantRole(withdrawRole, attacker.address);
-            await expect(bond.connect(attacker).withdrawCollateral()).to.not.be
-              .reverted;
-
-            await bond.revokeRole(withdrawRole, attacker.address);
-            await expect(
-              bond.connect(attacker).withdrawCollateral()
-            ).to.be.revertedWith(
-              `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
-            );
-          });
-        });
-        describe(`uncollateralized`, async () => {
-          beforeEach(async () => {
-            bond = bondWithTokens.uncollateralized.bond;
-            config = bondWithTokens.uncollateralized.config;
-            await collateralToken.approve(
-              bond.address,
-              config.collateralTokenAmount
-            );
-          });
-          it(`should have zero collateral available to withdraw when they are burned`, async () => {
-            await burnAndWithdraw({
-              bond,
-              sharesToBurn: ZERO,
-              collateralToReceive: ZERO,
+            it(`should have zero collateral available to withdraw when they are burned`, async () => {
+              await burnAndWithdraw({
+                bond,
+                sharesToBurn: config.maxSupply,
+                collateralToReceive: config.collateralTokenAmount,
+              });
             });
-          });
 
-          it(`should have zero collateral available to withdraw when they are burned`, async () => {
-            await burnAndWithdraw({
-              bond,
-              sharesToBurn: BigNumber.from(1),
-              collateralToReceive: ZERO,
+            it("should make excess collateral available to withdraw", async () => {
+              await collateralToken.approve(
+                bond.address,
+                utils.parseEther("1")
+              );
+              await collateralToken.transfer(
+                bond.address,
+                utils.parseEther("1")
+              );
+              expect(await bond.previewWithdraw()).to.equal(
+                utils.parseEther("1")
+              );
             });
-          });
-
-          it(`should have zero collateral available to withdraw when they are burned`, async () => {
-            await burnAndWithdraw({
-              bond,
-              sharesToBurn: config.maxSupply,
-              collateralToReceive: config.collateralTokenAmount,
-            });
-          });
-
-          it("should make excess collateral available to withdraw", async () => {
-            await collateralToken.approve(bond.address, utils.parseEther("1"));
-            await collateralToken.transfer(bond.address, utils.parseEther("1"));
-            expect(await bond.previewWithdraw()).to.equal(
-              utils.parseEther("1")
-            );
-          });
-
-          it("should not change amount owed", async () => {
-            const targetPayment = config.maxSupply.div(2);
-            await (
-              await paymentToken.approve(bond.address, targetPayment)
-            ).wait();
-            await (await bond.pay(targetPayment)).wait();
-            const amountOwed = await bond.amountOwed();
-            await (await bond.withdrawCollateral()).wait();
-            expect(await bond.amountOwed()).to.be.equal(amountOwed);
-          });
-
-          it("should revert when called by non-withdrawer", async () => {
-            await expect(
-              bond.connect(attacker).withdrawCollateral()
-            ).to.be.revertedWith(
-              `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
-            );
-          });
-
-          it("should grant and revoke withdraw role", async () => {
-            await bond.grantRole(withdrawRole, attacker.address);
-            await expect(bond.connect(attacker).withdrawCollateral()).to.not.be
-              .reverted;
-
-            await bond.revokeRole(withdrawRole, attacker.address);
-            await expect(
-              bond.connect(attacker).withdrawCollateral()
-            ).to.be.revertedWith(
-              `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
-            );
           });
         });
       });
