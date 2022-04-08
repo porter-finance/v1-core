@@ -419,7 +419,7 @@ describe("Bond", () => {
           });
         });
       });
-      describe.only("#withdrawCollateral", async () => {
+      describe("#withdrawCollateral", async () => {
         beforeEach(async () => {
           bond = bondWithTokens.nonConvertible.bond;
           config = bondWithTokens.nonConvertible.config;
