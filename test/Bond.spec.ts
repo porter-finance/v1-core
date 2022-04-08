@@ -486,7 +486,21 @@ describe("Bond", () => {
             );
           });
         });
-        describe("Defaulted state", async () => {});
+        describe("Defaulted state", async () => {
+          describe("convertible", async () => {
+            it("should withdraw collateral that was locked to give bondholders the option to convert", async () => {
+              bond = bondWithTokens.convertible.bond;
+              config = bondWithTokens.convertible.config;
+              await ethers.provider.send("evm_mine", [config.maturityDate]);
+              await payAndWithdraw({
+                bond,
+                paymentToken,
+                paymentTokenAmount: config.maxSupply.sub(1),
+                collateralToReceive: config.collateralTokenAmount.sub(1),
+              });
+            });
+          });
+        });
         describe("Active state", async () => {
           describe("simple", async () => {
             it("should not change amount owed", async () => {
