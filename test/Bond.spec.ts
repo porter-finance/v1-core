@@ -433,7 +433,6 @@ describe("Bond", () => {
           beforeEach(async () => {
             await ethers.provider.send("evm_mine", [config.maturityDate]);
           });
-
           describe("simple", async () => {
             it("should withdraw all collateral in Paid state", async () => {
               await payAndWithdraw({
@@ -464,26 +463,60 @@ describe("Bond", () => {
           });
         });
         describe("PaidEarly state", async () => {
-          it("should allow all collateral to be withdrawn when paidEarly", async () => {
-            const targetPayment = config.maxSupply;
-            await paymentToken.approve(bond.address, targetPayment);
+          describe("simple", async () => {
+            it("should allow all collateral to be withdrawn when paidEarly", async () => {
+              const targetPayment = config.maxSupply;
+              await paymentToken.approve(bond.address, targetPayment);
 
-            await expectTokenDelta(
-              () => bond.pay(targetPayment),
-              paymentToken,
-              owner,
-              bond.address,
-              targetPayment
-            );
-            expect(await bond.totalSupply()).to.not.equal(0);
+              await expectTokenDelta(
+                () => bond.pay(targetPayment),
+                paymentToken,
+                owner,
+                bond.address,
+                targetPayment
+              );
+              expect(await bond.totalSupply()).to.not.equal(0);
 
-            await expectTokenDelta(
-              bond.withdrawCollateral,
-              collateralToken,
-              owner,
-              bond.address,
-              config.collateralTokenAmount
-            );
+              await expectTokenDelta(
+                bond.withdrawCollateral,
+                collateralToken,
+                owner,
+                bond.address,
+                config.collateralTokenAmount
+              );
+            });
+          });
+
+          describe("convert", async () => {
+            it("should require convertibleTokens to stay in contract when paidEarly", async () => {
+              await payAndWithdraw({
+                bond,
+                paymentToken,
+                paymentTokenAmount: config.maxSupply,
+                collateralToReceive: config.collateralTokenAmount.sub(
+                  config.convertibleTokenAmount
+                ),
+              });
+            });
+
+            it("should make excess collateral available to withdraw when payment token is fully paid", async () => {
+              const totalWithdrawableCollateral =
+                config.collateralTokenAmount.sub(config.convertibleTokenAmount);
+              await bond.burn(utils.parseUnits("1000", decimals));
+              // since we've burnt 1000 bonds, the collateral has been unlocked
+              const unlockedCollateral = utils
+                .parseUnits("1000", decimals)
+                .mul(await bond.convertibleRatio())
+                .div(ONE);
+              const collateralToReceive =
+                totalWithdrawableCollateral.add(unlockedCollateral);
+              await payAndWithdraw({
+                bond,
+                paymentToken,
+                paymentTokenAmount: config.maxSupply,
+                collateralToReceive,
+              });
+            });
           });
         });
         describe("Defaulted state", async () => {
@@ -602,45 +635,16 @@ describe("Bond", () => {
             });
           });
           describe(`convert`, async () => {
-            beforeEach(async () => {
+            it("should have collateral required to cover convertibleRatio locked", async () => {
               bond = bondWithTokens.convertible.bond;
               config = bondWithTokens.convertible.config;
-              await collateralToken.approve(
-                bond.address,
-                config.collateralTokenAmount
-              );
-            });
-
-            it("should make excess collateral available to withdraw when payment token is fully paid", async () => {
               await payAndWithdraw({
                 bond,
                 paymentToken,
-                paymentTokenAmount: config.maxSupply,
+                paymentTokenAmount: config.maxSupply.sub(1),
                 collateralToReceive: config.collateralTokenAmount.sub(
                   config.convertibleTokenAmount
                 ),
-              });
-            });
-
-            // this test seems flawed
-            it("should make excess collateral available to withdraw when payment token is fully paid", async () => {
-              const totalCollateralAvailable = config.collateralTokenAmount;
-              const totalWithdrawableCollateral = totalCollateralAvailable.sub(
-                config.convertibleTokenAmount
-              );
-              await bond.burn(utils.parseUnits("1000", decimals));
-              // since we've burnt 1000 bonds, the collateral has been unlocked
-              const unlockedCollateral = utils
-                .parseUnits("1000", decimals)
-                .mul(await bond.convertibleRatio())
-                .div(ONE);
-              const collateralToReceive =
-                totalWithdrawableCollateral.add(unlockedCollateral);
-              await payAndWithdraw({
-                bond,
-                paymentToken,
-                paymentTokenAmount: config.maxSupply,
-                collateralToReceive,
               });
             });
           });
