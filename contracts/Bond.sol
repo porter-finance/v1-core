@@ -391,8 +391,6 @@ contract Bond is
             All outstanding bonds must be covered by the convertibleRatio
         @return the amount of collateral received
      */
-
-    //active vs defaulted
     function previewWithdraw() public view returns (uint256) {
         uint256 tokensCoveredByPayment = paymentBalance();
         uint256 collateralTokensRequired;
