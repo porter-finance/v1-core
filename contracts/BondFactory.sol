@@ -26,13 +26,13 @@ contract BondFactory is IBondFactory, AccessControl {
     /// @notice the role required to issue bonds
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
 
-    /// inheritdoc IBond
+    /// @inheritdoc IBondFactory
     address public immutable tokenImplementation;
 
-    /// inheritdoc IBond
+    /// @inheritdoc IBondFactory
     mapping(address => bool) public isBond;
 
-    /// inheritdoc IBond
+    /// @inheritdoc IBondFactory
     bool public isAllowListEnabled = true;
 
     /// @dev If allow list is enabled, only allow listed issuers are able to call functions
@@ -51,7 +51,7 @@ contract BondFactory is IBondFactory, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
-    /// inheritdoc IBond
+    /// @inheritdoc IBondFactory
     function setIsAllowListEnabled(bool _isAllowListEnabled)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -60,7 +60,7 @@ contract BondFactory is IBondFactory, AccessControl {
         emit AllowListEnabled(isAllowListEnabled);
     }
 
-    /// inheritdoc IBond
+    /// @inheritdoc IBondFactory
     function createBond(
         string memory name,
         string memory symbol,
