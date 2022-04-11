@@ -10,7 +10,6 @@ import {
   previewRedeem,
   redeemAndCheckTokens,
   mulWad,
-  divWad,
 } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
@@ -259,19 +258,6 @@ describe("Bond", () => {
           });
 
           it("should return configured public parameters");
-          //   expect(await bond.maturityDate()).to.be.equal(config.maturityDate);
-          //   expect(await bond.collateralToken()).to.be.equal(
-          //     collateralToken.address
-          //   );
-          //   expect(await bond.collateralRatio()).to.be.equal(
-          //     config.collateralRatio
-          //   );
-          //   expect(await bond.convertibleRatio()).to.be.equal(
-          //     config.convertibleRatio
-          //   );
-
-          //   expect(await bond.paymentToken()).to.be.equal(paymentToken.address);
-          // });
 
           it("should have configured ERC20 attributes", async () => {
             expect(await bond.name()).to.be.equal("Bond");
@@ -443,28 +429,12 @@ describe("Bond", () => {
               });
             });
 
-            it("should make excess collateral available to withdraw when maturity is reached", async () => {
-              await payAndWithdraw({
-                bond,
-                paymentToken,
-                paymentTokenAmount: config.maxSupply.div(4),
-                collateralToReceive: config.collateralTokenAmount.div(4),
-              });
-            });
-
-            it("should withdraw all collateral in Paid state", async () => {
-              await payAndWithdraw({
-                bond,
-                paymentToken,
-                paymentTokenAmount: config.maxSupply,
-                collateralToReceive: config.collateralTokenAmount,
-              });
-            });
+            it("should make excess collateral available to withdraw when maturity is reached", async () => {});
           });
         });
         describe("PaidEarly state", async () => {
           describe("simple", async () => {
-            it("should allow all collateral to be withdrawn when paidEarly", async () => {
+            it("should allow all collateral to be withdrawn when PaidEarly", async () => {
               const targetPayment = config.maxSupply;
               await paymentToken.approve(bond.address, targetPayment);
 
@@ -488,7 +458,7 @@ describe("Bond", () => {
           });
 
           describe("convert", async () => {
-            it("should require convertibleTokens to stay in contract when paidEarly", async () => {
+            it("should require convertibleTokens to stay in contract when PaidEarly", async () => {
               await payAndWithdraw({
                 bond,
                 paymentToken,
@@ -520,7 +490,7 @@ describe("Bond", () => {
           });
         });
         describe("Defaulted state", async () => {
-          describe("convertible", async () => {
+          describe("convert", async () => {
             it("should withdraw collateral that was locked to give bondholders the option to convert", async () => {
               bond = bondWithTokens.convertible.bond;
               config = bondWithTokens.convertible.config;
@@ -567,7 +537,7 @@ describe("Bond", () => {
                 `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
               );
             });
-            it("should make excess collateral available to withdraw when zero amount are burned", async () => {
+            it("should withdraw zero collateral when zero amount are burned", async () => {
               await burnAndWithdraw({
                 bond,
                 sharesToBurn: ZERO,
@@ -575,7 +545,7 @@ describe("Bond", () => {
               });
             });
 
-            it("should make excess collateral available to withdraw when collateral rounded down are burned", async () => {
+            it("should withdraw zero collateral when collateral rounds down", async () => {
               await burnAndWithdraw({
                 bond,
                 sharesToBurn: BigNumber.from(1),
@@ -662,7 +632,7 @@ describe("Bond", () => {
               await burnAndWithdraw({
                 bond,
                 sharesToBurn: config.maxSupply,
-                collateralToReceive: config.collateralTokenAmount,
+                collateralToReceive: ZERO,
               });
             });
 
@@ -783,7 +753,7 @@ describe("Bond", () => {
             });
           });
 
-          it("should redeem collateral when partly paid", async () => {
+          it("should redeem payment and collateral portions when partly paid", async () => {
             const paymentAmount = utils.parseUnits("4000", decimals);
             await bond.pay(paymentAmount);
 
@@ -836,7 +806,7 @@ describe("Bond", () => {
               ).to.be.revertedWith("ZeroAmount");
             });
 
-            it("should allow withdraw of collateral & payment token when bond is partially paid Defaulted", async () => {
+            it("should allow withdraw of payment token when bond is partially paid and Defaulted", async () => {
               const paymentAmount = utils.parseUnits("4000", decimals);
               await bond.pay(paymentAmount);
 
@@ -899,7 +869,7 @@ describe("Bond", () => {
             ).to.equal(config.convertibleTokenAmount);
           });
 
-          it("previews convert double target converted", async () => {
+          it("previews convert half target converted", async () => {
             expect(
               await bond.previewConvertBeforeMaturity(config.maxSupply.div(2))
             ).to.equal(config.convertibleTokenAmount.div(2));
