@@ -224,10 +224,10 @@ contract Bond is
             revert ZeroAmount();
         }
 
+        burn(bonds);
+
         // saves an extra SLOAD
         address collateral = collateralToken;
-
-        burn(bonds);
 
         //  Reentrancy possibility: the bonds are already burnt - if there weren't enough bonds to burn, an error is thrown
         IERC20Metadata(collateral).safeTransfer(
@@ -295,11 +295,12 @@ contract Bond is
         if (paymentTokensToSend == 0 && collateralTokensToSend == 0) {
             revert ZeroAmount();
         }
+
+        burn(bonds);
+
         // saves an extra SLOAD
         address payment = paymentToken;
         address collateral = collateralToken;
-
-        burn(bonds);
 
         // reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
         if (paymentTokensToSend != 0) {
