@@ -292,7 +292,7 @@ contract Bond is
         if (bonds == 0) {
             revert ZeroAmount();
         }
-        // calculate amount before burning as the preview function uses totalSupply.
+
         (
             uint256 paymentTokensToSend,
             uint256 collateralTokensToSend
@@ -301,27 +301,30 @@ contract Bond is
         if (paymentTokensToSend == 0 && collateralTokensToSend == 0) {
             revert ZeroAmount();
         }
+        // saves an extra SLOAD
+        address payment = paymentToken;
+        address collateral = collateralToken;
 
         burn(bonds);
 
         // reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
         if (paymentTokensToSend != 0) {
-            IERC20Metadata(paymentToken).safeTransfer(
+            IERC20Metadata(payment).safeTransfer(
                 _msgSender(),
                 paymentTokensToSend
             );
         }
         if (collateralTokensToSend != 0) {
             // reentrancy possibility: the bonds are burnt here already - if there weren't enough bonds to burn, an error is thrown
-            IERC20Metadata(collateralToken).safeTransfer(
+            IERC20Metadata(collateral).safeTransfer(
                 _msgSender(),
                 collateralTokensToSend
             );
         }
         emit Redeem(
             _msgSender(),
-            paymentToken,
-            collateralToken,
+            payment,
+            collateral,
             bonds,
             paymentTokensToSend,
             collateralTokensToSend
