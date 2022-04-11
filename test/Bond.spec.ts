@@ -567,7 +567,7 @@ describe("Bond", () => {
                 `AccessControl: account ${attacker.address.toLowerCase()} is missing role ${withdrawRole}`
               );
             });
-            it(`should make excess collateral available to withdraw when zero amount are burned`, async () => {
+            it("should make excess collateral available to withdraw when zero amount are burned", async () => {
               await burnAndWithdraw({
                 bond,
                 sharesToBurn: ZERO,
@@ -575,7 +575,7 @@ describe("Bond", () => {
               });
             });
 
-            it(`should make excess collateral available to withdraw when collateral rounded down are burned`, async () => {
+            it("should make excess collateral available to withdraw when collateral rounded down are burned", async () => {
               await burnAndWithdraw({
                 bond,
                 sharesToBurn: BigNumber.from(1),
@@ -583,7 +583,7 @@ describe("Bond", () => {
               });
             });
 
-            it(`should make excess collateral available to withdraw when smallest unit are burned`, async () => {
+            it("should make excess collateral available to withdraw when smallest unit are burned", async () => {
               await burnAndWithdraw({
                 bond,
                 sharesToBurn: ONE.div(await bond.collateralRatio()),
@@ -591,7 +591,7 @@ describe("Bond", () => {
               });
             });
 
-            it(`should make all collateral available to withdraw when total amount are burned`, async () => {
+            it("should make all collateral available to withdraw when total amount are burned", async () => {
               await burnAndWithdraw({
                 bond,
                 sharesToBurn: config.maxSupply,
@@ -599,7 +599,7 @@ describe("Bond", () => {
               });
             });
 
-            it(`should make excess collateral available to withdraw one to one`, async () => {
+            it("should make excess collateral available to withdraw one to one", async () => {
               await payAndWithdraw({
                 bond,
                 paymentToken,
@@ -634,7 +634,7 @@ describe("Bond", () => {
               expect(await collateralToken.balanceOf(bond.address)).to.equal(0);
             });
           });
-          describe(`convert`, async () => {
+          describe("convert", async () => {
             it("should have collateral required to cover convertibleRatio locked", async () => {
               bond = bondWithTokens.convertible.bond;
               config = bondWithTokens.convertible.config;
@@ -648,7 +648,7 @@ describe("Bond", () => {
               });
             });
           });
-          describe(`uncollateralized`, async () => {
+          describe("uncollateralized", async () => {
             beforeEach(async () => {
               bond = bondWithTokens.uncollateralized.bond;
               config = bondWithTokens.uncollateralized.config;
@@ -658,7 +658,7 @@ describe("Bond", () => {
               );
             });
 
-            it(`should have zero collateral available to withdraw when they are burned`, async () => {
+            it("should have zero collateral available to withdraw when they are burned", async () => {
               await burnAndWithdraw({
                 bond,
                 sharesToBurn: config.maxSupply,
@@ -887,19 +887,19 @@ describe("Bond", () => {
             );
           });
 
-          it(`previews convert zero converted`, async () => {
+          it("previews convert zero converted", async () => {
             expect(await bond.previewConvertBeforeMaturity(ZERO)).to.equal(
               ZERO
             );
           });
 
-          it(`previews convert target converted`, async () => {
+          it("previews convert target converted", async () => {
             expect(
               await bond.previewConvertBeforeMaturity(config.maxSupply)
             ).to.equal(config.convertibleTokenAmount);
           });
 
-          it(`previews convert double target converted`, async () => {
+          it("previews convert double target converted", async () => {
             expect(
               await bond.previewConvertBeforeMaturity(config.maxSupply.div(2))
             ).to.equal(config.convertibleTokenAmount.div(2));
