@@ -224,20 +224,18 @@ contract Bond is
             revert ZeroAmount();
         }
 
+        // saves an extra SLOAD
+        address collateral = collateralToken;
+
         burn(bonds);
 
         //  Reentrancy possibility: the bonds are already burnt - if there weren't enough bonds to burn, an error is thrown
-        IERC20Metadata(collateralToken).safeTransfer(
+        IERC20Metadata(collateral).safeTransfer(
             _msgSender(),
             convertibleTokensToSend
         );
 
-        emit Convert(
-            _msgSender(),
-            collateralToken,
-            bonds,
-            convertibleTokensToSend
-        );
+        emit Convert(_msgSender(), collateral, bonds, convertibleTokensToSend);
     }
 
     /**
@@ -251,16 +249,12 @@ contract Bond is
     {
         uint256 collateralToSend = previewWithdraw();
 
-        IERC20Metadata(collateralToken).safeTransfer(
-            _msgSender(),
-            collateralToSend
-        );
+        // saves an extra SLOAD
+        address collateral = collateralToken;
 
-        emit CollateralWithdraw(
-            _msgSender(),
-            collateralToken,
-            collateralToSend
-        );
+        IERC20Metadata(collateral).safeTransfer(_msgSender(), collateralToSend);
+
+        emit CollateralWithdraw(_msgSender(), collateral, collateralToSend);
     }
 
     /**
@@ -478,8 +472,11 @@ contract Bond is
         if (overpayment <= 0) {
             revert NoPaymentToWithdraw();
         }
-        IERC20Metadata(paymentToken).safeTransfer(_msgSender(), overpayment);
-        emit ExcessPaymentWithdraw(_msgSender(), paymentToken, overpayment);
+        // saves an extra SLOAD
+        address payment = paymentToken;
+
+        IERC20Metadata(payment).safeTransfer(_msgSender(), overpayment);
+        emit ExcessPaymentWithdraw(_msgSender(), payment, overpayment);
     }
 
     /**
