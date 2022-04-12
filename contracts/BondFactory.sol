@@ -48,6 +48,18 @@ contract BondFactory is IBondFactory, AccessControl {
 
     constructor() {
         tokenImplementation = address(new Bond());
+        Bond(tokenImplementation).initialize(
+            "",
+            "",
+            address(this),
+            0,
+            address(0),
+            address(1),
+            0,
+            0,
+            0
+        );
+
         // This grants the user deploying this contract the DEFAULT_ADMIN_ROLE
         // which gives them the ability to call grantRole to grant access to
         // the ISSUER_ROLE.
