@@ -119,15 +119,15 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function withdrawExcessCollateral() external onlyOwner {
+    function withdrawExcessCollateral(address receiver) external onlyOwner {
         uint256 collateralToSend = previewWithdraw();
 
         // Saves an extra SLOAD
         address collateral = collateralToken;
 
-        IERC20Metadata(collateral).safeTransfer(_msgSender(), collateralToSend);
+        IERC20Metadata(collateral).safeTransfer(receiver, collateralToSend);
 
-        emit CollateralWithdraw(_msgSender(), collateral, collateralToSend);
+        emit CollateralWithdraw(receiver, collateral, collateralToSend);
     }
 
     /// @inheritdoc IBond
@@ -191,7 +191,10 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function sweep(IERC20Metadata sweepingToken) external onlyOwner {
+    function sweep(IERC20Metadata sweepingToken, address receiver)
+        external
+        onlyOwner
+    {
         // Check the balances before and compare to after to protect
         // against tokens that may proxy transfers through different addresses.
         uint256 paymentTokenBalanceBefore = IERC20Metadata(paymentToken)
@@ -201,7 +204,7 @@ contract Bond is
 
         uint256 sweepingTokenBalance = sweepingToken.balanceOf(address(this));
 
-        sweepingToken.safeTransfer(_msgSender(), sweepingTokenBalance);
+        sweepingToken.safeTransfer(receiver, sweepingTokenBalance);
 
         uint256 paymentTokenBalanceAfter = IERC20Metadata(paymentToken)
             .balanceOf(address(this));
@@ -215,7 +218,7 @@ contract Bond is
             revert SweepDisallowedForToken();
         }
 
-        emit TokenSweep(_msgSender(), sweepingToken, sweepingTokenBalance);
+        emit TokenSweep(receiver, sweepingToken, sweepingTokenBalance);
     }
 
     /// @inheritdoc IBond
@@ -289,7 +292,7 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function withdrawExcessPayment() external onlyOwner {
+    function withdrawExcessPayment(address receiver) external onlyOwner {
         uint256 overpayment = amountOverPaid();
         if (overpayment <= 0) {
             revert NoPaymentToWithdraw();
@@ -297,8 +300,8 @@ contract Bond is
         // Saves an extra SLOAD
         address payment = paymentToken;
 
-        IERC20Metadata(payment).safeTransfer(_msgSender(), overpayment);
-        emit ExcessPaymentWithdraw(_msgSender(), payment, overpayment);
+        IERC20Metadata(payment).safeTransfer(receiver, overpayment);
+        emit ExcessPaymentWithdraw(receiver, payment, overpayment);
     }
 
     /// @inheritdoc  IBond

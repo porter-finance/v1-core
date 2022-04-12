@@ -680,7 +680,7 @@ The Bond holder can burn Bonds in return for their portion of paymentTokens and 
 ### sweep
 
 ```solidity
-function sweep(contract IERC20Metadata token) external nonpayable
+function sweep(contract IERC20Metadata token, address receiver) external nonpayable
 ```
 
 Sends tokens to the owner that are in this contract.
@@ -694,27 +694,53 @@ Sends tokens to the owner that are in this contract.
         <td>
     The ERC20 token to sweep and send to the owner.    </td>
       </tr>
+  <tr>
+    <td>address </td>
+    <td>receiver</td>
+        <td>
+    The address that is transfered the sweep token    </td>
+      </tr>
 </table>
 
 
 ### withdrawExcessCollateral
 
 ```solidity
-function withdrawExcessCollateral() external nonpayable
+function withdrawExcessCollateral(address receiver) external nonpayable
 ```
 
 A caller with the WITHDRAW_ROLE may withdraw excess collateral from bond contract. The number of collateralTokens remaining in the contract must be enough to cover the total supply of Bonds in accordance to both the collateralRatio and convertibleRatio.
 
+#### Parameters
+
+<table>
+  <tr>
+    <td>address </td>
+    <td>receiver</td>
+        <td>
+    The address that is transfered the excess collateral    </td>
+      </tr>
+</table>
 
 
 ### withdrawExcessPayment
 
 ```solidity
-function withdrawExcessPayment() external nonpayable
+function withdrawExcessPayment(address receiver) external nonpayable
 ```
 
 A caller with the WITHDRAW_ROLE can withdraw any overpaid payment token in the contract.
 
+#### Parameters
+
+<table>
+  <tr>
+    <td>address </td>
+    <td>receiver</td>
+        <td>
+    The address that is transfered the excess payment    </td>
+      </tr>
+</table>
 
 
 

@@ -294,20 +294,25 @@ interface IBond {
         @notice Sends tokens to the owner that are in this contract.
         @dev The collateralToken and paymentToken, cannot be swept.
         @param token The ERC20 token to sweep and send to the owner.
+        @param receiver The address that is transfered the sweep token
+
     */
-    function sweep(IERC20Metadata token) external;
+    function sweep(IERC20Metadata token, address receiver) external;
 
     /**
         @notice A caller with the WITHDRAW_ROLE may withdraw excess collateral
             from bond contract. The number of collateralTokens remaining in the
             contract must be enough to cover the total supply of Bonds in
             accordance to both the collateralRatio and convertibleRatio.
+        @param receiver The address that is transfered the excess collateral
     */
-    function withdrawExcessCollateral() external;
+    function withdrawExcessCollateral(address receiver) external;
 
     /**
         @notice A caller with the WITHDRAW_ROLE can withdraw any overpaid
             payment token in the contract.
+        @param receiver The address that is transfered the excess payment
+
     */
-    function withdrawExcessPayment() external;
+    function withdrawExcessPayment(address receiver) external;
 }
