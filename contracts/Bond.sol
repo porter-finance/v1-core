@@ -332,11 +332,7 @@ contract Bond is
         @dev collateral, payment, and the bond itself cannot be swept
         @param token send the entire token balance of this address to the owner
     */
-    function sweep(IERC20Metadata token)
-        external
-        nonReentrant
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function sweep(IERC20Metadata token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (
             address(token) == paymentToken || address(token) == collateralToken
         ) {
