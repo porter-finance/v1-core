@@ -46,6 +46,10 @@ contract BondFactory is IBondFactory, AccessControl {
         _;
     }
 
+    /*
+        The token implementation is instantiated and initialized with dummy
+        values so that it is not initialized by another user.
+    */
     constructor() {
         tokenImplementation = address(new Bond());
         Bond(tokenImplementation).initialize(
