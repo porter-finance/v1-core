@@ -122,7 +122,7 @@ interface IBond {
 
     /**
         @notice The ERC20 token used as collateral backing the bond.
-        @return The ERC20 token's address
+        @return The ERC20 token's address.
     */
     function collateralToken() external view returns (address);
 
@@ -286,7 +286,7 @@ interface IBond {
         has reached maturity without being fully paid, a portion of the
         collateralTokens will be availalbe.
         @dev Emits Redeem event.
-        @param bonds The number of bonds to redeem and burn
+        @param bonds The number of bonds to redeem and burn.
     */
     function redeem(uint256 bonds) external;
 

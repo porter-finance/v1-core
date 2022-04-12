@@ -49,14 +49,14 @@ contract Bond is
     uint256 public convertibleRatio;
 
     /**
-        @notice This role permits the withdraw of collateral from the contract
+        @notice This role permits the withdraw of collateral from the contract.
         @dev This role is assigned to the owner upon bond creation who can also
             assign this role to other addresses to enable their withdraw.
             
     */
     bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
 
-    /// @dev Used to confirm the bond has not yet matured
+    /// @dev Used to confirm the bond has not yet matured.
     modifier beforeMaturity() {
         if (isMature()) {
             revert BondPastMaturity();
@@ -64,7 +64,7 @@ contract Bond is
         _;
     }
 
-    /// @dev Used to confirm that the bon is either mature or has been paid
+    /// @dev Used to confirm that the bon is either mature or has been paid.
     modifier afterMaturityOrPaid() {
         if (!isMature() && !isFullyPaid()) {
             revert BondNotYetMaturedOrPaid();

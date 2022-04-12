@@ -17,13 +17,13 @@ import "./Bond.sol";
     @author Porter Finance
     @notice This factory contract issues new bond contracts.
     @dev This uses a cloneFactory to save on gas costs during deployment.
-        See OpenZeppelin's "Clones" proxy
+        See OpenZeppelin's "Clones" proxy.
 */
 contract BondFactory is IBondFactory, AccessControl {
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
-    /// @notice The role required to issue bonds
+    /// @notice The role required to issue bonds.
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
 
     /// @inheritdoc IBondFactory
@@ -37,7 +37,7 @@ contract BondFactory is IBondFactory, AccessControl {
 
     /**
         @dev If allow list is enabled, only allow-listed issuers are
-            able to call functions
+            able to call functions.
     */
     modifier onlyIssuer() {
         if (isAllowListEnabled) {
