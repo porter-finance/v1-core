@@ -1,31 +1,9 @@
-# Bond
+# IBond
 
-A custom ERC20 token that can be used to issue bonds.The contract handles issuance, payment, conversion, and redemption.
+
 
 
 ## Events
-
-### Approval
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>owner</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>spender</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>value</td>
-      </tr>
-</table>
 
 ### CollateralWithdraw
 
@@ -38,14 +16,20 @@ Emitted when collateral is withdrawn.
   <tr>
     <td>address <code>indexed</code></td>
     <td>from</td>
+        <td>
+    The address withdrawing the collateral.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
     <td>token</td>
+        <td>
+    The address of the collateralToken.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amount</td>
+        <td>
+    The number of collateralTokens withdrawn.    </td>
       </tr>
 </table>
 
@@ -60,18 +44,26 @@ Emitted when Bond tokens are converted by a borrower.
   <tr>
     <td>address <code>indexed</code></td>
     <td>from</td>
+        <td>
+    The address converting their tokens.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
     <td>collateralToken</td>
+        <td>
+    The address of the collateralToken.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amountOfBondsConverted</td>
+        <td>
+    The number of burnt Bonds.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amountOfCollateralTokens</td>
+        <td>
+    The number of collateralTokens received.    </td>
       </tr>
 </table>
 
@@ -86,14 +78,20 @@ Emitted when payment over the required amount is withdrawn.
   <tr>
     <td>address <code>indexed</code></td>
     <td>from</td>
+        <td>
+    The caller withdrawing the excess payment amount.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
     <td>token</td>
+        <td>
+    The paymentToken being withdrawn.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amount</td>
+        <td>
+    The amount of paymentToken withdrawn.    </td>
       </tr>
 </table>
 
@@ -101,17 +99,21 @@ Emitted when payment over the required amount is withdrawn.
 
 Emitted when a portion of the Bond&#39;s principal is paid.
 
-
+*The amount could be incorrect if the token takes a fee on transfer. *
 
 
 <table>
   <tr>
     <td>address <code>indexed</code></td>
     <td>from</td>
+        <td>
+    The address depositing payment.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amount</td>
+        <td>
+    Amount paid.    </td>
       </tr>
 </table>
 
@@ -126,92 +128,38 @@ Emitted when a Bond is redeemed.
   <tr>
     <td>address <code>indexed</code></td>
     <td>from</td>
+        <td>
+    The Bond holder whose Bonds are burnt.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
     <td>paymentToken</td>
+        <td>
+    The address of the paymentToken.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
     <td>collateralToken</td>
+        <td>
+    The address of the collateralToken.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amountOfBondsRedeemed</td>
+        <td>
+    The amount of Bonds burned for redemption.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amountOfPaymentTokensReceived</td>
+        <td>
+    The amount of paymentTokens.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amountOfCollateralTokens</td>
-      </tr>
-</table>
-
-### RoleAdminChanged
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>previousAdminRole</td>
-      </tr>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>newAdminRole</td>
-      </tr>
-</table>
-
-### RoleGranted
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>account</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>sender</td>
-      </tr>
-</table>
-
-### RoleRevoked
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>account</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>sender</td>
+        <td>
+    The amount of collateralTokens.    </td>
       </tr>
 </table>
 
@@ -226,36 +174,20 @@ Emitted when a token is swept by the contract owner.
   <tr>
     <td>address </td>
     <td>from</td>
+        <td>
+    The owner&#39;s address.    </td>
       </tr>
   <tr>
     <td>contract IERC20Metadata </td>
     <td>token</td>
+        <td>
+    The token that was swept.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amount</td>
-      </tr>
-</table>
-
-### Transfer
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>from</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>to</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>value</td>
+        <td>
+    The amount that was swept.    </td>
       </tr>
 </table>
 
@@ -299,75 +231,6 @@ Emitted when a token is swept by the contract owner.
 ## Methods
 
 
-### DEFAULT_ADMIN_ROLE
-
-```solidity
-function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
-```
-
-
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bytes32    </td>
-      </tr>
-</table>
-
-### WITHDRAW_ROLE
-
-```solidity
-function WITHDRAW_ROLE() external view returns (bytes32)
-```
-
-This role permits the withdraw of collateral from the contract.
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bytes32    </td>
-      </tr>
-</table>
-
-### allowance
-
-```solidity
-function allowance(address owner, address spender) external view returns (uint256)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>address </td>
-    <td>owner</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>spender</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      uint256    </td>
-      </tr>
-</table>
-
 ### amountOverPaid
 
 ```solidity
@@ -409,104 +272,6 @@ The amount of paymentTokens required to fully pay the contract.
     The amount of paymentTokens.    </td>
       </tr>
 </table>
-
-### approve
-
-```solidity
-function approve(address spender, uint256 amount) external nonpayable returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>address </td>
-    <td>spender</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>amount</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
-
-### balanceOf
-
-```solidity
-function balanceOf(address account) external view returns (uint256)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      uint256    </td>
-      </tr>
-</table>
-
-### burn
-
-```solidity
-function burn(uint256 amount) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>uint256 </td>
-    <td>amount</td>
-      </tr>
-</table>
-
-
-### burnFrom
-
-```solidity
-function burnFrom(address account, uint256 amount) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>amount</td>
-      </tr>
-</table>
-
 
 ### collateralBalance
 
@@ -607,167 +372,6 @@ The ratio of convertibleTokens the bonds will convert into.
   <tr>
     <td>
       uint256    </td>
-      </tr>
-</table>
-
-### decimals
-
-```solidity
-function decimals() external view returns (uint8)
-```
-
-
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      uint8    </td>
-      </tr>
-</table>
-
-### decreaseAllowance
-
-```solidity
-function decreaseAllowance(address spender, uint256 subtractedValue) external nonpayable returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>address </td>
-    <td>spender</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>subtractedValue</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
-
-### getRoleAdmin
-
-```solidity
-function getRoleAdmin(bytes32 role) external view returns (bytes32)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bytes32    </td>
-      </tr>
-</table>
-
-### grantRole
-
-```solidity
-function grantRole(bytes32 role, address account) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-
-### hasRole
-
-```solidity
-function hasRole(bytes32 role, address account) external view returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
-
-### increaseAllowance
-
-```solidity
-function increaseAllowance(address spender, uint256 addedValue) external nonpayable returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>address </td>
-    <td>spender</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>addedValue</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
       </tr>
 </table>
 
@@ -899,25 +503,6 @@ A date set at Bond creation when the Bond will mature.
       uint256    </td>
         <td>
     The maturity date timestamp.    </td>
-      </tr>
-</table>
-
-### name
-
-```solidity
-function name() external view returns (string)
-```
-
-
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      string    </td>
       </tr>
 </table>
 
@@ -1092,81 +677,10 @@ The Bond holder can burn Bonds in return for their portion of paymentTokens and 
 </table>
 
 
-### renounceRole
-
-```solidity
-function renounceRole(bytes32 role, address account) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-
-### revokeRole
-
-```solidity
-function revokeRole(bytes32 role, address account) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-
-### supportsInterface
-
-```solidity
-function supportsInterface(bytes4 interfaceId) external view returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes4 </td>
-    <td>interfaceId</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
-
 ### sweep
 
 ```solidity
-function sweep(contract IERC20Metadata sweepingToken) external nonpayable
+function sweep(contract IERC20Metadata token) external nonpayable
 ```
 
 Sends tokens to the owner that are in this contract.
@@ -1176,114 +690,12 @@ Sends tokens to the owner that are in this contract.
 <table>
   <tr>
     <td>contract IERC20Metadata </td>
-    <td>sweepingToken</td>
+    <td>token</td>
+        <td>
+    The ERC20 token to sweep and send to the owner.    </td>
       </tr>
 </table>
 
-
-### symbol
-
-```solidity
-function symbol() external view returns (string)
-```
-
-
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      string    </td>
-      </tr>
-</table>
-
-### totalSupply
-
-```solidity
-function totalSupply() external view returns (uint256)
-```
-
-
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      uint256    </td>
-      </tr>
-</table>
-
-### transfer
-
-```solidity
-function transfer(address to, uint256 amount) external nonpayable returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>address </td>
-    <td>to</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>amount</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
-
-### transferFrom
-
-```solidity
-function transferFrom(address from, address to, uint256 amount) external nonpayable returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>address </td>
-    <td>from</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>to</td>
-      </tr>
-  <tr>
-    <td>uint256 </td>
-    <td>amount</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
 
 ### withdrawExcessCollateral
 

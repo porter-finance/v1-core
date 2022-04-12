@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
+import {IBondFactory} from "./interfaces/IBondFactory.sol";
+
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -13,74 +15,30 @@ import "./Bond.sol";
 /** 
     @title Bond Factory
     @author Porter Finance
-    @notice This factory contract issues new bond contracts
-    @dev This uses a cloneFactory to save on gas costs during deployment
-        see OpenZeppelin's "Clones" proxy
+    @notice This factory contract issues new bond contracts.
+    @dev This uses a cloneFactory to save on gas costs during deployment.
+        See OpenZeppelin's "Clones" proxy.
 */
-contract BondFactory is AccessControl {
+contract BondFactory is IBondFactory, AccessControl {
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
-    /// @notice the role required to issue bonds
+    /// @notice The role required to issue bonds.
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
 
-    /**
-     @notice Address where the bond implementation contract is stored
-     @dev this is needed since we are using a clone proxy
-    */
+    /// @inheritdoc IBondFactory
     address public immutable tokenImplementation;
 
-    /**
-     @notice Check if a specific address is a porter bond created by this factory
-     @dev this is useful if we need to check if a bond is a porter bond on chain
-     for example, if we want to make a new contract that accepts any porter bonds and exchanges them
-     for new bonds, the exchange contract would need a way to know that the bonds are porter bonds
-    */
+    /// @inheritdoc IBondFactory
     mapping(address => bool) public isBond;
 
-    /// @notice when enabled, issuance is restricted to those with the ISSUER_ROLE
+    /// @inheritdoc IBondFactory
     bool public isAllowListEnabled = true;
 
     /**
-        @notice Emitted when the allow list is toggled on or off
-        @param isAllowListEnabled the new state of the allow list
+        @dev If allow list is enabled, only allow-listed issuers are
+            able to call functions.
     */
-    event AllowListEnabled(bool isAllowListEnabled);
-
-    /**
-        @notice Emitted when a new bond is created
-        @param newBond The address of the newley deployed bond
-        Inherit createBond
-    */
-    event BondCreated(
-        address newBond,
-        string name,
-        string symbol,
-        address indexed owner,
-        uint256 maturityDate,
-        address indexed paymentToken,
-        address indexed collateralToken,
-        uint256 collateralTokenAmount,
-        uint256 convertibleTokenAmount,
-        uint256 bonds
-    );
-
-    /// @notice fails if the collateral token takes a fee
-    error InvalidDeposit();
-
-    /// @notice Decimals with more than 18 digits are not supported
-    error DecimalsOver18();
-
-    /// @notice maturity date is not valid
-    error InvalidMaturityDate();
-
-    /// @notice There must be more collateral tokens than convertible tokens
-    error CollateralTokenAmountLessThanConvertibleTokenAmount();
-
-    /// @notice max bonds must be a positive number
-    error ZeroBondsToMint();
-
-    /// @dev If allow list is enabled, only allow listed issuers are able to call functions
     modifier onlyIssuer() {
         if (isAllowListEnabled) {
             _checkRole(ISSUER_ROLE, _msgSender());
@@ -90,38 +48,22 @@ contract BondFactory is AccessControl {
 
     constructor() {
         tokenImplementation = address(new Bond());
-        // this grants the user deploying this contract the DEFAULT_ADMIN_ROLE
+        // This grants the user deploying this contract the DEFAULT_ADMIN_ROLE
         // which gives them the ability to call grantRole to grant access to
-        // the ISSUER_ROLE
+        // the ISSUER_ROLE.
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
-    /**
-        @notice Turns the allow list on or off
-        @param _isAllowListEnabled If the allow list should be enabled or not
-        @dev Must be called by the current owner
-    */
+    /// @inheritdoc IBondFactory
     function setIsAllowListEnabled(bool _isAllowListEnabled)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         isAllowListEnabled = _isAllowListEnabled;
-        emit AllowListEnabled(isAllowListEnabled);
+        emit AllowListEnabled(_isAllowListEnabled);
     }
 
-    /**
-        @notice Creates a bond
-        @param name Name of the bond
-        @param symbol Ticker symbol for the bond
-        @param maturityDate Timestamp of when the bond matures
-        @param paymentToken Address of the token being paid
-        @param collateralToken Address of the collateral to use for the bond
-        @param collateralTokenAmount Number of all collateral tokens that the bonds will convert into
-        @param convertibleTokenAmount Number of the collateral token that all bonds will convert into
-        @param bonds number of bonds to mint
-        @dev This uses a clone to save on deployment costs which adds a slight overhead
-            everytime users interact with the bonds - but saves on gas during deployment
-    */
+    /// @inheritdoc IBondFactory
     function createBond(
         string memory name,
         string memory symbol,
@@ -134,6 +76,9 @@ contract BondFactory is AccessControl {
     ) external onlyIssuer returns (address clone) {
         if (bonds == 0) {
             revert ZeroBondsToMint();
+        }
+        if (paymentToken == collateralToken) {
+            revert TokensMustBeDifferent();
         }
 
         if (collateralTokenAmount < convertibleTokenAmount) {
@@ -155,8 +100,8 @@ contract BondFactory is AccessControl {
         clone = Clones.clone(tokenImplementation);
 
         isBond[clone] = true;
-        uint256 collateralRatio = collateralTokenAmount.divWadUp(bonds);
-        uint256 convertibleRatio = convertibleTokenAmount.divWadUp(bonds);
+        uint256 collateralRatio = collateralTokenAmount.divWadDown(bonds);
+        uint256 convertibleRatio = convertibleTokenAmount.divWadDown(bonds);
         _deposit(_msgSender(), clone, collateralToken, collateralTokenAmount);
 
         Bond(clone).initialize(
@@ -199,8 +144,8 @@ contract BondFactory is AccessControl {
         uint256 amountDeposited = IERC20Metadata(collateralToken).balanceOf(
             clone
         );
-        // greater than instead of != for the case where the collateral is sent to the
-        // clone address before creation
+        // Greater than instead of != for the case where the collateralToken
+        // is sent to the clone address before creation.
         if (collateralToDeposit > amountDeposited) {
             revert InvalidDeposit();
         }

@@ -1,6 +1,6 @@
-# BondFactory
+# IBondFactory
 
-This factory contract issues new bond contracts.
+
 
 
 ## Events
@@ -16,6 +16,8 @@ Emitted when the allow list is toggled on or off.
   <tr>
     <td>bool </td>
     <td>isAllowListEnabled</td>
+        <td>
+    The new state of the allow list.    </td>
       </tr>
 </table>
 
@@ -30,108 +32,62 @@ Emitted when a new bond is created.
   <tr>
     <td>address </td>
     <td>newBond</td>
+        <td>
+    The address of the newley deployed bond.    </td>
       </tr>
   <tr>
     <td>string </td>
     <td>name</td>
+        <td>
+    Passed into the ERC20 token to define the name.    </td>
       </tr>
   <tr>
     <td>string </td>
     <td>symbol</td>
+        <td>
+    Passed into the ERC20 token to define the symbol.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
     <td>owner</td>
+        <td>
+    Ownership of the created Bond is transferred to this address by way of DEFAULT_ADMIN_ROLE. The ability to withdraw is  given by WITHDRAW_ROLE, and tokens are minted to this address. See `initialize` in `Bond`.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>maturityDate</td>
+        <td>
+    The timestamp at which the Bond will mature.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
     <td>paymentToken</td>
+        <td>
+    The ERC20 token address the Bond is redeemable for.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
     <td>collateralToken</td>
+        <td>
+    The ERC20 token address the Bond is backed by.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>collateralTokenAmount</td>
+        <td>
+    The amount of collateral tokens per bond.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>convertibleTokenAmount</td>
+        <td>
+    The amount of convertible tokens per bond.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>bonds</td>
-      </tr>
-</table>
-
-### RoleAdminChanged
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>previousAdminRole</td>
-      </tr>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>newAdminRole</td>
-      </tr>
-</table>
-
-### RoleGranted
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>account</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>sender</td>
-      </tr>
-</table>
-
-### RoleRevoked
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>account</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>sender</td>
+        <td>
+    The amount of Bonds given to the owner during the one-time mint during the `Bond`&#39;s `initialize`.    </td>
       </tr>
 </table>
 
@@ -174,44 +130,6 @@ Emitted when a new bond is created.
 
 ## Methods
 
-
-### DEFAULT_ADMIN_ROLE
-
-```solidity
-function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
-```
-
-
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bytes32    </td>
-      </tr>
-</table>
-
-### ISSUER_ROLE
-
-```solidity
-function ISSUER_ROLE() external view returns (bytes32)
-```
-
-The role required to issue bonds.
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bytes32    </td>
-      </tr>
-</table>
 
 ### createBond
 
@@ -286,86 +204,6 @@ Creates a new Bond.
       </tr>
 </table>
 
-### getRoleAdmin
-
-```solidity
-function getRoleAdmin(bytes32 role) external view returns (bytes32)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bytes32    </td>
-      </tr>
-</table>
-
-### grantRole
-
-```solidity
-function grantRole(bytes32 role, address account) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-
-### hasRole
-
-```solidity
-function hasRole(bytes32 role, address account) external view returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
-
 ### isAllowListEnabled
 
 ```solidity
@@ -412,50 +250,6 @@ Check if the address was created by this Bond factory.
       </tr>
 </table>
 
-### renounceRole
-
-```solidity
-function renounceRole(bytes32 role, address account) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-
-### revokeRole
-
-```solidity
-function revokeRole(bytes32 role, address account) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-
 ### setIsAllowListEnabled
 
 ```solidity
@@ -475,33 +269,6 @@ Turns the allow list on or off.
       </tr>
 </table>
 
-
-### supportsInterface
-
-```solidity
-function supportsInterface(bytes4 interfaceId) external view returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes4 </td>
-    <td>interfaceId</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
 
 ### tokenImplementation
 
