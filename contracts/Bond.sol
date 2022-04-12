@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 import {IBond} from "./interfaces/IBond.sol";
 
 import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
-import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -25,7 +25,7 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 */
 contract Bond is
     IBond,
-    AccessControlUpgradeable,
+    OwnableUpgradeable,
     ERC20BurnableUpgradeable,
     ReentrancyGuard
 {
@@ -76,7 +76,7 @@ contract Bond is
     function initialize(
         string memory bondName,
         string memory bondSymbol,
-        address owner,
+        address bondOwner,
         uint256 _maturityDate,
         address _paymentToken,
         address _collateralToken,
@@ -85,15 +85,14 @@ contract Bond is
         uint256 maxSupply
     ) external initializer {
         __ERC20_init(bondName, bondSymbol);
+        _transferOwnership(bondOwner);
 
         maturityDate = _maturityDate;
         paymentToken = _paymentToken;
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
-        _grantRole(DEFAULT_ADMIN_ROLE, owner);
-        _grantRole(WITHDRAW_ROLE, owner);
-        _mint(owner, maxSupply);
+        _mint(bondOwner, maxSupply);
     }
 
     /// @inheritdoc IBond
@@ -120,7 +119,7 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function withdrawExcessCollateral() external onlyRole(WITHDRAW_ROLE) {
+    function withdrawExcessCollateral() external onlyOwner {
         uint256 collateralToSend = previewWithdraw();
 
         // Saves an extra SLOAD
@@ -192,10 +191,7 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function sweep(IERC20Metadata sweepingToken)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function sweep(IERC20Metadata sweepingToken) external onlyOwner {
         // Check the balances before and compare to after to protect
         // against tokens that may proxy transfers through different addresses.
         uint256 paymentTokenBalanceBefore = IERC20Metadata(paymentToken)
@@ -293,7 +289,7 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function withdrawExcessPayment() external onlyRole(WITHDRAW_ROLE) {
+    function withdrawExcessPayment() external onlyOwner {
         uint256 overpayment = amountOverPaid();
         if (overpayment <= 0) {
             revert NoPaymentToWithdraw();

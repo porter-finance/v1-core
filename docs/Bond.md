@@ -97,6 +97,24 @@ Emitted when payment over the required amount is withdrawn.
       </tr>
 </table>
 
+### OwnershipTransferred
+
+
+
+
+
+
+<table>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>previousOwner</td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>newOwner</td>
+      </tr>
+</table>
+
 ### Payment
 
 Emitted when a portion of the Bond&#39;s principal is paid.
@@ -146,72 +164,6 @@ Emitted when a Bond is redeemed.
   <tr>
     <td>uint256 </td>
     <td>amountOfCollateralTokens</td>
-      </tr>
-</table>
-
-### RoleAdminChanged
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>previousAdminRole</td>
-      </tr>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>newAdminRole</td>
-      </tr>
-</table>
-
-### RoleGranted
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>account</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>sender</td>
-      </tr>
-</table>
-
-### RoleRevoked
-
-
-
-
-
-
-<table>
-  <tr>
-    <td>bytes32 <code>indexed</code></td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>account</td>
-      </tr>
-  <tr>
-    <td>address <code>indexed</code></td>
-    <td>sender</td>
       </tr>
 </table>
 
@@ -298,25 +250,6 @@ Emitted when a token is swept by the contract owner.
 
 ## Methods
 
-
-### DEFAULT_ADMIN_ROLE
-
-```solidity
-function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
-```
-
-
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bytes32    </td>
-      </tr>
-</table>
 
 ### WITHDRAW_ROLE
 
@@ -660,86 +593,6 @@ function decreaseAllowance(address spender, uint256 subtractedValue) external no
       </tr>
 </table>
 
-### getRoleAdmin
-
-```solidity
-function getRoleAdmin(bytes32 role) external view returns (bytes32)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bytes32    </td>
-      </tr>
-</table>
-
-### grantRole
-
-```solidity
-function grantRole(bytes32 role, address account) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-
-### hasRole
-
-```solidity
-function hasRole(bytes32 role, address account) external view returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
-
 ### increaseAllowance
 
 ```solidity
@@ -774,7 +627,7 @@ function increaseAllowance(address spender, uint256 addedValue) external nonpaya
 ### initialize
 
 ```solidity
-function initialize(string bondName, string bondSymbol, address owner, uint256 _maturityDate, address _paymentToken, address _collateralToken, uint256 _collateralRatio, uint256 _convertibleRatio, uint256 maxSupply) external nonpayable
+function initialize(string bondName, string bondSymbol, address bondOwner, uint256 _maturityDate, address _paymentToken, address _collateralToken, uint256 _collateralRatio, uint256 _convertibleRatio, uint256 maxSupply) external nonpayable
 ```
 
 This one-time setup initiated by the BondFactory initializes the Bond with the given configuration.
@@ -796,9 +649,7 @@ This one-time setup initiated by the BondFactory initializes the Bond with the g
       </tr>
   <tr>
     <td>address </td>
-    <td>owner</td>
-        <td>
-    Ownership of the created Bond is transferred to this address by way of DEFAULT_ADMIN_ROLE. The ability to withdraw is  given by WITHDRAW_ROLE, and tokens are minted to this address.    </td>
+    <td>bondOwner</td>
       </tr>
   <tr>
     <td>uint256 </td>
@@ -918,6 +769,25 @@ function name() external view returns (string)
   <tr>
     <td>
       string    </td>
+      </tr>
+</table>
+
+### owner
+
+```solidity
+function owner() external view returns (address)
+```
+
+
+
+
+#### Returns
+
+
+<table>
+  <tr>
+    <td>
+      address    </td>
       </tr>
 </table>
 
@@ -1092,76 +962,15 @@ The Bond holder can burn Bonds in return for their portion of paymentTokens and 
 </table>
 
 
-### renounceRole
+### renounceOwnership
 
 ```solidity
-function renounceRole(bytes32 role, address account) external nonpayable
+function renounceOwnership() external nonpayable
 ```
 
 
 
-#### Parameters
 
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-
-### revokeRole
-
-```solidity
-function revokeRole(bytes32 role, address account) external nonpayable
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes32 </td>
-    <td>role</td>
-      </tr>
-  <tr>
-    <td>address </td>
-    <td>account</td>
-      </tr>
-</table>
-
-
-### supportsInterface
-
-```solidity
-function supportsInterface(bytes4 interfaceId) external view returns (bool)
-```
-
-
-
-#### Parameters
-
-<table>
-  <tr>
-    <td>bytes4 </td>
-    <td>interfaceId</td>
-      </tr>
-</table>
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
 
 ### sweep
 
@@ -1284,6 +1093,24 @@ function transferFrom(address from, address to, uint256 amount) external nonpaya
       bool    </td>
       </tr>
 </table>
+
+### transferOwnership
+
+```solidity
+function transferOwnership(address newOwner) external nonpayable
+```
+
+
+
+#### Parameters
+
+<table>
+  <tr>
+    <td>address </td>
+    <td>newOwner</td>
+      </tr>
+</table>
+
 
 ### withdrawExcessCollateral
 
