@@ -274,9 +274,10 @@ interface IBond {
             bond is NOT paid AND mature (Defaulted)
                 to cover collateralRatio: totalUncoveredSupply * collateralRatio
                 to cover convertibleRatio: 0
+        @param payment previews amount withdrawable after a payment
         @return The number of collateralTokens received.
      */
-    function previewWithdraw() external view returns (uint256);
+    function previewWithdraw(uint256 payment) external view returns (uint256);
 
     /**
         @notice The Bond holder can burn Bonds in return for their portion of

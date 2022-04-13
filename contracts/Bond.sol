@@ -121,7 +121,7 @@ contract Bond is
 
     /// @inheritdoc IBond
     function withdrawExcessCollateral() external onlyRole(WITHDRAW_ROLE) {
-        uint256 collateralToSend = previewWithdraw();
+        uint256 collateralToSend = previewWithdraw(0);
 
         // Saves an extra SLOAD
         address collateral = collateralToken;
@@ -232,8 +232,8 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function previewWithdraw() public view returns (uint256) {
-        uint256 tokensCoveredByPayment = paymentBalance();
+    function previewWithdraw(uint256 payment) public view returns (uint256) {
+        uint256 tokensCoveredByPayment = paymentBalance() + payment;
         uint256 collateralTokensRequired = 0;
         if (tokensCoveredByPayment < totalSupply()) {
             collateralTokensRequired = (totalSupply() - tokensCoveredByPayment)

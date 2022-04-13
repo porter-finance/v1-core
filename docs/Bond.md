@@ -1054,11 +1054,21 @@ At maturity, if the given bonds are redeemed, this would be the amount of collat
 ### previewWithdraw
 
 ```solidity
-function previewWithdraw() external view returns (uint256)
+function previewWithdraw(uint256 payment) external view returns (uint256)
 ```
 
 The amount of collateral that the issuer would be able to  withdraw from the contract.
 
+#### Parameters
+
+<table>
+  <tr>
+    <td>uint256 </td>
+    <td>payment</td>
+        <td>
+    previews amount withdrawable after a payment    </td>
+      </tr>
+</table>
 
 #### Returns
 

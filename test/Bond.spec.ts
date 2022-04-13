@@ -645,7 +645,7 @@ describe("Bond", () => {
                 bond.address,
                 utils.parseEther("1")
               );
-              expect(await bond.previewWithdraw()).to.equal(
+              expect(await bond.previewWithdraw(0)).to.equal(
                 utils.parseEther("1")
               );
             });
