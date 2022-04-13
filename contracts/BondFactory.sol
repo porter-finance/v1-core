@@ -72,7 +72,7 @@ contract BondFactory is IBondFactory, AccessControl {
         emit IssuerAllowListEnabled(_isIssuerAllowListEnabled);
     }
 
-    function setisTokenAllowListEnabled(bool _isTokenAllowListEnabled)
+    function setIsTokenAllowListEnabled(bool _isTokenAllowListEnabled)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {

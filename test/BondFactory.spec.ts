@@ -235,7 +235,7 @@ describe("BondFactory", async () => {
       await expect(factory.connect(user).setIsIssuerAllowListEnabled(false)).to
         .be.reverted;
     });
-    it("should toggle allow list", async () => {
+    it("should toggle issuer allow list", async () => {
       expect(await factory.isIssuerAllowListEnabled()).to.be.equal(true);
 
       await expect(factory.setIsIssuerAllowListEnabled(false))
@@ -263,4 +263,32 @@ describe("BondFactory", async () => {
       expect(await factory.isIssuerAllowListEnabled()).to.be.equal(true);
     });
   });
+
+  // it("should toggle token allow list", async () => {
+  //   expect(await factory.isTokenAllowListEnabled()).to.be.equal(true);
+
+  //   await expect(factory.setIsTokenAllowListEnabled(false))
+  //     .to.emit(factory, "TokenAllowListEnabled")
+  //     .withArgs(false);
+  //   expect(await factory.isTokenAllowListEnabled()).to.be.equal(false);
+  //   await collateralToken.transfer(
+  //     user.address,
+  //     await collateralToken.balanceOf(owner.address)
+  //   );
+  //   collateralToken
+  //     .connect(user)
+  //     .approve(
+  //       factory.address,
+  //       await collateralToken.balanceOf(user.address)
+  //     );
+  //   await expect(createBond(factory.connect(user))).to.emit(
+  //     factory,
+  //     "BondCreated"
+  //   );
+
+  //   await expect(factory.setIsTokenAllowListEnabled(true))
+  //     .to.emit(factory, "TokenAllowListEnabled")
+  //     .withArgs(true);
+  //   expect(await factory.isTokenAllowListEnabled()).to.be.equal(true);
+  // });
 });

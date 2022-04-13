@@ -291,7 +291,7 @@ If enabled, usable tokens are restricted to those with the ALLOWED_TOKEN role.
 function setIsIssuerAllowListEnabled(bool _isIssuerAllowListEnabled) external nonpayable
 ```
 
-Turns the allow list on or off.
+Turns the issuer allow list on or off.
 
 #### Parameters
 
@@ -300,7 +300,27 @@ Turns the allow list on or off.
     <td>bool </td>
     <td>_isIssuerAllowListEnabled</td>
         <td>
-    If the allow list should be enabled or not.    </td>
+    If the issuer allow list should be enabled or not.    </td>
+      </tr>
+</table>
+
+
+### setIsTokenAllowListEnabled
+
+```solidity
+function setIsTokenAllowListEnabled(bool _isTokenAllowListEnabled) external nonpayable
+```
+
+Turns the token allow list on or off.
+
+#### Parameters
+
+<table>
+  <tr>
+    <td>bool </td>
+    <td>_isTokenAllowListEnabled</td>
+        <td>
+    If the token allow list should be enabled or not.    </td>
       </tr>
 </table>
 

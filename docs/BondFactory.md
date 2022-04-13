@@ -514,7 +514,7 @@ function revokeRole(bytes32 role, address account) external nonpayable
 function setIsIssuerAllowListEnabled(bool _isIssuerAllowListEnabled) external nonpayable
 ```
 
-Turns the allow list on or off.
+Turns the issuer allow list on or off.
 
 #### Parameters
 
@@ -523,18 +523,18 @@ Turns the allow list on or off.
     <td>bool </td>
     <td>_isIssuerAllowListEnabled</td>
         <td>
-    If the allow list should be enabled or not.    </td>
+    If the issuer allow list should be enabled or not.    </td>
       </tr>
 </table>
 
 
-### setisTokenAllowListEnabled
+### setIsTokenAllowListEnabled
 
 ```solidity
-function setisTokenAllowListEnabled(bool _isTokenAllowListEnabled) external nonpayable
+function setIsTokenAllowListEnabled(bool _isTokenAllowListEnabled) external nonpayable
 ```
 
-
+Turns the token allow list on or off.
 
 #### Parameters
 
@@ -542,6 +542,8 @@ function setisTokenAllowListEnabled(bool _isTokenAllowListEnabled) external nonp
   <tr>
     <td>bool </td>
     <td>_isTokenAllowListEnabled</td>
+        <td>
+    If the token allow list should be enabled or not.    </td>
       </tr>
 </table>
 

@@ -106,12 +106,19 @@ interface IBondFactory {
     function isBond(address) external view returns (bool);
 
     /**
-        @notice Turns the allow list on or off.
-        @param _isIssuerAllowListEnabled If the allow list should be enabled or not.
+        @notice Turns the issuer allow list on or off.
+        @param _isIssuerAllowListEnabled If the issuer allow list should be enabled or not.
         @dev Must be called by the current owner.
     */
     function setIsIssuerAllowListEnabled(bool _isIssuerAllowListEnabled)
         external;
+
+    /**
+        @notice Turns the token allow list on or off.
+        @param _isTokenAllowListEnabled If the token allow list should be enabled or not.
+        @dev Must be called by the current owner.
+    */
+    function setIsTokenAllowListEnabled(bool _isTokenAllowListEnabled) external;
 
     /**
         @notice Address where the bond implementation contract is stored.
