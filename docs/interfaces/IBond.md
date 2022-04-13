@@ -21,6 +21,12 @@ Emitted when collateral is withdrawn.
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
+    <td>receiver</td>
+        <td>
+    The address receiving the collateral.    </td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
     <td>token</td>
         <td>
     The address of the collateralToken.    </td>
@@ -80,6 +86,12 @@ Emitted when payment over the required amount is withdrawn.
     <td>from</td>
         <td>
     The caller withdrawing the excess payment amount.    </td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>receiver</td>
+        <td>
+    The address receiving the collateral.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
@@ -176,6 +188,12 @@ Emitted when a token is swept by the contract owner.
     <td>from</td>
         <td>
     The owner&#39;s address.    </td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>receiver</td>
+        <td>
+    The address receiving the collateral.    </td>
       </tr>
   <tr>
     <td>contract IERC20Metadata </td>

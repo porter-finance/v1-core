@@ -39,11 +39,13 @@ interface IBond {
     /**
         @notice Emitted when collateral is withdrawn.
         @param from The address withdrawing the collateral.
+        @param receiver The address receiving the collateral.
         @param token The address of the collateralToken.
         @param amount The number of collateralTokens withdrawn.
     */
     event CollateralWithdraw(
         address indexed from,
+        address indexed receiver,
         address indexed token,
         uint256 amount
     );
@@ -77,11 +79,13 @@ interface IBond {
     /**
         @notice Emitted when payment over the required amount is withdrawn.
         @param from The caller withdrawing the excess payment amount.
+        @param receiver The address receiving the collateral.
         @param token The paymentToken being withdrawn.
         @param amount The amount of paymentToken withdrawn.
     */
     event ExcessPaymentWithdraw(
         address indexed from,
+        address indexed receiver,
         address indexed token,
         uint256 amount
     );
@@ -89,10 +93,16 @@ interface IBond {
     /**
         @notice Emitted when a token is swept by the contract owner.
         @param from The owner's address.
+        @param receiver The address receiving the collateral.
         @param token The token that was swept.
         @param amount The amount that was swept.
     */
-    event TokenSweep(address from, IERC20Metadata token, uint256 amount);
+    event TokenSweep(
+        address from,
+        address indexed receiver,
+        IERC20Metadata token,
+        uint256 amount
+    );
 
     /**
         @notice The amount that was overpaid and can be withdrawn.
