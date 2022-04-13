@@ -91,10 +91,17 @@ interface IBondFactory {
         uint256 bonds
     ) external returns (address clone);
 
-    /// @notice If enabled, issuance is restricted to those with ISSUER_ROLE.
+    /**  
+    @notice If enabled, issuance is restricted to those with ISSUER_ROLE.
+    @return isEnabled Whether or not the `ISSUER_ROLE` will be checked when creating new bonds.
+    */
     function isIssuerAllowListEnabled() external view returns (bool isEnabled);
 
-    /// @notice If enabled, usable tokens are restricted to those with the ALLOWED_TOKEN role.
+    /**  
+    @notice If enabled, usable tokens are restricted to those with the ALLOWED_TOKEN role.
+    @return isEnabled Whether or not the collateralToken and paymentToken are checked
+        for the `ALLOWED_TOKEN` role when creating new bonds.
+    */
     function isTokenAllowListEnabled() external view returns (bool isEnabled);
 
     /**
