@@ -279,6 +279,9 @@ contract Bond is
         returns (uint256 paymentTokensToSend, uint256 collateralTokensToSend)
     {
         uint256 supply = totalSupply();
+        if (supply == 0) {
+            return (0, 0);
+        }
         uint256 paidAmount = isFullyPaid() ? supply : paymentBalance();
         paymentTokensToSend = bonds.mulDivDown(paidAmount, supply);
 
