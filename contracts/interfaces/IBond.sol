@@ -39,7 +39,7 @@ interface IBond {
     /**
         @notice Emitted when collateral is withdrawn.
         @param from The address withdrawing the collateral.
-        @param receiver The address receiving the collateral.
+        @param receiver The address receiving the collateralTokens.
         @param token The address of the collateralToken.
         @param amount The number of collateralTokens withdrawn.
     */
@@ -79,7 +79,7 @@ interface IBond {
     /**
         @notice Emitted when payment over the required amount is withdrawn.
         @param from The caller withdrawing the excess payment amount.
-        @param receiver The address receiving the collateral.
+        @param receiver The address receiving the paymentTokens.
         @param token The paymentToken being withdrawn.
         @param amount The amount of paymentToken withdrawn.
     */
@@ -93,7 +93,7 @@ interface IBond {
     /**
         @notice Emitted when a token is swept by the contract owner.
         @param from The owner's address.
-        @param receiver The address receiving the collateral.
+        @param receiver The address receiving the swept tokens.
         @param token The token that was swept.
         @param amount The amount that was swept.
     */
@@ -304,7 +304,7 @@ interface IBond {
         @notice Sends tokens to the owner that are in this contract.
         @dev The collateralToken and paymentToken, cannot be swept.
         @param token The ERC20 token to sweep and send to the owner.
-        @param receiver The address that is transfered the sweep token
+        @param receiver The address that is transferred the swept token.
 
     */
     function sweep(IERC20Metadata token, address receiver) external;
@@ -314,14 +314,14 @@ interface IBond {
             from bond contract. The number of collateralTokens remaining in the
             contract must be enough to cover the total supply of Bonds in
             accordance to both the collateralRatio and convertibleRatio.
-        @param receiver The address that is transfered the excess collateral
+        @param receiver The address that is transferred the excess collateral.
     */
     function withdrawExcessCollateral(address receiver) external;
 
     /**
         @notice The Owner can withdraw any overpaid
             payment token in the contract.
-        @param receiver The address that is transfered the excess payment
+        @param receiver The address that is transferred the excess payment.
 
     */
     function withdrawExcessPayment(address receiver) external;
