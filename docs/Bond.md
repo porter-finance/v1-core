@@ -880,7 +880,7 @@ Before maturity, if the given bonds are converted, this would be the number of c
 ### previewRedeemAtMaturity
 
 ```solidity
-function previewRedeemAtMaturity(uint256 bonds) external view returns (uint256, uint256)
+function previewRedeemAtMaturity(uint256 bonds) external view returns (uint256 paymentTokensToSend, uint256 collateralTokensToSend)
 ```
 
 At maturity, if the given bonds are redeemed, this would be the amount of collateralTokens and paymentTokens received. The number of paymentTokens to receive is rounded down.
@@ -917,7 +917,7 @@ At maturity, if the given bonds are redeemed, this would be the amount of collat
 ### previewWithdraw
 
 ```solidity
-function previewWithdraw(uint256 payment) external view returns (uint256)
+function previewWithdraw(uint256 payment) external view returns (uint256 amount)
 ```
 
 The amount of collateral that the issuer would be able to  withdraw from the contract. This function rounds up the number  of collateralTokens required in the contract and therefore may round down the amount received.
