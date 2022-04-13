@@ -195,7 +195,7 @@ Emitted when the token allow list is toggled on or off.
 function ALLOWED_TOKEN() external view returns (bytes32)
 ```
 
-The role required to issue bonds.
+The role given to allowed tokens
 
 
 #### Returns

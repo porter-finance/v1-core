@@ -26,7 +26,7 @@ contract BondFactory is IBondFactory, AccessControl {
     /// @notice The role required to issue bonds.
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
 
-    /// @notice The role required to issue bonds.
+    /// @notice The role given to allowed tokens
     bytes32 public constant ALLOWED_TOKEN = keccak256("ALLOWED_TOKEN");
 
     /// @inheritdoc IBondFactory

@@ -36,6 +36,7 @@ describe("BondFactory", async () => {
   let collateralToken: TestERC20;
   let paymentToken: TestERC20;
   let ISSUER_ROLE: any;
+  let ALLOWED_TOKEN: any;
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
@@ -45,6 +46,9 @@ describe("BondFactory", async () => {
     ).tokens[0]);
 
     ISSUER_ROLE = await factory.ISSUER_ROLE();
+    ALLOWED_TOKEN = await factory.ALLOWED_TOKEN();
+    await factory.grantRole(ALLOWED_TOKEN, collateralToken.address);
+    await factory.grantRole(ALLOWED_TOKEN, paymentToken.address);
   });
 
   async function createBond(factory: BondFactory, params: BondParams = {}) {
@@ -122,6 +126,7 @@ describe("BondFactory", async () => {
     describe("invalid maturity dates", async () => {
       it("should revert on a maturity date already passed", async () => {
         await factory.grantRole(ISSUER_ROLE, owner.address);
+
         await expect(
           createBond(factory, { maturityDate: BigNumber.from(1) })
         ).to.be.revertedWith("InvalidMaturityDate");
@@ -135,12 +140,14 @@ describe("BondFactory", async () => {
           .timestamp;
 
         await factory.grantRole(ISSUER_ROLE, owner.address);
+
         await expect(
           createBond(factory, { maturityDate: currentTimestamp })
         ).to.be.revertedWith("InvalidMaturityDate");
       });
       it("should revert on a maturity date 10 years in the future", async () => {
         await factory.grantRole(ISSUER_ROLE, owner.address);
+
         await expect(
           createBond(factory, {
             maturityDate: ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
@@ -190,7 +197,7 @@ describe("BondFactory", async () => {
 
     it("should allow anyone to call createBond with allow list disabled", async () => {
       await expect(factory.setIsIssuerAllowListEnabled(false))
-        .to.emit(factory, "AllowListEnabled")
+        .to.emit(factory, "IssuerAllowListEnabled")
         .withArgs(false);
       expect(await factory.isIssuerAllowListEnabled()).to.be.equal(false);
       await collateralToken.transfer(
@@ -232,7 +239,7 @@ describe("BondFactory", async () => {
       expect(await factory.isIssuerAllowListEnabled()).to.be.equal(true);
 
       await expect(factory.setIsIssuerAllowListEnabled(false))
-        .to.emit(factory, "AllowListEnabled")
+        .to.emit(factory, "IssuerAllowListEnabled")
         .withArgs(false);
       expect(await factory.isIssuerAllowListEnabled()).to.be.equal(false);
       await collateralToken.transfer(
@@ -251,7 +258,7 @@ describe("BondFactory", async () => {
       );
 
       await expect(factory.setIsIssuerAllowListEnabled(true))
-        .to.emit(factory, "AllowListEnabled")
+        .to.emit(factory, "IssuerAllowListEnabled")
         .withArgs(true);
       expect(await factory.isIssuerAllowListEnabled()).to.be.equal(true);
     });
