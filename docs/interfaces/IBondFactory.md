@@ -5,22 +5,6 @@
 
 ## Events
 
-### AllowListEnabled
-
-Emitted when the allow list is toggled on or off.
-
-
-
-
-<table>
-  <tr>
-    <td>bool </td>
-    <td>isAllowListEnabled</td>
-        <td>
-    The new state of the allow list.    </td>
-      </tr>
-</table>
-
 ### BondCreated
 
 Emitted when a new bond is created.
@@ -51,7 +35,7 @@ Emitted when a new bond is created.
     <td>address <code>indexed</code></td>
     <td>owner</td>
         <td>
-    Ownership of the created Bond is transferred to this address by way of DEFAULT_ADMIN_ROLE. The ability to withdraw is  given by WITHDRAW_ROLE, and tokens are minted to this address. See `initialize` in `Bond`.    </td>
+    Ownership of the created Bond is transferred to this address by way of _transfeOwnership and tokens are minted to this address. See `initialize` in `Bond`.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
@@ -88,6 +72,38 @@ Emitted when a new bond is created.
     <td>bonds</td>
         <td>
     The amount of Bonds given to the owner during the one-time mint during the `Bond`&#39;s `initialize`.    </td>
+      </tr>
+</table>
+
+### IssuerAllowListEnabled
+
+Emitted when the issuerallow list is toggled on or off.
+
+
+
+
+<table>
+  <tr>
+    <td>bool </td>
+    <td>isIssuerAllowListEnabled</td>
+        <td>
+    The new state of the allow list.    </td>
+      </tr>
+</table>
+
+### TokenAllowListEnabled
+
+Emitted when the token allow list is toggled on or off.
+
+
+
+
+<table>
+  <tr>
+    <td>bool </td>
+    <td>isTokenAllowListEnabled</td>
+        <td>
+    The new state of the allow list.    </td>
       </tr>
 </table>
 
@@ -137,7 +153,7 @@ Emitted when a new bond is created.
 function createBond(string name, string symbol, uint256 maturityDate, address paymentToken, address collateralToken, uint256 collateralTokenAmount, uint256 convertibleTokenAmount, uint256 bonds) external nonpayable returns (address clone)
 ```
 
-Creates a new Bond.
+Creates a new Bond. The calculated ratios are rounded down.
 
 #### Parameters
 
@@ -204,25 +220,6 @@ Creates a new Bond.
       </tr>
 </table>
 
-### isAllowListEnabled
-
-```solidity
-function isAllowListEnabled() external view returns (bool)
-```
-
-If enabled, issuance is restricted to those with ISSUER_ROLE.
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
-
 ### isBond
 
 ```solidity
@@ -250,22 +247,80 @@ Check if the address was created by this Bond factory.
       </tr>
 </table>
 
-### setIsAllowListEnabled
+### isIssuerAllowListEnabled
 
 ```solidity
-function setIsAllowListEnabled(bool _isAllowListEnabled) external nonpayable
+function isIssuerAllowListEnabled() external view returns (bool isEnabled)
 ```
 
-Turns the allow list on or off.
+If enabled, issuance is restricted to those with ISSUER_ROLE.
+
+
+#### Returns
+
+
+<table>
+  <tr>
+    <td>
+      bool    </td>
+      </tr>
+</table>
+
+### isTokenAllowListEnabled
+
+```solidity
+function isTokenAllowListEnabled() external view returns (bool isEnabled)
+```
+
+If enabled, usable tokens are restricted to those with the ALLOWED_TOKEN role.
+
+
+#### Returns
+
+
+<table>
+  <tr>
+    <td>
+      bool    </td>
+      </tr>
+</table>
+
+### setIsIssuerAllowListEnabled
+
+```solidity
+function setIsIssuerAllowListEnabled(bool _isIssuerAllowListEnabled) external nonpayable
+```
+
+Turns the issuer allow list on or off.
 
 #### Parameters
 
 <table>
   <tr>
     <td>bool </td>
-    <td>_isAllowListEnabled</td>
+    <td>_isIssuerAllowListEnabled</td>
         <td>
-    If the allow list should be enabled or not.    </td>
+    If the issuer allow list should be enabled or not.    </td>
+      </tr>
+</table>
+
+
+### setIsTokenAllowListEnabled
+
+```solidity
+function setIsTokenAllowListEnabled(bool _isTokenAllowListEnabled) external nonpayable
+```
+
+Turns the token allow list on or off.
+
+#### Parameters
+
+<table>
+  <tr>
+    <td>bool </td>
+    <td>_isTokenAllowListEnabled</td>
+        <td>
+    If the token allow list should be enabled or not.    </td>
       </tr>
 </table>
 

@@ -21,6 +21,12 @@ Emitted when collateral is withdrawn.
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
+    <td>receiver</td>
+        <td>
+    The address receiving the collateral.    </td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
     <td>token</td>
         <td>
     The address of the collateralToken.    </td>
@@ -80,6 +86,12 @@ Emitted when payment over the required amount is withdrawn.
     <td>from</td>
         <td>
     The caller withdrawing the excess payment amount.    </td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>receiver</td>
+        <td>
+    The address receiving the collateral.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
@@ -176,6 +188,12 @@ Emitted when a token is swept by the contract owner.
     <td>from</td>
         <td>
     The owner&#39;s address.    </td>
+      </tr>
+  <tr>
+    <td>address <code>indexed</code></td>
+    <td>receiver</td>
+        <td>
+    The address receiving the collateral.    </td>
       </tr>
   <tr>
     <td>contract IERC20Metadata </td>
@@ -402,7 +420,7 @@ This one-time setup initiated by the BondFactory initializes the Bond with the g
     <td>address </td>
     <td>owner</td>
         <td>
-    Ownership of the created Bond is transferred to this address by way of DEFAULT_ADMIN_ROLE. The ability to withdraw is  given by WITHDRAW_ROLE, and tokens are minted to this address.    </td>
+    Ownership of the created Bond is transferred to this address by way of _transfeOwnership and tokens are minted to this address. See `initialize` in `Bond`.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
@@ -574,7 +592,7 @@ This is the token the borrower deposits into the contract and what the Bond hold
 function previewConvertBeforeMaturity(uint256 bonds) external view returns (uint256)
 ```
 
-Before maturity, if the given bonds are converted, this would be the number of collateralTokens received.
+Before maturity, if the given bonds are converted, this would be the number of collateralTokens received. This function rounds down the number of returned collateral.
 
 #### Parameters
 
@@ -605,7 +623,7 @@ Before maturity, if the given bonds are converted, this would be the number of c
 function previewRedeemAtMaturity(uint256 bonds) external view returns (uint256, uint256)
 ```
 
-At maturity, if the given bonds are redeemed, this would be the amount of collateralTokens and paymentTokens received.
+At maturity, if the given bonds are redeemed, this would be the amount of collateralTokens and paymentTokens received. The number of paymentTokens to receive is rounded down.
 
 #### Parameters
 
@@ -642,7 +660,7 @@ At maturity, if the given bonds are redeemed, this would be the amount of collat
 function previewWithdraw(uint256 payment) external view returns (uint256)
 ```
 
-The amount of collateral that the issuer would be able to  withdraw from the contract.
+The amount of collateral that the issuer would be able to  withdraw from the contract. This function rounds up the number  of collateralTokens required in the contract and therefore may round down the amount received.
 
 #### Parameters
 
@@ -690,7 +708,7 @@ The Bond holder can burn Bonds in return for their portion of paymentTokens and 
 ### sweep
 
 ```solidity
-function sweep(contract IERC20Metadata token) external nonpayable
+function sweep(contract IERC20Metadata token, address receiver) external nonpayable
 ```
 
 Sends tokens to the owner that are in this contract.
@@ -704,27 +722,53 @@ Sends tokens to the owner that are in this contract.
         <td>
     The ERC20 token to sweep and send to the owner.    </td>
       </tr>
+  <tr>
+    <td>address </td>
+    <td>receiver</td>
+        <td>
+    The address that is transfered the sweep token    </td>
+      </tr>
 </table>
 
 
 ### withdrawExcessCollateral
 
 ```solidity
-function withdrawExcessCollateral() external nonpayable
+function withdrawExcessCollateral(address receiver) external nonpayable
 ```
 
-A caller with the WITHDRAW_ROLE may withdraw excess collateral from bond contract. The number of collateralTokens remaining in the contract must be enough to cover the total supply of Bonds in accordance to both the collateralRatio and convertibleRatio.
+The Owner may withdraw excess collateral from bond contract. The number of collateralTokens remaining in the contract must be enough to cover the total supply of Bonds in accordance to both the collateralRatio and convertibleRatio.
 
+#### Parameters
+
+<table>
+  <tr>
+    <td>address </td>
+    <td>receiver</td>
+        <td>
+    The address that is transfered the excess collateral    </td>
+      </tr>
+</table>
 
 
 ### withdrawExcessPayment
 
 ```solidity
-function withdrawExcessPayment() external nonpayable
+function withdrawExcessPayment(address receiver) external nonpayable
 ```
 
-A caller with the WITHDRAW_ROLE can withdraw any overpaid payment token in the contract.
+The Owner can withdraw any overpaid payment token in the contract.
 
+#### Parameters
+
+<table>
+  <tr>
+    <td>address </td>
+    <td>receiver</td>
+        <td>
+    The address that is transfered the excess payment    </td>
+      </tr>
+</table>
 
 
 
