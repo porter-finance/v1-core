@@ -260,7 +260,7 @@ describe.only("Bond", () => {
               (await bond.amountOwed()).add(1)
             );
             expect(await bond.amountOverPaid()).to.equal(1);
-            await bond.withdrawExcessPayment();
+            await bond.withdrawExcessPayment(owner.address);
             expect(await bond.amountOverPaid()).to.equal(0);
           });
           it("should withdraw excess payment when bonds are redeemed", async () => {
@@ -273,7 +273,7 @@ describe.only("Bond", () => {
             await bond.redeem(bonds);
 
             expect(await bond.amountOverPaid()).to.equal(fullPayment);
-            await bond.withdrawExcessPayment();
+            await bond.withdrawExcessPayment(owner.address);
             expect(await bond.amountOverPaid()).to.equal(0);
           });
           it("should have available overpayment when partially paid and all bonds are burnt", async () => {
@@ -303,7 +303,7 @@ describe.only("Bond", () => {
             expect(await bond.amountOverPaid()).to.equal(fullPayment.div(2));
             await bond.convert(halfBonds);
             expect(await bond.amountOverPaid()).to.equal(fullPayment);
-            await bond.withdrawExcessPayment();
+            await bond.withdrawExcessPayment(owner.address);
             expect(await bond.amountOverPaid()).to.equal(0);
           });
         });
@@ -420,7 +420,7 @@ describe.only("Bond", () => {
               expect(await bond.totalSupply()).to.not.equal(0);
 
               await expectTokenDelta(
-                bond.withdrawExcessCollateral,
+                () => bond.withdrawExcessCollateral(owner.address),
                 collateralToken,
                 owner,
                 bond.address,
@@ -485,7 +485,7 @@ describe.only("Bond", () => {
               ).wait();
               await (await bond.pay(targetPayment)).wait();
               const amountOwed = await bond.amountOwed();
-              await (await bond.withdrawExcessCollateral()).wait();
+              await (await bond.withdrawExcessCollateral(owner.address)).wait();
               expect(await bond.amountOwed()).to.be.equal(amountOwed);
             });
 
@@ -566,7 +566,7 @@ describe.only("Bond", () => {
               await bond.burn(config.maxSupply);
               expect(await bond.totalSupply()).to.equal(0);
               await expectTokenDelta(
-                bond.withdrawExcessCollateral,
+                () => bond.withdrawExcessCollateral(owner.address),
                 collateralToken,
                 owner,
                 owner.address,
@@ -909,21 +909,20 @@ describe.only("Bond", () => {
 
           it("should remove a token from the contract", async () => {
             await attackingToken.connect(attacker).transfer(bond.address, 1000);
-            await expect(bond.sweep(attackingToken.address)).to.emit(
-              bond,
-              "TokenSweep"
-            );
+            await expect(
+              bond.sweep(attackingToken.address, owner.address)
+            ).to.emit(bond, "TokenSweep");
             expect(await attackingToken.balanceOf(owner.address)).to.be.equal(
               1000
             );
           });
 
           it("should disallow removal of collateralToken and paymentToken", async () => {
-            await expect(bond.sweep(paymentToken.address)).to.be.revertedWith(
-              "SweepDisallowedForToken"
-            );
             await expect(
-              bond.sweep(collateralToken.address)
+              bond.sweep(paymentToken.address, owner.address)
+            ).to.be.revertedWith("SweepDisallowedForToken");
+            await expect(
+              bond.sweep(collateralToken.address, owner.address)
             ).to.be.revertedWith("SweepDisallowedForToken");
           });
         });
