@@ -228,16 +228,16 @@ contract Bond is
     function previewConvertBeforeMaturity(uint256 bonds)
         public
         view
-        returns (uint256)
+        returns (uint256 collateralTokens)
     {
-        return bonds.mulWadDown(convertibleRatio);
+        collateralTokens = bonds.mulWadDown(convertibleRatio);
     }
 
     /// @inheritdoc IBond
     function previewWithdraw(uint256 payment)
         public
         view
-        returns (uint256 amount)
+        returns (uint256 collateralTokens)
     {
         uint256 tokensCoveredByPayment = paymentBalance() + payment;
         uint256 collateralTokensRequired = 0;
@@ -269,7 +269,7 @@ contract Bond is
             return 0;
         }
 
-        amount = collBalance - totalRequiredCollateral;
+        collateralTokens = collBalance - totalRequiredCollateral;
     }
 
     /// @inheritdoc IBond
@@ -292,8 +292,8 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function paymentBalance() public view returns (uint256) {
-        return IERC20Metadata(paymentToken).balanceOf(address(this));
+    function paymentBalance() public view returns (uint256 paymentTokens) {
+        paymentTokens = IERC20Metadata(paymentToken).balanceOf(address(this));
     }
 
     /// @inheritdoc IBond
@@ -315,29 +315,34 @@ contract Bond is
     }
 
     /// @inheritdoc  IBond
-    function collateralBalance() public view returns (uint256) {
-        return IERC20Metadata(collateralToken).balanceOf(address(this));
+    function collateralBalance()
+        public
+        view
+        returns (uint256 collateralTokens)
+    {
+        collateralTokens = IERC20Metadata(collateralToken).balanceOf(
+            address(this)
+        );
     }
 
     /// @inheritdoc IBond
-    function isFullyPaid() public view returns (bool) {
-        return paymentBalance() >= totalSupply();
+    function isFullyPaid() public view returns (bool isPaid) {
+        isPaid = paymentBalance() >= totalSupply();
     }
 
     /// @inheritdoc IBond
-    function isMature() public view returns (bool) {
-        return block.timestamp >= maturityDate;
+    function isMature() public view returns (bool isBondMature) {
+        isBondMature = block.timestamp >= maturityDate;
     }
 
     /// @inheritdoc IBond
-    function amountOwed() external view returns (uint256) {
+    function amountOwed() external view returns (uint256 amountUnpaid) {
         uint256 supply = totalSupply();
         uint256 balance = paymentBalance();
         if (supply <= balance) {
             return 0;
         }
-        uint256 amountUnpaid = supply - balance;
-        return (amountUnpaid);
+        amountUnpaid = supply - balance;
     }
 
     /// @inheritdoc IBond
