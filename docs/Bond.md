@@ -263,25 +263,6 @@ Emitted when a token is swept by the contract owner.
 ## Methods
 
 
-### WITHDRAW_ROLE
-
-```solidity
-function WITHDRAW_ROLE() external view returns (bytes32)
-```
-
-This role permits the withdraw of collateral from the contract.
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bytes32    </td>
-      </tr>
-</table>
-
 ### allowance
 
 ```solidity
@@ -1136,7 +1117,7 @@ function transferOwnership(address newOwner) external nonpayable
 function withdrawExcessCollateral(address receiver) external nonpayable
 ```
 
-A caller with the WITHDRAW_ROLE may withdraw excess collateral from bond contract. The number of collateralTokens remaining in the contract must be enough to cover the total supply of Bonds in accordance to both the collateralRatio and convertibleRatio.
+The Owner may withdraw excess collateral from bond contract. The number of collateralTokens remaining in the contract must be enough to cover the total supply of Bonds in accordance to both the collateralRatio and convertibleRatio.
 
 #### Parameters
 
@@ -1156,7 +1137,7 @@ A caller with the WITHDRAW_ROLE may withdraw excess collateral from bond contrac
 function withdrawExcessPayment(address receiver) external nonpayable
 ```
 
-A caller with the WITHDRAW_ROLE can withdraw any overpaid payment token in the contract.
+The Owner can withdraw any overpaid payment token in the contract.
 
 #### Parameters
 

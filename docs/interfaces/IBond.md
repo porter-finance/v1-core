@@ -420,7 +420,7 @@ This one-time setup initiated by the BondFactory initializes the Bond with the g
     <td>address </td>
     <td>owner</td>
         <td>
-    Ownership of the created Bond is transferred to this address by way of DEFAULT_ADMIN_ROLE. The ability to withdraw is  given by WITHDRAW_ROLE, and tokens are minted to this address.    </td>
+    Ownership of the created Bond is transferred to this address by way of _transfeOwnership and tokens are minted to this address. See `initialize` in `Bond`.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
@@ -727,7 +727,7 @@ Sends tokens to the owner that are in this contract.
 function withdrawExcessCollateral(address receiver) external nonpayable
 ```
 
-A caller with the WITHDRAW_ROLE may withdraw excess collateral from bond contract. The number of collateralTokens remaining in the contract must be enough to cover the total supply of Bonds in accordance to both the collateralRatio and convertibleRatio.
+The Owner may withdraw excess collateral from bond contract. The number of collateralTokens remaining in the contract must be enough to cover the total supply of Bonds in accordance to both the collateralRatio and convertibleRatio.
 
 #### Parameters
 
@@ -747,7 +747,7 @@ A caller with the WITHDRAW_ROLE may withdraw excess collateral from bond contrac
 function withdrawExcessPayment(address receiver) external nonpayable
 ```
 
-A caller with the WITHDRAW_ROLE can withdraw any overpaid payment token in the contract.
+The Owner can withdraw any overpaid payment token in the contract.
 
 #### Parameters
 

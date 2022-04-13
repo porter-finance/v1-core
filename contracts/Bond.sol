@@ -48,14 +48,6 @@ contract Bond is
     /// @inheritdoc IBond
     uint256 public convertibleRatio;
 
-    /**
-        @notice This role permits the withdraw of collateral from the contract.
-        @dev This role is assigned to the owner upon bond creation who can also
-            assign this role to other addresses to enable their withdraw.
-            
-    */
-    bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
-
     /// @dev Used to confirm the bond has not yet matured.
     modifier beforeMaturity() {
         if (isMature()) {
