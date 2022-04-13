@@ -3,13 +3,15 @@ pragma solidity 0.8.9;
 
 interface IBondFactory {
     /**
-        @notice Emitted when the issuerallow list is toggled on or off.
+        @notice Emitted when the restriction of bond creation to allow-listed
+            accounts is toggled on or off.
         @param isIssuerAllowListEnabled The new state of the allow list.
     */
     event IssuerAllowListEnabled(bool isIssuerAllowListEnabled);
 
     /**
-        @notice Emitted when the token allow list is toggled on or off.
+        @notice Emitted when the restriction of collateralToken and paymentToken
+            to allow-listed tokens is toggled on or off.
         @param isTokenAllowListEnabled The new state of the allow list.
     */
     event TokenAllowListEnabled(bool isTokenAllowListEnabled);
@@ -106,7 +108,7 @@ interface IBondFactory {
     function isBond(address) external view returns (bool);
 
     /**
-        @notice Turns the issuer allow list on or off.
+        @notice Sets the state of bond restriction to allow-listed accounts.
         @param _isIssuerAllowListEnabled If the issuer allow list should be enabled or not.
         @dev Must be called by the current owner.
     */
@@ -114,7 +116,7 @@ interface IBondFactory {
         external;
 
     /**
-        @notice Turns the token allow list on or off.
+        @notice Sets the state of token restriction to the list of allowed tokens.
         @param _isTokenAllowListEnabled If the token allow list should be enabled or not.
         @dev Must be called by the current owner.
     */
