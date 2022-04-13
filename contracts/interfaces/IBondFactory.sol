@@ -3,10 +3,16 @@ pragma solidity 0.8.9;
 
 interface IBondFactory {
     /**
-        @notice Emitted when the allow list is toggled on or off.
-        @param isAllowListEnabled The new state of the allow list.
+        @notice Emitted when the issuerallow list is toggled on or off.
+        @param isIssuerAllowListEnabled The new state of the allow list.
     */
-    event AllowListEnabled(bool isAllowListEnabled);
+    event IssuerAllowListEnabled(bool isIssuerAllowListEnabled);
+
+    /**
+        @notice Emitted when the token allow list is toggled on or off.
+        @param isTokenAllowListEnabled The new state of the allow list.
+    */
+    event TokenAllowListEnabled(bool isTokenAllowListEnabled);
 
     /**
         @notice Emitted when a new bond is created.
@@ -84,7 +90,10 @@ interface IBondFactory {
     ) external returns (address clone);
 
     /// @notice If enabled, issuance is restricted to those with ISSUER_ROLE.
-    function isAllowListEnabled() external view returns (bool);
+    function isIssuerAllowListEnabled() external view returns (bool isEnabled);
+
+    /// @notice If enabled, usable tokens are restricted to those with the ALLOWED_TOKEN role.
+    function isTokenAllowListEnabled() external view returns (bool isEnabled);
 
     /**
         @notice Check if the address was created by this Bond factory.
@@ -98,10 +107,11 @@ interface IBondFactory {
 
     /**
         @notice Turns the allow list on or off.
-        @param _isAllowListEnabled If the allow list should be enabled or not.
+        @param _isIssuerAllowListEnabled If the allow list should be enabled or not.
         @dev Must be called by the current owner.
     */
-    function setIsAllowListEnabled(bool _isAllowListEnabled) external;
+    function setIsIssuerAllowListEnabled(bool _isIssuerAllowListEnabled)
+        external;
 
     /**
         @notice Address where the bond implementation contract is stored.

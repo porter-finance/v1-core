@@ -5,20 +5,6 @@ This factory contract issues new bond contracts.
 
 ## Events
 
-### AllowListEnabled
-
-Emitted when the allow list is toggled on or off.
-
-
-
-
-<table>
-  <tr>
-    <td>bool </td>
-    <td>isAllowListEnabled</td>
-      </tr>
-</table>
-
 ### BondCreated
 
 Emitted when a new bond is created.
@@ -66,6 +52,20 @@ Emitted when a new bond is created.
   <tr>
     <td>uint256 </td>
     <td>bonds</td>
+      </tr>
+</table>
+
+### IssuerAllowListEnabled
+
+Emitted when the issuerallow list is toggled on or off.
+
+
+
+
+<table>
+  <tr>
+    <td>bool </td>
+    <td>isIssuerAllowListEnabled</td>
       </tr>
 </table>
 
@@ -135,6 +135,20 @@ Emitted when a new bond is created.
       </tr>
 </table>
 
+### TokenAllowListEnabled
+
+Emitted when the token allow list is toggled on or off.
+
+
+
+
+<table>
+  <tr>
+    <td>bool </td>
+    <td>isTokenAllowListEnabled</td>
+      </tr>
+</table>
+
 
 
 ## Errors
@@ -174,6 +188,25 @@ Emitted when a new bond is created.
 
 ## Methods
 
+
+### ALLOWED_TOKEN
+
+```solidity
+function ALLOWED_TOKEN() external view returns (bytes32)
+```
+
+The role required to issue bonds.
+
+
+#### Returns
+
+
+<table>
+  <tr>
+    <td>
+      bytes32    </td>
+      </tr>
+</table>
 
 ### DEFAULT_ADMIN_ROLE
 
@@ -366,25 +399,6 @@ function hasRole(bytes32 role, address account) external view returns (bool)
       </tr>
 </table>
 
-### isAllowListEnabled
-
-```solidity
-function isAllowListEnabled() external view returns (bool)
-```
-
-If enabled, issuance is restricted to those with ISSUER_ROLE.
-
-
-#### Returns
-
-
-<table>
-  <tr>
-    <td>
-      bool    </td>
-      </tr>
-</table>
-
 ### isBond
 
 ```solidity
@@ -401,6 +415,44 @@ Check if the address was created by this Bond factory.
     <td>_0</td>
       </tr>
 </table>
+
+#### Returns
+
+
+<table>
+  <tr>
+    <td>
+      bool    </td>
+      </tr>
+</table>
+
+### isIssuerAllowListEnabled
+
+```solidity
+function isIssuerAllowListEnabled() external view returns (bool)
+```
+
+If enabled, issuance is restricted to those with ISSUER_ROLE.
+
+
+#### Returns
+
+
+<table>
+  <tr>
+    <td>
+      bool    </td>
+      </tr>
+</table>
+
+### isTokenAllowListEnabled
+
+```solidity
+function isTokenAllowListEnabled() external view returns (bool)
+```
+
+If enabled, usable tokens are restricted to those with the ALLOWED_TOKEN role.
+
 
 #### Returns
 
@@ -456,10 +508,10 @@ function revokeRole(bytes32 role, address account) external nonpayable
 </table>
 
 
-### setIsAllowListEnabled
+### setIsIssuerAllowListEnabled
 
 ```solidity
-function setIsAllowListEnabled(bool _isAllowListEnabled) external nonpayable
+function setIsIssuerAllowListEnabled(bool _isIssuerAllowListEnabled) external nonpayable
 ```
 
 Turns the allow list on or off.
@@ -469,9 +521,27 @@ Turns the allow list on or off.
 <table>
   <tr>
     <td>bool </td>
-    <td>_isAllowListEnabled</td>
+    <td>_isIssuerAllowListEnabled</td>
         <td>
     If the allow list should be enabled or not.    </td>
+      </tr>
+</table>
+
+
+### setisTokenAllowListEnabled
+
+```solidity
+function setisTokenAllowListEnabled(bool _isTokenAllowListEnabled) external nonpayable
+```
+
+
+
+#### Parameters
+
+<table>
+  <tr>
+    <td>bool </td>
+    <td>_isTokenAllowListEnabled</td>
       </tr>
 </table>
 

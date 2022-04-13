@@ -189,10 +189,10 @@ describe("BondFactory", async () => {
     });
 
     it("should allow anyone to call createBond with allow list disabled", async () => {
-      await expect(factory.setIsAllowListEnabled(false))
+      await expect(factory.setIsIssuerAllowListEnabled(false))
         .to.emit(factory, "AllowListEnabled")
         .withArgs(false);
-      expect(await factory.isAllowListEnabled()).to.be.equal(false);
+      expect(await factory.isIssuerAllowListEnabled()).to.be.equal(false);
       await collateralToken.transfer(
         user.address,
         await collateralToken.balanceOf(owner.address)
@@ -223,18 +223,18 @@ describe("BondFactory", async () => {
       );
     });
   });
-  describe("setIsAllowListEnabled", async () => {
+  describe("setIsIssuerAllowListEnabled", async () => {
     it("should fail if non owner tries to update allow list", async () => {
-      await expect(factory.connect(user).setIsAllowListEnabled(false)).to.be
-        .reverted;
+      await expect(factory.connect(user).setIsIssuerAllowListEnabled(false)).to
+        .be.reverted;
     });
     it("should toggle allow list", async () => {
-      expect(await factory.isAllowListEnabled()).to.be.equal(true);
+      expect(await factory.isIssuerAllowListEnabled()).to.be.equal(true);
 
-      await expect(factory.setIsAllowListEnabled(false))
+      await expect(factory.setIsIssuerAllowListEnabled(false))
         .to.emit(factory, "AllowListEnabled")
         .withArgs(false);
-      expect(await factory.isAllowListEnabled()).to.be.equal(false);
+      expect(await factory.isIssuerAllowListEnabled()).to.be.equal(false);
       await collateralToken.transfer(
         user.address,
         await collateralToken.balanceOf(owner.address)
@@ -250,10 +250,10 @@ describe("BondFactory", async () => {
         "BondCreated"
       );
 
-      await expect(factory.setIsAllowListEnabled(true))
+      await expect(factory.setIsIssuerAllowListEnabled(true))
         .to.emit(factory, "AllowListEnabled")
         .withArgs(true);
-      expect(await factory.isAllowListEnabled()).to.be.equal(true);
+      expect(await factory.isIssuerAllowListEnabled()).to.be.equal(true);
     });
   });
 });
