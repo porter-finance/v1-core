@@ -45,7 +45,7 @@ const DECIMALS_TO_TEST = [6, 8, 18];
   Recommended to use your editors "fold all" and unfolding the test of interest.
   "command / ctrl + k" -> "command / ctrl 0" for Visual Studio Code
 */
-describe.only("Bond", () => {
+describe("Bond", () => {
   // owner deploys and is the "issuer"
   let owner: SignerWithAddress;
   // bondHolder is one who has the bonds and will redeem or convert them
@@ -422,7 +422,7 @@ describe.only("Bond", () => {
                 config.collateralTokenAmount.div(2)
               );
             });
-            it.only("fails if requesting too much", async () => {
+            it("fails if requesting too much", async () => {
               const owed = await bond.amountOwed();
               await paymentToken.approve(bond.address, owed);
               await bond.pay(owed);
