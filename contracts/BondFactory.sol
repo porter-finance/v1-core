@@ -24,10 +24,12 @@ contract BondFactory is IBondFactory, AccessControl {
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
-    /// @notice The role required to issue bonds.
+    /// @notice Max length of the bond
     uint256 internal constant MAX_TIME_TO_MATURITY = 3650 days;
 
-    /// @notice The role required to issue bonds.
+    /** @notice The max amount of decimals that a collateralToken or
+     convertibleToken can be
+     */
     uint8 internal constant MAX_DECIMALS = 18;
 
     /// @notice The role required to issue bonds.
@@ -174,6 +176,7 @@ contract BondFactory is IBondFactory, AccessControl {
         );
         // Greater than instead of != for the case where the collateralToken
         // is sent to the clone address before creation.
+        // reverts if the collateralToken takes a fee
         if (collateralToDeposit > amountDeposited) {
             revert InvalidDeposit();
         }
