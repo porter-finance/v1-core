@@ -25,6 +25,12 @@ contract BondFactory is IBondFactory, AccessControl {
     using FixedPointMathLib for uint256;
 
     /// @notice The role required to issue bonds.
+    uint256 internal constant MAX_TIME_TO_MATURITY = 3650 days;
+
+    /// @notice The role required to issue bonds.
+    uint8 internal constant MAX_DECIMALS = 18;
+
+    /// @notice The role required to issue bonds.
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
 
     /// @notice The role given to allowed tokens
@@ -104,13 +110,13 @@ contract BondFactory is IBondFactory, AccessControl {
         }
         if (
             maturity <= block.timestamp ||
-            maturity > block.timestamp + 3650 days
+            maturity > block.timestamp + MAX_TIME_TO_MATURITY
         ) {
             revert Invalidmaturity();
         }
         if (
-            IERC20Metadata(paymentToken).decimals() > 18 ||
-            IERC20Metadata(collateralToken).decimals() > 18
+            IERC20Metadata(paymentToken).decimals() > MAX_DECIMALS ||
+            IERC20Metadata(collateralToken).decimals() > MAX_DECIMALS
         ) {
             revert DecimalsOver18();
         }
