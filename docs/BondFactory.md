@@ -158,7 +158,7 @@ Emitted when the restriction of collateralToken and paymentToken to allow-listed
 
 
 
-### DecimalsOver18
+### TooManyDecimals
 * Decimals with more than 18 digits are not supported.
 
 

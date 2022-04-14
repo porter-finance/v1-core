@@ -118,7 +118,7 @@ contract BondFactory is IBondFactory, AccessControl {
             IERC20Metadata(paymentToken).decimals() > MAX_DECIMALS ||
             IERC20Metadata(collateralToken).decimals() > MAX_DECIMALS
         ) {
-            revert DecimalsOver18();
+            revert TooManyDecimals();
         }
         if (isTokenAllowListEnabled) {
             _checkRole(ALLOWED_TOKEN, paymentToken);

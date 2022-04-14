@@ -39,10 +39,10 @@ contract Bond is
     /// @inheritdoc IBond
     address public paymentToken;
 
-    /// @inheritdoc  IBond
+    /// @inheritdoc IBond
     address public collateralToken;
 
-    /// @inheritdoc  IBond
+    /// @inheritdoc IBond
     uint256 public collateralRatio;
 
     /// @inheritdoc IBond
@@ -313,7 +313,7 @@ contract Bond is
         );
     }
 
-    /// @inheritdoc  IBond
+    /// @inheritdoc IBond
     function collateralBalance()
         public
         view

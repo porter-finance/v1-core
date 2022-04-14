@@ -49,7 +49,7 @@ interface IBondFactory {
     error InvalidDeposit();
 
     /// @notice Decimals with more than 18 digits are not supported.
-    error DecimalsOver18();
+    error TooManyDecimals();
 
     /// @notice Maturity date is not valid.
     error Invalidmaturity();

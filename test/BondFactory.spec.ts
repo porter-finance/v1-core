@@ -138,7 +138,7 @@ describe("BondFactory", async () => {
       await factory.grantRole(ISSUER_ROLE, owner.address);
       await expect(
         createBond(factory, { paymentToken: bigPaymentToken.address })
-      ).to.be.revertedWith("DecimalsOver18()");
+      ).to.be.revertedWith("TooManyDecimals()");
     });
 
     describe("invalid maturity dates", async () => {
