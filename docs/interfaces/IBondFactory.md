@@ -39,7 +39,7 @@ Emitted when a new bond is created.
       </tr>
   <tr>
     <td>uint256 </td>
-    <td>maturityDate</td>
+    <td>maturity</td>
         <td>
     The timestamp at which the Bond will mature.    </td>
       </tr>
@@ -71,7 +71,7 @@ Emitted when a new bond is created.
     <td>uint256 </td>
     <td>bonds</td>
         <td>
-    The amount of Bonds given to the owner during the one-time mint during the `Bond`&#39;s `initialize`.    </td>
+    The amount of bond shares to give to the owner during the one-time mint during the `Bond`&#39;s `initialize`.    </td>
       </tr>
 </table>
 
@@ -126,7 +126,7 @@ Emitted when the restriction of collateralToken and paymentToken to allow-listed
 
 
 
-### InvalidMaturityDate
+### Invalidmaturity
 * Maturity date is not valid.
 
 
@@ -150,7 +150,7 @@ Emitted when the restriction of collateralToken and paymentToken to allow-listed
 ### createBond
 
 ```solidity
-function createBond(string name, string symbol, uint256 maturityDate, address paymentToken, address collateralToken, uint256 collateralTokenAmount, uint256 convertibleTokenAmount, uint256 bonds) external nonpayable returns (address clone)
+function createBond(string name, string symbol, uint256 maturity, address paymentToken, address collateralToken, uint256 collateralTokenAmount, uint256 convertibleTokenAmount, uint256 bonds) external nonpayable returns (address clone)
 ```
 
 Creates a new Bond. The calculated ratios are rounded down.
@@ -172,7 +172,7 @@ Creates a new Bond. The calculated ratios are rounded down.
       </tr>
   <tr>
     <td>uint256 </td>
-    <td>maturityDate</td>
+    <td>maturity</td>
         <td>
     The timestamp at which the Bond will mature.    </td>
       </tr>

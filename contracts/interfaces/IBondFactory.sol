@@ -24,7 +24,7 @@ interface IBondFactory {
         @param owner Ownership of the created Bond is transferred to this
             address by way of _transfeOwnership and tokens are minted to this address. See
             `initialize` in `Bond`.
-        @param maturityDate The timestamp at which the Bond will mature.
+        @param maturity The timestamp at which the Bond will mature.
         @param paymentToken The ERC20 token address the Bond is redeemable for.
         @param collateralToken The ERC20 token address the Bond is backed by.
         @param collateralTokenAmount The amount of collateral tokens per bond.
@@ -37,7 +37,7 @@ interface IBondFactory {
         string name,
         string symbol,
         address indexed owner,
-        uint256 maturityDate,
+        uint256 maturity,
         address indexed paymentToken,
         address indexed collateralToken,
         uint256 collateralTokenAmount,
@@ -52,7 +52,7 @@ interface IBondFactory {
     error DecimalsOver18();
 
     /// @notice Maturity date is not valid.
-    error InvalidMaturityDate();
+    error Invalidmaturity();
 
     /// @notice There must be more collateralTokens than convertibleTokens.
     error CollateralTokenAmountLessThanConvertibleTokenAmount();
@@ -67,7 +67,7 @@ interface IBondFactory {
         @notice Creates a new Bond. The calculated ratios are rounded down.
         @param name Passed into the ERC20 token to define the name.
         @param symbol Passed into the ERC20 token to define the symbol.
-        @param maturityDate The timestamp at which the Bond will mature.
+        @param maturity The timestamp at which the Bond will mature.
         @param paymentToken The ERC20 token address the Bond is redeemable for.
         @param collateralToken The ERC20 token address the Bond is backed by.
         @param collateralTokenAmount The amount of collateral tokens per bond.
@@ -82,7 +82,7 @@ interface IBondFactory {
     function createBond(
         string memory name,
         string memory symbol,
-        uint256 maturityDate,
+        uint256 maturity,
         address paymentToken,
         address collateralToken,
         uint256 collateralTokenAmount,

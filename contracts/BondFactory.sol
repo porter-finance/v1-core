@@ -19,6 +19,7 @@ import "./Bond.sol";
     @dev This uses a cloneFactory to save on gas costs during deployment.
         See OpenZeppelin's "Clones" proxy.
 */
+
 contract BondFactory is IBondFactory, AccessControl {
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
@@ -84,7 +85,7 @@ contract BondFactory is IBondFactory, AccessControl {
     function createBond(
         string memory name,
         string memory symbol,
-        uint256 maturityDate,
+        uint256 maturity,
         address paymentToken,
         address collateralToken,
         uint256 collateralTokenAmount,
@@ -102,10 +103,10 @@ contract BondFactory is IBondFactory, AccessControl {
             revert CollateralTokenAmountLessThanConvertibleTokenAmount();
         }
         if (
-            maturityDate <= block.timestamp ||
-            maturityDate > block.timestamp + 3650 days
+            maturity <= block.timestamp ||
+            maturity > block.timestamp + 3650 days
         ) {
-            revert InvalidMaturityDate();
+            revert Invalidmaturity();
         }
         if (
             IERC20Metadata(paymentToken).decimals() > 18 ||
@@ -129,7 +130,7 @@ contract BondFactory is IBondFactory, AccessControl {
             name,
             symbol,
             _msgSender(),
-            maturityDate,
+            maturity,
             paymentToken,
             collateralToken,
             collateralRatio,
@@ -142,7 +143,7 @@ contract BondFactory is IBondFactory, AccessControl {
             name,
             symbol,
             _msgSender(),
-            maturityDate,
+            maturity,
             paymentToken,
             collateralToken,
             collateralRatio,

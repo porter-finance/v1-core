@@ -32,7 +32,7 @@ Borrowers decide on multiple paramaters and call the `Factory.createBond` method
         @notice Creates a new Bond. The calculated ratios are rounded down.
         @param name Passed into the ERC20 token to define the name.
         @param symbol Passed into the ERC20 token to define the symbol.
-        @param maturityDate The timestamp at which the Bond will mature.
+        @param maturity The timestamp at which the Bond will mature.
         @param paymentToken The ERC20 token address the Bond is redeemable for.
         @param collateralToken The ERC20 token address the Bond is backed by.
         @param collateralTokenAmount The amount of collateral tokens per bond.
@@ -47,7 +47,7 @@ Borrowers decide on multiple paramaters and call the `Factory.createBond` method
 function createBond(
   string memory name,
   string memory symbol,
-  uint256 maturityDate,
+  uint256 maturity,
   address paymentToken,
   address collateralToken,
   uint256 collateralTokenAmount,

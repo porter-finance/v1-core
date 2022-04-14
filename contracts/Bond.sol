@@ -34,7 +34,7 @@ contract Bond is
     using FixedPointMathLib for uint256;
 
     /// @inheritdoc IBond
-    uint256 public maturityDate;
+    uint256 public maturity;
 
     /// @inheritdoc IBond
     address public paymentToken;
@@ -69,7 +69,7 @@ contract Bond is
         string memory bondName,
         string memory bondSymbol,
         address bondOwner,
-        uint256 _maturityDate,
+        uint256 _maturity,
         address _paymentToken,
         address _collateralToken,
         uint256 _collateralRatio,
@@ -79,7 +79,7 @@ contract Bond is
         __ERC20_init(bondName, bondSymbol);
         _transferOwnership(bondOwner);
 
-        maturityDate = _maturityDate;
+        maturity = _maturity;
         paymentToken = _paymentToken;
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
@@ -331,7 +331,7 @@ contract Bond is
 
     /// @inheritdoc IBond
     function isMature() public view returns (bool isBondMature) {
-        isBondMature = block.timestamp >= maturityDate;
+        isBondMature = block.timestamp >= maturity;
     }
 
     /// @inheritdoc IBond
