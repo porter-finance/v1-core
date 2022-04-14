@@ -130,7 +130,7 @@ contract Bond is
     /// @inheritdoc IBond
     function pay(uint256 amount) external nonReentrant {
         if (isFullyPaid()) {
-            revert PaymentMet();
+            revert PaymentAlreadyMet();
         }
         if (amount == 0) {
             revert ZeroAmount();

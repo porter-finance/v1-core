@@ -2,11 +2,11 @@
 
 ## BondFactory
 
-The `BondFactory` facilitates the creation of new bonds. For our early v1 only authorized addresses will be able to create `Bonds` through the `BondFactory`
+The `BondFactory` facilitates the creation of new bonds. For our early v1 only authorized addresses will be able to create a `Bond` through the `BondFactory`
 
 ## [Bond](./bond.md)
 
-A new `Bond` contract is created for each [borrower](https://docs.porter.finance/portal/participants/borrowers). They implement the standard EIP-20/ERC20 token methods as well as Porter specific methods. Each `BondToken` represents a [zero coupon bond](https://docs.porter.finance/portal/intro-to-bonds/zero-coupon-bonds) that can be purchased by [lenders](https://docs.porter.finance/portal/participants/lenders).
+A new `Bond` contract is created for issuance. The entity creating the bond is know as a [borrower](https://docs.porter.finance/portal/participants/borrowers). Bond implements the standard EIP-20/ERC20 token methods as well as Porter specific methods. Each `Bond` represents a [zero coupon bond](https://docs.porter.finance/portal/intro-to-bonds/zero-coupon-bonds) that can be purchased by [lenders](https://docs.porter.finance/portal/participants/lenders).
 
 # User Roles
 
@@ -14,9 +14,9 @@ A new `Bond` contract is created for each [borrower](https://docs.porter.finance
 
 Borrowers are on chain entities that want to borrow stablecoins using their native token as collateral with a fixed interest rate and no liquidation risk.
 
-- Creation, depositing collateral, and minting new `BondTokens` via `initialize()`
-- withdrawing collateralToken via`withdrawExcessCollateral()`
-- withdrawing paymentToken via`withdrawExcessPayment()`
+- Creation, depositing collateral, and minting new bond shares via `initialize()`
+- Withdrawing collateralToken via `withdrawExcessCollateral()`
+- Withdrawing paymentToken via`withdrawExcessPayment()`
 - Handling convertibility via a configured ratio and the ability for lenders to convert their `BondTokens` using `convert()`
 - Handling payment for the issuer via `pay()`
 - Allowing bond redemption for the bond holders via `redeem()`
@@ -37,7 +37,7 @@ Borrowers decide on multiple paramaters and call the `Factory.createBond` method
         @param collateralToken The ERC20 token address the Bond is backed by.
         @param collateralTokenAmount The amount of collateral tokens per bond.
         @param convertibleTokenAmount The amount of convertible tokens per bond.
-        @param bonds The amount of Bonds given to the owner during the one-time
+        @param bonds The amount of bond shares to give to the owner during the one-time
             mint during the `Bond`'s `initialize`.
         @dev This uses a clone to save on deployment costs which adds a slight
             overhead when users interact with the bonds, but also saves on gas

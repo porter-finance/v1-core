@@ -29,7 +29,7 @@ interface IBondFactory {
         @param collateralToken The ERC20 token address the Bond is backed by.
         @param collateralTokenAmount The amount of collateral tokens per bond.
         @param convertibleTokenAmount The amount of convertible tokens per bond.
-        @param bonds The amount of Bonds given to the owner during the one-time
+        @param bonds The amount of bond shares to give to the owner during the one-time
             mint during the `Bond`'s `initialize`.
     */
     event BondCreated(

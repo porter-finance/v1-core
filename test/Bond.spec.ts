@@ -350,7 +350,7 @@ describe("Bond", () => {
           it("should fail if already paid", async () => {
             await bond.pay(config.maxSupply);
             await expect(bond.pay(config.maxSupply)).to.be.revertedWith(
-              "PaymentMet"
+              "PaymentAlreadyMet"
             );
           });
 

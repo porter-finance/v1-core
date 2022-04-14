@@ -11,7 +11,7 @@ interface IBond {
     error BondNotYetMaturedOrPaid();
 
     /// @notice Attempted to pay after payment was met.
-    error PaymentMet();
+    error PaymentAlreadyMet();
 
     /// @notice Attempted to sweep a token used in the contract.
     error SweepDisallowedForToken();
@@ -26,7 +26,7 @@ interface IBond {
     error NotEnoughCollateral();
 
     /**
-        @notice Emitted when Bond tokens are converted by a borrower.
+        @notice Emitted when bond shares are converted by a lender.
         @param from The address converting their tokens.
         @param collateralToken The address of the collateralToken.
         @param amountOfBondsConverted The number of burnt Bonds.
