@@ -301,7 +301,15 @@ interface IBond {
         view
         returns (uint256 collateralTokens);
 
-    // @notice Calls previewWithdrawAfterPayment with a payment amount of 0
+    /**
+        @notice The amount of collateral that the issuer would be able to 
+            withdraw from the contract. This does not take into account an
+            amount of payment like `previewWithdrawAfterPayment` does. See that
+            function for more information.
+        @dev Calls `previewWithdrawAfterPayment` with a payment amount of 0.
+        @return collateralTokens The number of collateralTokens that would be
+        received by the issuer.
+    */
     function previewWithdraw() external view returns (uint256 collateralTokens);
 
     /**
