@@ -255,13 +255,9 @@ contract Bond is
                 ? 0 // Paid
                 : convertibleTokensRequired; // PaidEarly
         } else {
-            uint256 convertibleOrCollateral = convertibleTokensRequired >
-                collateralTokensRequired
-                ? convertibleTokensRequired
-                : collateralTokensRequired;
             totalRequiredCollateral = isMature()
                 ? collateralTokensRequired // Defaulted
-                : convertibleOrCollateral; // Active
+                : _max(convertibleTokensRequired, collateralTokensRequired); // Active
         }
         uint256 collBalance = collateralBalance();
         if (totalRequiredCollateral >= collBalance) {
@@ -356,5 +352,9 @@ contract Bond is
 
     function decimals() public view override returns (uint8) {
         return IERC20Metadata(paymentToken).decimals();
+    }
+
+    function _max(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a >= b ? a : b;
     }
 }

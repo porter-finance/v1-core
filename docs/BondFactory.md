@@ -158,11 +158,6 @@ Emitted when the restriction of collateralToken and paymentToken to allow-listed
 
 
 
-### TooManyDecimals
-* Decimals with more than 18 digits are not supported.
-
-
-
 ### InvalidDeposit
 * Fails if the collateralToken takes a fee.
 
@@ -175,6 +170,11 @@ Emitted when the restriction of collateralToken and paymentToken to allow-listed
 
 ### TokensMustBeDifferent
 * The paymentToken and collateralToken must be different.
+
+
+
+### TooManyDecimals
+* Decimals with more than 18 digits are not supported.
 
 
 
