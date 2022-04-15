@@ -52,7 +52,7 @@ interface IBondFactory {
     error TooManyDecimals();
 
     /// @notice Maturity date is not valid.
-    error Invalidmaturity();
+    error InvalidMaturity();
 
     /// @notice There must be more collateralTokens than convertibleTokens.
     error CollateralTokenAmountLessThanConvertibleTokenAmount();

@@ -19,17 +19,16 @@ import "./Bond.sol";
     @dev This uses a cloneFactory to save on gas costs during deployment.
         See OpenZeppelin's "Clones" proxy.
 */
-
 contract BondFactory is IBondFactory, AccessControl {
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
-    /// @notice Max length of the bond
+    /// @notice Max length of the Bond.
     uint256 internal constant MAX_TIME_TO_MATURITY = 3650 days;
 
-    /** @notice The max amount of decimals that a collateralToken or
-     convertibleToken can be
-     */
+    /** @notice The max amount of decimals for the paymentToken and
+        collateralToken.
+    */
     uint8 internal constant MAX_DECIMALS = 18;
 
     /// @notice The role required to issue bonds.
@@ -114,7 +113,7 @@ contract BondFactory is IBondFactory, AccessControl {
             maturity <= block.timestamp ||
             maturity > block.timestamp + MAX_TIME_TO_MATURITY
         ) {
-            revert Invalidmaturity();
+            revert InvalidMaturity();
         }
         if (
             IERC20Metadata(paymentToken).decimals() > MAX_DECIMALS ||
