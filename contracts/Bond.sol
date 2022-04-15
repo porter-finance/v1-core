@@ -115,7 +115,7 @@ contract Bond is
         external
         onlyOwner
     {
-        if (amount > previewWithdraw(0)) {
+        if (amount > previewWithdraw()) {
             revert NotEnoughCollateral();
         }
 
@@ -232,8 +232,11 @@ contract Bond is
         collateralTokens = bonds.mulWadDown(convertibleRatio);
     }
 
-    /// @inheritdoc IBond
-    function previewWithdraw(uint256 payment)
+    function previewWithdraw() public view returns (uint256 collateralTokens) {
+        collateralTokens = previewWithdrawAfterPayment(0);
+    }
+
+    function previewWithdrawAfterPayment(uint256 payment)
         public
         view
         returns (uint256 collateralTokens)
