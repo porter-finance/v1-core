@@ -232,10 +232,12 @@ contract Bond is
         collateralTokens = bonds.mulWadDown(convertibleRatio);
     }
 
+    /// @inheritdoc IBond
     function previewWithdraw() public view returns (uint256 collateralTokens) {
         collateralTokens = previewWithdrawAfterPayment(0);
     }
 
+    /// @inheritdoc IBond
     function previewWithdrawAfterPayment(uint256 payment)
         public
         view
