@@ -170,7 +170,7 @@ describe("BondFactory", async () => {
           createBond(factory, {
             maturity: ELEVEN_YEARS_FROM_NOW_IN_SECONDS,
           })
-        ).to.be.revertedWith("Invalidmaturity");
+        ).to.be.revertedWith("InvalidMaturity");
       });
     });
 
