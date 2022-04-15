@@ -173,10 +173,12 @@ contract BondFactory is IBondFactory, AccessControl {
         uint256 amountDeposited = IERC20Metadata(collateralToken).balanceOf(
             clone
         );
-        // Greater than instead of != for the case where the collateralToken
-        // is sent to the clone address before creation.
-        // reverts if the collateralToken takes a fee
-        if (collateralToDeposit > amountDeposited) {
+
+        /**  
+        Check that the amount of collateral in the contract is the expected amount deposited. 
+            A token could take a fee upon transfer. If the collateralToken takes a fee than the transaction will be reverted. 
+        */
+        if (collateralToDeposit != amountDeposited) {
             revert InvalidDeposit();
         }
     }

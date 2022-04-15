@@ -163,7 +163,7 @@ Emitted when the restriction of collateralToken and paymentToken to allow-listed
 
 
 
-### Invalidmaturity
+### InvalidMaturity
 * Maturity date is not valid.
 
 

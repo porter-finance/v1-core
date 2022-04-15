@@ -147,7 +147,7 @@ describe("BondFactory", async () => {
 
         await expect(
           createBond(factory, { maturity: BigNumber.from(1) })
-        ).to.be.revertedWith("Invalidmaturity");
+        ).to.be.revertedWith("InvalidMaturity");
       });
 
       it("should revert on a maturity date current timestamp", async () => {
@@ -161,7 +161,7 @@ describe("BondFactory", async () => {
 
         await expect(
           createBond(factory, { maturity: currentTimestamp })
-        ).to.be.revertedWith("Invalidmaturity");
+        ).to.be.revertedWith("InvalidMaturity");
       });
       it("should revert on a maturity date 10 years in the future", async () => {
         await factory.grantRole(ISSUER_ROLE, owner.address);
