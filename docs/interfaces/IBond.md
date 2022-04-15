@@ -17,7 +17,7 @@ Emitted when collateral is withdrawn.
     <td>address <code>indexed</code></td>
     <td>from</td>
         <td>
-    The address withdrawing the collateral.    </td>
+    The address withdrawing the collateralTokens.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
@@ -41,7 +41,7 @@ Emitted when collateral is withdrawn.
 
 ### Convert
 
-Emitted when bond shares are converted by a lender.
+Emitted when bond shares are converted by a Bond holder.
 
 
 
@@ -63,7 +63,7 @@ Emitted when bond shares are converted by a lender.
     <td>uint256 </td>
     <td>amountOfBondsConverted</td>
         <td>
-    The number of burnt Bonds.    </td>
+    The number of burnt bond shares.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
@@ -97,7 +97,7 @@ Emitted when payment over the required amount is withdrawn.
     <td>address <code>indexed</code></td>
     <td>token</td>
         <td>
-    The paymentToken being withdrawn.    </td>
+    The address of the paymentToken being withdrawn.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
@@ -131,7 +131,7 @@ Emitted when a portion of the Bond&#39;s principal is paid.
 
 ### Redeem
 
-Emitted when a Bond is redeemed.
+Emitted when a bond share is redeemed.
 
 
 
@@ -141,7 +141,7 @@ Emitted when a Bond is redeemed.
     <td>address <code>indexed</code></td>
     <td>from</td>
         <td>
-    The Bond holder whose Bonds are burnt.    </td>
+    The Bond holder whose bond shares are burnt.    </td>
       </tr>
   <tr>
     <td>address <code>indexed</code></td>
@@ -159,19 +159,19 @@ Emitted when a Bond is redeemed.
     <td>uint256 </td>
     <td>amountOfBondsRedeemed</td>
         <td>
-    The amount of Bonds burned for redemption.    </td>
+    The number of bond shares burned for redemption.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amountOfPaymentTokensReceived</td>
         <td>
-    The amount of paymentTokens.    </td>
+    The number of paymentTokens.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amountOfCollateralTokens</td>
         <td>
-    The amount of collateralTokens.    </td>
+    The number of collateralTokens.    </td>
       </tr>
 </table>
 
@@ -199,13 +199,13 @@ Emitted when a token is swept by the contract owner.
     <td>contract IERC20Metadata </td>
     <td>token</td>
         <td>
-    The token that was swept.    </td>
+    The address of the token that was swept.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
     <td>amount</td>
         <td>
-    The amount that was swept.    </td>
+    The number of tokens swept.    </td>
       </tr>
 </table>
 
@@ -214,12 +214,12 @@ Emitted when a token is swept by the contract owner.
 ## Errors
 
 ### BondNotYetMaturedOrPaid
-* Operation restricted because the bond has not matured or paid.
+* Operation restricted because the Bond has not matured or paid.
 
 
 
 ### BondPastMaturity
-* Operation restricted because the bond has matured.
+* Operation restricted because the Bond has matured.
 
 
 
@@ -229,7 +229,7 @@ Emitted when a token is swept by the contract owner.
 
 
 ### NotEnoughCollateral
-* Attempted to withdraw more collateral than avaliable
+* Attempted to withdraw more collateral than available.
 
 
 
@@ -292,7 +292,7 @@ The amount of paymentTokens required to fully pay the contract.
     <td>
       uint256    </td>
         <td>
-    The amount of paymentTokens.    </td>
+    The number of paymentTokens.    </td>
       </tr>
 </table>
 
@@ -313,7 +313,7 @@ The external balance of the ERC20 collateral token.
     <td>
       uint256    </td>
         <td>
-    The amount of collateralTokens in the contract.    </td>
+    The number of collateralTokens in the contract.    </td>
       </tr>
 </table>
 
@@ -323,7 +323,7 @@ The external balance of the ERC20 collateral token.
 function collateralRatio() external view returns (uint256)
 ```
 
-The ratio of collateralTokens per Bond.
+The number of collateralTokens per Bond.
 
 
 #### Returns
@@ -334,7 +334,7 @@ The ratio of collateralTokens per Bond.
     <td>
       uint256    </td>
         <td>
-    The number of tokens backing a Bond.    </td>
+    The number of collateralTokens per Bond.    </td>
       </tr>
 </table>
 
@@ -355,7 +355,7 @@ The ERC20 token used as collateral backing the bond.
     <td>
       address    </td>
         <td>
-    The ERC20 token&#39;s address.    </td>
+    The collateralToken&#39;s address.    </td>
       </tr>
 </table>
 
@@ -385,7 +385,7 @@ For convertible Bonds (ones with a convertibilityRatio &gt; 0), the Bond holder 
 function convertibleRatio() external view returns (uint256)
 ```
 
-The ratio of convertibleTokens the bonds will convert into.
+The number of convertibleTokens the bonds will convert into.
 
 
 #### Returns
@@ -395,6 +395,8 @@ The ratio of convertibleTokens the bonds will convert into.
   <tr>
     <td>
       uint256    </td>
+        <td>
+    The number of convertibleTokens per Bond.    </td>
       </tr>
 </table>
 
@@ -425,7 +427,7 @@ This one-time setup initiated by the BondFactory initializes the Bond with the g
     <td>address </td>
     <td>owner</td>
         <td>
-    Ownership of the created Bond is transferred to this address by way of _transfeOwnership and tokens are minted to this address. See `initialize` in `Bond`.    </td>
+    Ownership of the created Bond is transferred to this address by way of _transferOwnership and also the address that tokens are minted to. See `initialize` in `Bond`.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
@@ -472,7 +474,7 @@ This one-time setup initiated by the BondFactory initializes the Bond with the g
 function isFullyPaid() external view returns (bool isPaid)
 ```
 
-Checks if the balance of payment token covers the Bond supply.
+Checks if the balance of paymentToken covers the Bond supply.
 
 
 #### Returns
@@ -493,7 +495,7 @@ Checks if the balance of payment token covers the Bond supply.
 function isMature() external view returns (bool isBondMature)
 ```
 
-Checks if the maturity date has passed.
+Checks if the maturity timestamp has passed.
 
 
 #### Returns
@@ -504,7 +506,7 @@ Checks if the maturity date has passed.
     <td>
       bool    </td>
         <td>
-    Whether or not the Bond has reached the maturity date.    </td>
+    Whether or not the Bond has reached maturity.    </td>
       </tr>
 </table>
 
@@ -525,7 +527,7 @@ A date set at Bond creation when the Bond will mature.
     <td>
       uint256    </td>
         <td>
-    The maturity date timestamp.    </td>
+    The maturity date as a timestamp.    </td>
       </tr>
 </table>
 
@@ -535,7 +537,7 @@ A date set at Bond creation when the Bond will mature.
 function pay(uint256 amount) external nonpayable
 ```
 
-Allows the issuer to pay the bond by depositing payment token.
+Allows the issuer to pay the bond by depositing paymentTokens.
 
 #### Parameters
 
@@ -555,7 +557,7 @@ Allows the issuer to pay the bond by depositing payment token.
 function paymentBalance() external view returns (uint256 paymentTokens)
 ```
 
-Gets the external balance of the ERC20 payment token.
+Gets the external balance of the ERC20 paymentToken.
 
 
 #### Returns
@@ -606,7 +608,7 @@ Before maturity, if the given bonds are converted, this would be the number of c
     <td>uint256 </td>
     <td>bonds</td>
         <td>
-    The number of Bonds burnt and converted into collateral.    </td>
+    The number of bond shares burnt and converted into collateralTokens.    </td>
       </tr>
 </table>
 
@@ -618,7 +620,7 @@ Before maturity, if the given bonds are converted, this would be the number of c
     <td>
       uint256    </td>
         <td>
-    The number of collateralTokens the Bonds will be converted into.    </td>
+    The number of collateralTokens the Bonds would be converted into.    </td>
       </tr>
 </table>
 
@@ -628,7 +630,7 @@ Before maturity, if the given bonds are converted, this would be the number of c
 function previewRedeemAtMaturity(uint256 bonds) external view returns (uint256 paymentTokensToSend, uint256 collateralTokensToSend)
 ```
 
-At maturity, if the given bonds are redeemed, this would be the amount of collateralTokens and paymentTokens received. The number of paymentTokens to receive is rounded down.
+At maturity, if the given bond shares are redeemed, this would be the number of collateralTokens and paymentTokens received by the bond holder. The number of paymentTokens to receive is rounded down.
 
 #### Parameters
 
@@ -649,13 +651,13 @@ At maturity, if the given bonds are redeemed, this would be the amount of collat
     <td>
       uint256    </td>
         <td>
-    The number of paymentTokens to receive.    </td>
+    The number of paymentTokens that the bond shares would be redeemed for.    </td>
       </tr>
   <tr>
     <td>
       uint256    </td>
         <td>
-    The number of collateralTokens to receive.    </td>
+    The number of collateralTokens that would be redeemed for.    </td>
       </tr>
 </table>
 
@@ -665,7 +667,7 @@ At maturity, if the given bonds are redeemed, this would be the amount of collat
 function previewWithdraw() external view returns (uint256 collateralTokens)
 ```
 
-
+The amount of collateral that the issuer would be able to  withdraw from the contract. This does not take into account an amount of payment like `previewWithdrawAfterPayment` does. See that function for more information.
 
 
 #### Returns
@@ -675,6 +677,8 @@ function previewWithdraw() external view returns (uint256 collateralTokens)
   <tr>
     <td>
       uint256    </td>
+        <td>
+    The number of collateralTokens that would be withdrawn.    </td>
       </tr>
 </table>
 
@@ -693,7 +697,7 @@ The amount of collateral that the issuer would be able to  withdraw from the con
     <td>uint256 </td>
     <td>payment</td>
         <td>
-    The amount of paymentToken to add when previewing a withdraw.    </td>
+    The number of paymentTokens to add when previewing a withdraw.    </td>
       </tr>
 </table>
 
@@ -705,7 +709,7 @@ The amount of collateral that the issuer would be able to  withdraw from the con
     <td>
       uint256    </td>
         <td>
-    The number of collateralTokens received.    </td>
+    The number of collateralTokens that would be withdrawn.    </td>
       </tr>
 </table>
 
@@ -715,7 +719,7 @@ The amount of collateral that the issuer would be able to  withdraw from the con
 function redeem(uint256 bonds) external nonpayable
 ```
 
-The Bond holder can burn Bonds in return for their portion of paymentTokens and collateralTokens backing the Bonds. These portions of tokens depends on the number of paymentTokens deposited. When the Bond is fully paid, redemption will result in all paymentTokens. If the Bond has reached maturity without being fully paid, a portion of the collateralTokens will be availalbe.
+The Bond holder can burn bond shares in return for their portion of paymentTokens and collateralTokens backing the Bonds. These portions of tokens depends on the number of paymentTokens deposited. When the Bond is fully paid, redemption will result in all  paymentTokens. If the Bond has reached maturity without being fully paid, a portion of the collateralTokens will be available.
 
 #### Parameters
 
@@ -724,7 +728,7 @@ The Bond holder can burn Bonds in return for their portion of paymentTokens and 
     <td>uint256 </td>
     <td>bonds</td>
         <td>
-    The number of bonds to redeem and burn.    </td>
+    The number of bond shares to redeem and burn.    </td>
       </tr>
 </table>
 
@@ -735,7 +739,7 @@ The Bond holder can burn Bonds in return for their portion of paymentTokens and 
 function sweep(contract IERC20Metadata token, address receiver) external nonpayable
 ```
 
-Sends tokens to the owner that are in this contract.
+Sends ERC20 tokens to the owner that are in this contract.
 
 #### Parameters
 
@@ -761,7 +765,7 @@ Sends tokens to the owner that are in this contract.
 function withdrawExcessCollateral(uint256 amount, address receiver) external nonpayable
 ```
 
-The Owner may withdraw excess collateral from bond contract. The number of collateralTokens remaining in the contract must be enough to cover the total supply of Bonds in accordance to both the collateralRatio and convertibleRatio.
+The Owner may withdraw excess collateral from the Bond contract. The number of collateralTokens remaining in the contract must be enough to cover the total supply of Bonds in accordance to both the collateralRatio and convertibleRatio.
 
 #### Parameters
 
@@ -770,13 +774,13 @@ The Owner may withdraw excess collateral from bond contract. The number of colla
     <td>uint256 </td>
     <td>amount</td>
         <td>
-    The amount of collateral to withdraw. Reverts if this number is greater than avaliable.     </td>
+    The number of collateralTokens to withdraw. Reverts if the amount is greater than available in the contract.     </td>
       </tr>
   <tr>
     <td>address </td>
     <td>receiver</td>
         <td>
-    The address that is transferred the excess collateral.    </td>
+    The address transferred the excess collateralTokens.    </td>
       </tr>
 </table>
 
@@ -787,7 +791,7 @@ The Owner may withdraw excess collateral from bond contract. The number of colla
 function withdrawExcessPayment(address receiver) external nonpayable
 ```
 
-The Owner can withdraw any overpaid payment token in the contract.
+The owner can withdraw any excess paymentToken in the contract.
 
 #### Parameters
 
@@ -796,7 +800,7 @@ The Owner can withdraw any overpaid payment token in the contract.
     <td>address </td>
     <td>receiver</td>
         <td>
-    The address that is transferred the excess payment.    </td>
+    The address that is transferred the excess paymentToken.    </td>
       </tr>
 </table>
 

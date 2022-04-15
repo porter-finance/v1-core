@@ -195,7 +195,7 @@ Emitted when the restriction of collateralToken and paymentToken to allow-listed
 function ALLOWED_TOKEN() external view returns (bytes32)
 ```
 
-The role given to allowed tokens
+The role given to allowed tokens.
 
 
 #### Returns
@@ -453,7 +453,7 @@ If enabled, issuance is restricted to those with ISSUER_ROLE.
 function isTokenAllowListEnabled() external view returns (bool)
 ```
 
-If enabled, usable tokens are restricted to those with the ALLOWED_TOKEN role.
+If enabled, tokens used as paymentToken and collateralToken are restricted to those with the ALLOWED_TOKEN role.
 
 
 #### Returns

@@ -17,7 +17,7 @@ Emitted when a new bond is created.
     <td>address </td>
     <td>newBond</td>
         <td>
-    The address of the newley deployed bond.    </td>
+    The address of the newly deployed bond.    </td>
       </tr>
   <tr>
     <td>string </td>
@@ -35,7 +35,7 @@ Emitted when a new bond is created.
     <td>address <code>indexed</code></td>
     <td>owner</td>
         <td>
-    Ownership of the created Bond is transferred to this address by way of _transfeOwnership and tokens are minted to this address. See `initialize` in `Bond`.    </td>
+    Ownership of the created Bond is transferred to this address by way of _transferOwnership and tokens are minted to this address. See `initialize` in `Bond`.    </td>
       </tr>
   <tr>
     <td>uint256 </td>
@@ -274,7 +274,7 @@ If enabled, issuance is restricted to those with ISSUER_ROLE.
 function isTokenAllowListEnabled() external view returns (bool isEnabled)
 ```
 
-If enabled, usable tokens are restricted to those with the ALLOWED_TOKEN role.
+If enabled, tokens used as paymentToken and collateralToken are restricted to those with the ALLOWED_TOKEN role.
 
 
 #### Returns
