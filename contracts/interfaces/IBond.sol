@@ -109,16 +109,10 @@ interface IBond {
     );
 
     /**
-        @notice The amount that was overpaid and can be withdrawn.
-        @return overpayment Amount that was overpaid.
-    */
-    function amountOverPaid() external view returns (uint256 overpayment);
-
-    /**
         @notice The amount of paymentTokens required to fully pay the contract.
-        @return amountUnpaid The number of paymentTokens.
+        @return paymentTokens The number of paymentTokens unpaid.
     */
-    function amountOwed() external view returns (uint256 amountUnpaid);
+    function amountUnpaid() external view returns (uint256 paymentTokens);
 
     /**
         @notice The external balance of the ERC20 collateral token.
@@ -197,9 +191,9 @@ interface IBond {
 
     /**
         @notice Checks if the balance of paymentToken covers the Bond supply.
-        @return isPaid Whether or not the Bond is fully paid.
+        @return isBondPaid Whether or not the Bond is fully paid.
     */
-    function isFullyPaid() external view returns (bool isPaid);
+    function isFullyPaid() external view returns (bool isBondPaid);
 
     /**
         @notice Checks if the maturity timestamp has passed.
@@ -214,7 +208,7 @@ interface IBond {
     function maturity() external view returns (uint256);
 
     /**
-        @notice Allows the issuer to pay the bond by depositing paymentTokens.
+        @notice Allows the owner to pay the bond by depositing paymentTokens.
         @dev Emits `Payment` event.
         @param amount The number of paymentTokens to deposit.
     */
@@ -263,12 +257,12 @@ interface IBond {
         returns (uint256 paymentTokensToSend, uint256 collateralTokensToSend);
 
     /** 
-        @notice The amount of collateral that the issuer would be able to 
+        @notice The number of collateralTokens that the owner would be able to 
             withdraw from the contract. This function rounds up the number 
             of collateralTokens required in the contract and therefore may round
             down the amount received.
         @dev This function calculates the amount of collateralTokens that are
-            able to be withdrawn by the issuer. The amount of tokens can
+            able to be withdrawn by the owner. The amount of tokens can
             increase when Bonds are burnt and converted as well when payment is
             made. Each Bond is covered by a certain amount of collateral to
             the collateralRatio. In addition to covering the collateralRatio,
@@ -304,13 +298,13 @@ interface IBond {
         @return collateralTokens The number of collateralTokens that would be
             withdrawn.
      */
-    function previewWithdrawAfterPayment(uint256 payment)
+    function previewWithdrawExcessCollateralAfterPayment(uint256 payment)
         external
         view
         returns (uint256 collateralTokens);
 
     /**
-        @notice The amount of collateral that the issuer would be able to 
+        @notice The number of collateralTokens that the owner would be able to 
             withdraw from the contract. This does not take into account an
             amount of payment like `previewWithdrawAfterPayment` does. See that
             function for more information.
@@ -318,7 +312,21 @@ interface IBond {
         @return collateralTokens The number of collateralTokens that would be
             withdrawn.
     */
-    function previewWithdraw() external view returns (uint256 collateralTokens);
+    function previewWithdrawExcessCollateral()
+        external
+        view
+        returns (uint256 collateralTokens);
+
+    /**
+        @notice The number of excess paymentTokens that the owner would be able
+            to withdraw from the contract.
+        @return paymentTokens The number of paymentTokens that would be
+            withdrawn.
+    */
+    function previewWithdrawExcessPayment()
+        external
+        view
+        returns (uint256 paymentTokens);
 
     /**
         @notice The Bond holder can burn bond shares in return for their portion
