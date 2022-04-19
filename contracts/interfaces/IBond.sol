@@ -163,7 +163,9 @@ interface IBond {
             Bond with the given configuration.
         @dev New Bond contract deployed via clone. See `BondFactory`.
         @dev During initialization, __Ownable_init is not called because the
-            owner, or `bondOwner`, is not necessarily the `msg.sender`. Nor is __ERC20Burnable_init called because it generates an empty function.
+            owner would be set to the BondFactory's Address. Additionally,
+            __ERC20Burnable_init is not called because it generates an empty
+            function.
         @param bondName Passed into the ERC20 token to define the name.
         @param bondSymbol Passed into the ERC20 token to define the symbol.
         @param bondOwner Ownership of the created Bond is transferred to this
