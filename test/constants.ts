@@ -2,6 +2,9 @@ import { FallbackProvider } from "@ethersproject/providers";
 import { BigNumber, utils } from "ethers";
 import { BondConfigType } from "./interfaces";
 
+export const ONE_MINUTE_FROM_NOW_IN_SECONDS = Math.round(
+  new Date(new Date().setMinutes(new Date().getMinutes() + 1)).getTime() / 1000
+);
 export const THREE_YEARS_FROM_NOW_IN_SECONDS = Math.round(
   new Date(new Date().setFullYear(new Date().getFullYear() + 3)).getTime() /
     1000
@@ -46,3 +49,42 @@ export const MaliciousBondConfig: BondConfigType = {
   maturity: THREE_YEARS_FROM_NOW_IN_SECONDS,
   maxSupply: utils.parseUnits(FIFTY_MILLION.toString(), 18),
 };
+
+export const deploymentBonds = [
+  {
+    name: "nonConvertibleBond",
+    bondName: "2025NC",
+    config: NonConvertibleBondConfig,
+    options: {},
+  },
+  {
+    name: "convertibleBond",
+    bondName: "2025C",
+    config: ConvertibleBondConfig,
+    options: {},
+  },
+  {
+    name: "uncollateralizedBond",
+    bondName: "2025C",
+    config: UncollateralizedBondConfig,
+    options: {},
+  },
+  {
+    name: "defaultedNonConvertibleBond",
+    bondName: "2022DNC",
+    config: NonConvertibleBondConfig,
+    options: { maturity: ONE_MINUTE_FROM_NOW_IN_SECONDS },
+  },
+  {
+    name: "paidNonConvertibleBond",
+    bondName: "2022PNC",
+    config: NonConvertibleBondConfig,
+    options: { maturity: ONE_MINUTE_FROM_NOW_IN_SECONDS, maxSupply: 1 },
+  },
+  {
+    name: "paidEarlyNonConvertibleBond",
+    bondName: "2025PENC",
+    config: NonConvertibleBondConfig,
+    options: { maxSupply: 1 },
+  },
+];

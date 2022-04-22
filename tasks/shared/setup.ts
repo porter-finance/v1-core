@@ -9,6 +9,7 @@ import {
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TestERC20, BondFactory, Bond } from "../../typechain";
 import { ConvertibleBondConfig } from "../../test/constants";
+import { BondParams } from "../../test/BondFactory.spec";
 
 export const deployNativeAndPayment = async (
   owner: SignerWithAddress,
@@ -39,25 +40,52 @@ export const deployNativeAndPayment = async (
 export const createBond = async (
   owner: SignerWithAddress,
   getContractAt: Function,
-  nativeToken: TestERC20,
+  collateralToken: TestERC20,
   paymentToken: TestERC20,
-  factory: BondFactory
+  factory: BondFactory,
+  params: BondParams
 ) => {
   // these could be converted to parameters
   const bondName = "Always be growing";
   const bondSymbol = "LEARN";
 
   const issuerRole = await factory.ISSUER_ROLE();
-  const grantRoleTx = await factory
+  const grantIssuerRoleTx = await factory
     .connect(owner)
     .grantRole(issuerRole, owner.address);
-  await grantRoleTx.wait();
 
-  const approveTokens = await nativeToken
+  const allowedTokenRole = await factory.ALLOWED_TOKEN();
+  const grantPaymentTokenRoleTx = await factory
+    .connect(owner)
+    .grantRole(allowedTokenRole, paymentToken.address);
+
+  const grantCollateralTokenRoleTx = await factory
+    .connect(owner)
+    .grantRole(allowedTokenRole, collateralToken.address);
+
+  await grantCollateralTokenRoleTx.wait();
+  console.log("Collateral token allow role granted");
+  await grantPaymentTokenRoleTx.wait();
+  console.log("Payment token allow role granted");
+  await grantIssuerRoleTx.wait();
+  console.log("Factory role granted");
+
+  const approveTokens = await collateralToken
     .connect(owner)
     .approve(factory.address, constants.MaxInt256);
+
   await approveTokens.wait();
 
+  console.log("Tokens approved");
+  const testMaturity = params.maturity || ConvertibleBondConfig.maturity;
+  const testPaymentToken = params.paymentToken || paymentToken.address;
+  const testCollateralToken = params.collateralToken || collateralToken.address;
+  const testCollateralTokenAmount =
+    params.collateralTokenAmount || ConvertibleBondConfig.collateralTokenAmount;
+  const testConvertibleTokenAmount =
+    params.convertibleTokenAmount ||
+    ConvertibleBondConfig.convertibleTokenAmount;
+  const testMaxSupply = params.maxSupply || ConvertibleBondConfig.maxSupply;
   const bond = await getBondContract(
     getContractAt,
     owner,
@@ -66,12 +94,12 @@ export const createBond = async (
       .createBond(
         bondName,
         bondSymbol,
-        ConvertibleBondConfig.maturity,
-        paymentToken.address,
-        nativeToken.address,
-        ConvertibleBondConfig.collateralTokenAmount,
-        ConvertibleBondConfig.convertibleTokenAmount,
-        ConvertibleBondConfig.maxSupply
+        testMaturity,
+        testPaymentToken,
+        testCollateralToken,
+        testCollateralTokenAmount,
+        testConvertibleTokenAmount,
+        testMaxSupply
       )
   );
   return await bond;
@@ -121,7 +149,7 @@ export const initiateAuction = async (
   return initiateAuctionTx;
 };
 
-const getBondContract = async (
+export const getBondContract = async (
   getContractAt: Function,
   signer: SignerWithAddress,
   tx: Promise<any>

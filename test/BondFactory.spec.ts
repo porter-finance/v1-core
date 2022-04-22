@@ -20,7 +20,7 @@ const BondConfig: BondConfigType = {
   maxSupply: utils.parseUnits(FIFTY_MILLION.toString(), 18),
 };
 
-interface BondParams {
+export interface BondParams {
   maturity?: any;
   paymentToken?: any;
   collateralToken?: any;

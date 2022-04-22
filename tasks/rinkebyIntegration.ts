@@ -6,16 +6,17 @@ import {
   createBond,
   initiateAuction,
 } from "./shared/setup";
+import { BigNumber } from "ethers";
 
 const easyAuction = require("../contracts/external/EasyAuction");
 
 const rinkebyGnosis = "0xC5992c0e0A3267C7F75493D0F717201E26BE35f7";
-const rinkebyFactory = "0xD393916d00D7871434558624f87c2eC9a63fd48A";
+const rinkebyFactory = "0xf93799d08F7712427faf4728903d81baC54d3f09";
 
 task(
   "integration",
   "creates tokens, a bond, starts an auction, and verifies the contracts"
-).setAction(async (_, { ethers, network, run, artifacts }) => {
+).setAction(async (_, { ethers, network, run, deployments }) => {
   // executed on a live network (on rinkeby)
   const { RINKEBY_DEPLOYER_ADDRESS, ETHERSCAN_API_KEY } = process.env;
 
@@ -65,14 +66,20 @@ task(
     ethers.getContractAt,
     native,
     payment,
-    factory
+    factory,
+    {}
   )) as Bond;
 
   console.log("deployed bond", { bond: bond.address });
 
   expect(await bond.balanceOf(signer.address)).to.not.equal(0);
+
   const auction = await ethers.getContractAt(easyAuction.abi, rinkebyGnosis);
 
+  await expect(initiateAuction(auction, signer, bond, payment)).to.emit(
+    auction,
+    "NewAuction"
+  );
   await expect(initiateAuction(auction, signer, bond, payment)).to.emit(
     auction,
     "NewAuction"
