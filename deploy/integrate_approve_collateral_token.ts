@@ -16,17 +16,22 @@ module.exports = async function ({
     collateralTokenAddress,
     deployer
   )) as TestERC20;
+  if ((await collateralToken.allowance(deployer, bondFactoryAddress)).gt(0)) {
+    console.log(
+      `Collateral token for ${deployer} @ factory (${bondFactoryAddress}) already approved. Skipping.`
+    );
+  } else {
+    await (
+      await collateralToken.approve(
+        bondFactoryAddress,
+        ethers.constants.MaxInt256
+      )
+    ).wait();
 
-  await (
-    await collateralToken.approve(
-      bondFactoryAddress,
-      ethers.constants.MaxInt256
-    )
-  ).wait();
-
-  console.log(
-    `Approved collateral token for ${deployer} @ facotry (${bondFactoryAddress}) <-> token (${collateralTokenAddress}).`
-  );
+    console.log(
+      `Approved collateral token for ${deployer} @ facotry (${bondFactoryAddress}) <-> token (${collateralTokenAddress}).`
+    );
+  }
 };
 
 module.exports.tags = ["permissions"];

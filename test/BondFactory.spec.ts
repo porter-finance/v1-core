@@ -1,4 +1,4 @@
-import { BigNumber, utils } from "ethers";
+import { BigNumber, BigNumberish, utils } from "ethers";
 import { expect } from "chai";
 import { BondFactory, TestERC20 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -21,12 +21,12 @@ const BondConfig: BondConfigType = {
 };
 
 export interface BondParams {
-  maturity?: any;
-  paymentToken?: any;
-  collateralToken?: any;
-  collateralTokenAmount?: any;
-  convertibleTokenAmount?: any;
-  maxSupply?: any;
+  maturity?: BigNumberish;
+  paymentToken?: string;
+  collateralToken?: string;
+  collateralTokenAmount?: BigNumberish;
+  convertibleTokenAmount?: BigNumberish;
+  maxSupply?: BigNumberish;
 }
 
 describe("BondFactory", async () => {

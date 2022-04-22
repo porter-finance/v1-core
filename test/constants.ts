@@ -52,39 +52,35 @@ export const MaliciousBondConfig: BondConfigType = {
 
 export const deploymentBonds = [
   {
-    name: "nonConvertibleBond",
-    bondName: "2025NC",
     config: NonConvertibleBondConfig,
-    options: {},
+    auctionOptions: {},
+    bondOptions: {},
   },
   {
-    name: "convertibleBond",
-    bondName: "2025C",
     config: ConvertibleBondConfig,
-    options: {},
+    auctionOptions: {},
+    bondOptions: {},
   },
   {
-    name: "uncollateralizedBond",
-    bondName: "2025C",
     config: UncollateralizedBondConfig,
-    options: {},
+    auctionOptions: {
+      orderCancellationEndDate: ONE_MINUTE_FROM_NOW_IN_SECONDS,
+    },
+    bondOptions: {},
   },
   {
-    name: "defaultedNonConvertibleBond",
-    bondName: "2022DNC",
     config: NonConvertibleBondConfig,
-    options: { maturity: ONE_MINUTE_FROM_NOW_IN_SECONDS },
+    auctionOptions: { auctionEndDate: ONE_MINUTE_FROM_NOW_IN_SECONDS },
+    bondOptions: { maturity: ONE_MINUTE_FROM_NOW_IN_SECONDS },
   },
   {
-    name: "paidNonConvertibleBond",
-    bondName: "2022PNC",
     config: NonConvertibleBondConfig,
-    options: { maturity: ONE_MINUTE_FROM_NOW_IN_SECONDS, maxSupply: 1 },
+    auctionOptions: {},
+    bondOptions: { maturity: ONE_MINUTE_FROM_NOW_IN_SECONDS, maxSupply: 1 },
   },
   {
-    name: "paidEarlyNonConvertibleBond",
-    bondName: "2025PENC",
     config: NonConvertibleBondConfig,
-    options: { maxSupply: 1 },
+    auctionOptions: {},
+    bondOptions: { maxSupply: 1 },
   },
 ];

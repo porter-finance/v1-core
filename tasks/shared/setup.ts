@@ -109,19 +109,28 @@ export const initiateAuction = async (
   auction: Contract,
   owner: SignerWithAddress,
   bond: Bond,
-  borrowToken: TestERC20
+  borrowToken: TestERC20,
+  auctionParams?: any
 ) => {
-  const auctioningToken = bond.address;
-  const biddingToken = borrowToken.address;
-  const orderCancellationEndDate = 0;
+  const auctioningToken = auctionParams?.auctioningToken || bond.address;
+  const biddingToken = auctionParams?.biddingToken || borrowToken.address;
   // one day from today
-  const auctionEndDate = Math.round(
-    new Date(new Date().setDate(new Date().getDate() + 1)).getTime() / 1000
-  );
+  const orderCancellationEndDate =
+    auctionParams?.orderCancellationEndDate ||
+    Math.round(
+      new Date(new Date().setDate(new Date().getDate() + 1)).getTime() / 1000
+    );
+  // one week from today
+  const auctionEndDate =
+    auctionParams?.auctionEndDate ||
+    Math.round(
+      new Date(new Date().setDate(new Date().getDate() + 7)).getTime() / 1000
+    );
   const tokenBalance = await bond.balanceOf(owner.address);
-  const _auctionedSellAmount = tokenBalance.div(10);
-  const _minBuyAmount = 1000000000000000;
-  const minimumBiddingAmountPerOrder = 1000000000000000;
+  console.log(owner.address, tokenBalance, auctioningToken);
+  const _auctionedSellAmount = tokenBalance;
+  const _minBuyAmount = 1;
+  const minimumBiddingAmountPerOrder = 1;
   const minFundingThreshold = 0;
   const isAtomicClosureAllowed = false;
   const accessManagerContract = constants.AddressZero;

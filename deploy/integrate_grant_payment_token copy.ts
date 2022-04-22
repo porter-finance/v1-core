@@ -16,8 +16,14 @@ module.exports = async function ({
   )) as BondFactory;
   (await ethers.getContractAt("TestERC20", paymentTokenAddress)) as TestERC20;
   const tokenRole = await factory.ALLOWED_TOKEN();
-  await factory.grantRole(tokenRole, paymentTokenAddress);
-  console.log(`Token Role (${tokenRole}) granted to ${paymentTokenAddress}.`);
+  if (await factory.hasRole(tokenRole, paymentTokenAddress)) {
+    console.log(
+      `Payment token (${paymentTokenAddress}) already approved for ${tokenRole}. Skipping.`
+    );
+  } else {
+    await (await factory.grantRole(tokenRole, paymentTokenAddress)).wait();
+    console.log(`Token Role (${tokenRole}) granted to ${paymentTokenAddress}.`);
+  }
 };
 
 module.exports.tags = ["permissions"];

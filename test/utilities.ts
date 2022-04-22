@@ -4,6 +4,7 @@ import { ethers } from "hardhat";
 import { Bond, TestERC20 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { WAD } from "./constants";
+import { BondConfigType } from "./interfaces";
 export const addDaysToNow = (days: number = 0) => {
   return BigNumber.from(
     Math.floor(new Date().getTime() / 1000) + days * 24 * 60 * 60
@@ -181,4 +182,37 @@ export const previewRedeem = async ({
   );
   expect(paymentToken).to.equal(paymentTokenToSend);
   expect(collateralToken).to.equal(collateralTokenToSend);
+};
+
+export const getBondInfo = async (
+  paymentToken: TestERC20,
+  collateralToken: TestERC20,
+  config: BondConfigType
+): Promise<{ bondName: string; bondSymbol: string }> => {
+  const collateralTokenSymbol = await collateralToken.symbol();
+  const paymentTokenSymbol = await paymentToken.symbol();
+  const isConvertible = config.convertibleTokenAmount.gt(0);
+  const productNameShort = `${isConvertible ? "CONVERT" : "SIMPLE"} Bond`;
+  const productNameLong = `${
+    isConvertible ? "Convertible" : "Non-Convertible"
+  } Bond`;
+
+  const maturityDate = new Date(Number(config.maturity) * 1000)
+    .toLocaleString("en-gb", {
+      day: "2-digit",
+      year: "numeric",
+      month: "short",
+    })
+    .toUpperCase()
+    .replace(/ /g, "");
+
+  const bondName = `${collateralTokenSymbol} ${productNameLong}`;
+  const bondSymbol = `${collateralTokenSymbol.toUpperCase()} ${productNameShort} ${maturityDate} 2P${
+    isConvertible ? " 25C" : ""
+  } ${paymentTokenSymbol.toUpperCase()}`;
+
+  return {
+    bondName,
+    bondSymbol,
+  };
 };

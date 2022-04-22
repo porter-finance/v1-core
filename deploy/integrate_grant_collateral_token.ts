@@ -19,10 +19,16 @@ module.exports = async function ({
     collateralTokenAddress
   )) as TestERC20;
   const tokenRole = await factory.ALLOWED_TOKEN();
-  await factory.grantRole(tokenRole, collateralTokenAddress);
-  console.log(
-    `Token Role (${tokenRole}) granted to ${collateralTokenAddress}.`
-  );
+  if (await factory.hasRole(tokenRole, collateralTokenAddress)) {
+    console.log(
+      `Collateral token (${collateralTokenAddress}) already approved for ${tokenRole}. Skipping.`
+    );
+  } else {
+    await (await factory.grantRole(tokenRole, collateralTokenAddress)).wait();
+    console.log(
+      `Token Role (${tokenRole}) granted to ${collateralTokenAddress}.`
+    );
+  }
 };
 
 module.exports.tags = ["permissions"];

@@ -26,17 +26,24 @@ module.exports = async function ({
     await factory.tokenImplementation(),
     deployer
   )) as Bond;
-  implementationContract.initialize(
-    "Placeholder Bond",
-    "BOND",
-    deployer,
-    THREE_YEARS_FROM_NOW_IN_SECONDS,
-    "0x0000000000000000000000000000000000000000",
-    "0x0000000000000000000000000000000000000001",
-    ethers.BigNumber.from(0),
-    ethers.BigNumber.from(0),
-    0
-  );
+  try {
+    await (
+      await implementationContract.initialize(
+        "Placeholder Bond",
+        "BOND",
+        deployer,
+        THREE_YEARS_FROM_NOW_IN_SECONDS,
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000001",
+        ethers.BigNumber.from(0),
+        ethers.BigNumber.from(0),
+        0
+      )
+    ).wait();
+  } catch (e) {
+    console.log("Is the contract already initialized?");
+    console.log(e);
+  }
 };
 
-module.exports.tags = ["main-deployment", "factory"];
+module.exports.tags = ["main-deployment", "factory", "test-deployment"];

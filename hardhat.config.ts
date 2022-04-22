@@ -47,6 +47,10 @@ const config: HardhatUserConfig = {
   networks: {
     rinkeby: {
       live: true,
+      mining: {
+        auto: false,
+        interval: 10,
+      },
       url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
@@ -54,6 +58,10 @@ const config: HardhatUserConfig = {
     hardhat: {
       mining: {
         auto: true,
+      },
+      forking: {
+        blockNumber: 10453255,
+        url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       },
     },
   },

@@ -13,8 +13,12 @@ module.exports = async function ({
     address
   )) as BondFactory;
   const issuerRole = await factory.ISSUER_ROLE();
-  await factory.grantRole(issuerRole, deployer);
-  console.log(`Issuer Role (${issuerRole}) granted to ${deployer}.`);
+  if (await factory.hasRole(issuerRole, deployer)) {
+    console.log(`Issuer Role already granted to ${deployer}. Skipping.`);
+  } else {
+    await (await factory.grantRole(issuerRole, deployer)).wait();
+    console.log(`Issuer Role (${issuerRole}) granted to ${deployer}.`);
+  }
 };
 
 module.exports.tags = ["permissions"];

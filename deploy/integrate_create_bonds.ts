@@ -1,8 +1,8 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { BondFactory } from "../typechain";
+import { Bond, BondFactory, TestERC20 } from "../typechain";
 import { BondConfigType } from "../test/interfaces";
 import { BondParams } from "../test/BondFactory.spec";
-import { getBondContract } from "../test/utilities";
+import { getBondContract, getBondInfo } from "../test/utilities";
 import { deploymentBonds } from "../test/constants";
 
 module.exports = async function ({
@@ -23,22 +23,35 @@ module.exports = async function ({
 
   const bondArtifact = await artifacts.readArtifact("Bond");
 
+  const paymentTokenAddress = (await get("PaymentToken")).address;
+  const paymentTokenContract = (await ethers.getContractAt(
+    "TestERC20",
+    paymentTokenAddress
+  )) as TestERC20;
+  const collateralTokenAddress = (await get("CollateralToken")).address;
+  const collateralTokenContract = (await ethers.getContractAt(
+    "TestERC20",
+    collateralTokenAddress
+  )) as TestERC20;
   const createBond = async (
-    bondName: string,
-    bondSymbol: string,
     config: BondConfigType,
-    params: BondParams
+    params: BondParams,
+    nonce: number
   ) => {
     const maturity = params.maturity || config.maturity;
-    const paymentToken =
-      params.paymentToken || (await get("PaymentToken")).address;
+    const paymentToken = params.paymentToken || paymentTokenContract.address;
     const collateralToken =
-      params.collateralToken || (await get("CollateralToken")).address;
+      params.collateralToken || collateralTokenContract.address;
     const collateralTokenAmount =
       params.collateralTokenAmount || config.collateralTokenAmount;
     const convertibleTokenAmount =
       params.convertibleTokenAmount || config.convertibleTokenAmount;
     const maxSupply = params.maxSupply || config.maxSupply;
+    const { bondName, bondSymbol } = await getBondInfo(
+      paymentTokenContract,
+      collateralTokenContract,
+      config
+    );
     const bond = await getBondContract(
       factory.createBond(
         bondName,
@@ -48,34 +61,51 @@ module.exports = async function ({
         collateralToken,
         collateralTokenAmount,
         convertibleTokenAmount,
-        maxSupply
+        maxSupply,
+        { nonce }
       )
     );
     return await bond;
   };
 
-  const bondPromises = deploymentBonds.map(
-    async ({
-      bondName,
+  const signer = await ethers.getSigner(deployer);
+  const currentNonce = await signer.getTransactionCount();
+  for (let i = 0; i < deploymentBonds.length; i++) {
+    const {
       config,
-      options,
+      bondOptions,
     }: {
-      bondName: string;
       config: BondConfigType;
-      options: object;
-    }) => {
-      const { address } = await createBond(bondName, "BOND", config, options);
+      bondOptions: object;
+    } = deploymentBonds[i];
+    let bondAddress: string;
+    const { bondSymbol } = await getBondInfo(
+      paymentTokenContract,
+      collateralTokenContract,
+      config
+    );
+    try {
+      const foundBond = await get(bondSymbol);
+      bondAddress = foundBond.address;
+      const bond = (await ethers.getContractAt("Bond", bondAddress)) as Bond;
+      if ((await bond.owner()) !== deployer) {
+        throw new Error("Bond deployed with different owner.");
+      }
+      console.log(`${bondSymbol} found. Skipping.`);
+    } catch (e) {
+      const { address } = await createBond(
+        config,
+        bondOptions,
+        currentNonce + i
+      );
+      console.log(`Deployed a ${bondSymbol} bond @ (${address}).`);
 
-      console.log(`Deployed a ${bondName} bond @ (${address}).`);
-
-      deployments.save(bondName, {
+      deployments.save(bondSymbol, {
         abi: bondArtifact.abi,
         address,
       });
     }
-  );
-
-  await Promise.all(bondPromises);
+  }
 };
 
 module.exports.tags = ["bonds"];
