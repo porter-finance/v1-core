@@ -1,9 +1,14 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { deploymentBonds } from "../test/constants";
+import {
+  deploymentBonds,
+  FIFTY_MILLION,
+  HALF_FIFTY_MILLION,
+} from "../test/constants";
 import { Bond, TestERC20 } from "../typechain";
 import { BondConfigType } from "../test/interfaces";
 import { BigNumber, ContractTransaction } from "ethers";
-import { getBondInfo } from "../test/utilities";
+import { getBondInfo, mineBlock } from "../test/utilities";
+import { network } from "hardhat";
 
 module.exports = async function ({
   deployments,
@@ -25,15 +30,11 @@ module.exports = async function ({
     deployer
   )) as TestERC20;
 
-  const signer = await ethers.getSigner(deployer);
-  const currentNonce = await signer.getTransactionCount();
-  console.log(currentNonce);
   for (let i = 0; i < deploymentBonds.length; i++) {
     const {
       config,
     }: {
       config: BondConfigType;
-      bondOptions: object;
     } = deploymentBonds[i];
     const { bondSymbol } = await getBondInfo(
       paymentToken,
@@ -42,41 +43,54 @@ module.exports = async function ({
     );
     const { address } = await deployments.get(bondSymbol);
     const bond = (await ethers.getContractAt("Bond", address)) as Bond;
-    if ((await paymentToken.allowance(deployer, bond.address)).gt(0)) {
-      console.log(
-        `Payment token already approved for bond (${bond.address}). Skipping.`
-      );
-    } else {
-      await (
-        await paymentToken.approve(bond.address, ethers.constants.MaxUint256)
-      ).wait();
-    }
+    console.log(`
+---------------------
+Executing bond actions.
+  bondSymbol: ${bondSymbol}
+  address: ${address}
+`);
     const actions = [
       {
         actionName: "approve payment",
         action: () =>
           paymentToken.approve(bond.address, ethers.constants.MaxUint256),
+        conditions: [
+          async () => (await paymentToken.balanceOf(bond.address)).eq(0),
+        ],
       },
       {
         actionName: "pay",
-        action: () => bond.pay(2),
+        action: () =>
+          // some bonds will be fully paid with HALF_FIFTY_MILLION
+          bond.pay(ethers.utils.parseUnits(HALF_FIFTY_MILLION.toString(), 6)),
+        conditions: [async () => (await bond.amountUnpaid()).gt(0)],
       },
       {
         actionName: "convert",
-        action: () => bond.convert(1),
+        action: () => bond.convert(config.maxSupply.div(4)),
+        conditions: [
+          async () => (await bond.previewConvertBeforeMaturity(1)).gt(0),
+        ],
       },
       {
         actionName: "redeem",
         action: () => bond.redeem(1),
+        conditions: [async () => await bond.isMature()],
       },
       {
         actionName: "withdraw excess collateral",
         action: () =>
           bond.withdrawExcessCollateral(BigNumber.from(0), deployer),
+        conditions: [
+          async () => (await bond.previewWithdrawExcessCollateral()).gt(0),
+        ],
       },
       {
         actionName: "withdraw excess payment",
         action: () => bond.withdrawExcessPayment(deployer),
+        conditions: [
+          async () => (await bond.previewWithdrawExcessPayment()).gt(0),
+        ],
       },
     ];
 
@@ -84,18 +98,38 @@ module.exports = async function ({
       const {
         actionName,
         action,
+        conditions,
       }: {
         actionName: string;
         action: () => Promise<ContractTransaction>;
+        conditions: (() => Promise<boolean>)[];
       } = actions[j];
       try {
-        console.log(`Executing bond action on ${bond.address}.`);
-        await (await action()).wait();
-        console.log(`${actionName} success!`);
+        let executeAction = true;
+        for (let k = 0; k < conditions.length; k++) {
+          if (!(await conditions[k]())) {
+            executeAction = false;
+          }
+        }
+        if (executeAction) {
+          await (await action()).wait();
+          console.log(`✅${actionName}: executed on ${bond.address}.`);
+        } else {
+          console.log(`🚷${actionName}: skipped - conditions not met.`);
+        }
       } catch (error) {
+        console.log(error);
         console.log(`${actionName} failure!`);
       }
     }
+    console.log(`
+Bond actions complete
+amount unpaid: ${await bond.amountUnpaid()}
+deployer bond shares: ${await bond.balanceOf(deployer)}
+deployer collateral token: ${await collateralToken.balanceOf(deployer)}
+deployer payment token: ${await paymentToken.balanceOf(deployer)}
+---------------------
+`);
   }
 };
 

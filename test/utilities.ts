@@ -1,7 +1,13 @@
-import { BigNumber, BigNumberish, ContractTransaction, Event } from "ethers";
+import {
+  BigNumber,
+  constants,
+  Contract,
+  ContractTransaction,
+  Event,
+} from "ethers";
 import { use, expect } from "chai";
 import { ethers } from "hardhat";
-import { Bond, TestERC20 } from "../typechain";
+import { Bond, BondFactory, TestERC20 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { WAD } from "./constants";
 import { BondConfigType } from "./interfaces";
@@ -196,23 +202,111 @@ export const getBondInfo = async (
   const productNameLong = `${
     isConvertible ? "Convertible" : "Non-Convertible"
   } Bond`;
-
   const maturityDate = new Date(Number(config.maturity) * 1000)
-    .toLocaleString("en-gb", {
+    .toLocaleString("en-us", {
       day: "2-digit",
       year: "numeric",
       month: "short",
     })
     .toUpperCase()
-    .replace(/ /g, "");
-
+    .replace(/[ ,]/g, "");
+  // This put value will be calculated on the front-end with actual prices
+  const putAmount =
+    config.collateralTokenAmount.toString().slice(0, 2) +
+    "-" +
+    config.maxSupply.toString().slice(0, 2);
+  // This call value will be calculated on the front-end with acutal prices
+  const callAmount =
+    config.convertibleTokenAmount.toString().slice(0, 2) +
+    "-" +
+    config.maxSupply.toString().slice(0, 2);
   const bondName = `${collateralTokenSymbol} ${productNameLong}`;
-  const bondSymbol = `${collateralTokenSymbol.toUpperCase()} ${productNameShort} ${maturityDate} 2P${
-    isConvertible ? " 25C" : ""
-  } ${paymentTokenSymbol.toUpperCase()}`;
+  const bondSymbol = `${collateralTokenSymbol.toUpperCase()} ${productNameShort} ${maturityDate} ${
+    isConvertible ? callAmount + "C " : ""
+  }${paymentTokenSymbol.toUpperCase()}`;
 
   return {
     bondName,
     bondSymbol,
   };
+};
+
+export const createBond = async (
+  config: BondConfigType,
+  factory: BondFactory,
+  paymentTokenContract: TestERC20,
+  collateralTokenContract: TestERC20
+) => {
+  const paymentToken = paymentTokenContract.address;
+  const collateralToken = collateralTokenContract.address;
+  const { bondName, bondSymbol } = await getBondInfo(
+    paymentTokenContract,
+    collateralTokenContract,
+    config
+  );
+  const bond = await getBondContract(
+    factory.createBond(
+      bondName,
+      bondSymbol,
+      config.maturity,
+      paymentToken,
+      collateralToken,
+      config.collateralTokenAmount,
+      config.convertibleTokenAmount,
+      config.maxSupply
+    )
+  );
+  return await bond;
+};
+
+export const initiateAuction = async (
+  auction: Contract,
+  owner: SignerWithAddress,
+  bond: Bond,
+  borrowToken: TestERC20,
+  auctionParams?: any
+) => {
+  const auctioningToken = auctionParams?.auctioningToken || bond.address;
+  const biddingToken = auctionParams?.biddingToken || borrowToken.address;
+  // one day from today
+  const orderCancellationEndDate =
+    auctionParams?.orderCancellationEndDate ||
+    Math.round(
+      new Date(new Date().setDate(new Date().getDate() + 1)).getTime() / 1000
+    );
+  // one week from today
+  const auctionEndDate =
+    auctionParams?.auctionEndDate ||
+    Math.round(
+      new Date(new Date().setDate(new Date().getDate() + 7)).getTime() / 1000
+    );
+  const tokenBalance = await bond.balanceOf(owner.address);
+  const _auctionedSellAmount = tokenBalance;
+  const _minBuyAmount = 1;
+  const minimumBiddingAmountPerOrder = 1;
+  const minFundingThreshold = 0;
+  const isAtomicClosureAllowed = false;
+  const accessManagerContract = constants.AddressZero;
+  const accessManagerContractData = constants.HashZero;
+  const approveTx = await bond
+    .connect(owner)
+    .approve(auction.address, constants.MaxUint256);
+  await approveTx.wait();
+
+  const initiateAuctionTx = await auction
+    .connect(owner)
+    .initiateAuction(
+      auctioningToken,
+      biddingToken,
+      orderCancellationEndDate,
+      auctionEndDate,
+      _auctionedSellAmount,
+      _minBuyAmount,
+      minimumBiddingAmountPerOrder,
+      minFundingThreshold,
+      isAtomicClosureAllowed,
+      accessManagerContract,
+      accessManagerContractData
+    );
+  return initiateAuctionTx;
 };
