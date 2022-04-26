@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { deploymentBonds } from "../test/constants";
+import { deploymentBonds, easyAuction, rinkebyGnosis } from "../test/constants";
 import { Bond, TestERC20 } from "../typechain";
 import { BondConfigType } from "../test/interfaces";
 import { ContractTransaction } from "ethers";
@@ -7,11 +7,7 @@ import {
   getBondInfo,
   initiateAuction,
   placeManyOrders,
-  mineBlock,
 } from "../test/utilities";
-
-const easyAuction = require("../contracts/external/EasyAuction");
-const rinkebyGnosis = "0xC5992c0e0A3267C7F75493D0F717201E26BE35f7";
 
 module.exports = async function ({
   deployments,
@@ -71,7 +67,7 @@ module.exports = async function ({
         auctionEndDate,
       } = auctionData;
       console.log(`
-Created auction for ${address}.
+Created auction ${auctionId} for ${address}.
 auctioningToken: ${auctioningToken}
 biddingToken: ${biddingToken}
 orderCancellationEndDate: ${orderCancellationEndDate}

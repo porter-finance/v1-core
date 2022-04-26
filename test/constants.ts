@@ -1,9 +1,6 @@
 import { BigNumber, utils } from "ethers";
 import { BondConfigType } from "./interfaces";
 
-export const FIFTEEN_SECONDS_FROM_NOW_IN_SECONDS = Math.round(
-  new Date(new Date().setSeconds(new Date().getSeconds() + 15)).getTime() / 1000
-);
 export const TEN_MINUTES_FROM_NOW_IN_SECONDS = Math.round(
   new Date(new Date().setMinutes(new Date().getMinutes() + 10)).getTime() / 1000
 );
@@ -68,14 +65,17 @@ export const MaliciousBondConfig: BondConfigType = {
 
 export const deploymentBonds = [
   {
+    // This bond has a short maturity and a full FIFTY_MILLION
+    // Since we pay HALF_FIFTY_MILLION, this bond will "Default"
     config: {
       ...NonConvertibleBondConfig,
-      maturity: FIFTEEN_SECONDS_FROM_NOW_IN_SECONDS,
+      maturity: TEN_MINUTES_FROM_NOW_IN_SECONDS,
       maxSupply: utils.parseUnits(FIFTY_MILLION.toString(), 6),
     },
     auctionOptions: {},
   },
   {
+    // This will be an "Active" convertible bond
     config: {
       ...ConvertibleBondConfig,
       maturity: ONE_DAY_FROM_NOW_IN_SECONDS,
@@ -84,29 +84,32 @@ export const deploymentBonds = [
     auctionOptions: {},
   },
   {
+    // This will be an "Active" Un-Collateralized bond
     config: {
       ...UncollateralizedBondConfig,
       maturity: ONE_MONTH_FROM_NOW_IN_SECONDS,
       maxSupply: utils.parseUnits(FIFTY_MILLION.toString(), 6),
     },
     auctionOptions: {
-      // Make auction no longer cancellable
+      // Whose auction will not be cancellable
       orderCancellationEndDate: TEN_MINUTES_FROM_NOW_IN_SECONDS,
     },
   },
   {
+    // This will be an "Active" Non-Convertible bond
     config: {
       ...NonConvertibleBondConfig,
       maturity: ONE_YEAR_FROM_NOW_IN_SECONDS,
       maxSupply: utils.parseUnits(FIFTY_MILLION.toString(), 6),
     },
     auctionOptions: {
-      // Make auction end
+      // Whose auction will be ended
       auctionEndDate: TEN_MINUTES_FROM_NOW_IN_SECONDS,
       orderCancellationEndDate: TEN_MINUTES_FROM_NOW_IN_SECONDS,
     },
   },
   {
+    // This will be a "Paid" convertible bond
     config: {
       ...ConvertibleBondConfig,
       // Make bond mature
@@ -117,6 +120,7 @@ export const deploymentBonds = [
     auctionOptions: {},
   },
   {
+    // This will be a "PaidEarly" Non-Convertible bond
     config: {
       ...NonConvertibleBondConfig,
       maturity: THREE_YEARS_FROM_NOW_IN_SECONDS,
@@ -126,3 +130,6 @@ export const deploymentBonds = [
     auctionOptions: {},
   },
 ];
+
+export const easyAuction = require("../contracts/external/EasyAuction");
+export const rinkebyGnosis = "0xC5992c0e0A3267C7F75493D0F717201E26BE35f7";

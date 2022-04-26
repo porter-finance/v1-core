@@ -12,6 +12,7 @@ import "@primitivefi/hardhat-dodoc"; // generates docs on compile
 import "hardhat-storage-layout"; // exports storage layout of contracts
 
 import "./tasks/storageLayout.ts"; // add 'storage-layout' task
+import "./tasks/settleAuction.ts"; // add 'settle-auction' task
 
 dotenv.config();
 
