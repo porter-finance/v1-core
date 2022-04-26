@@ -4,8 +4,8 @@ import { BondConfigType } from "./interfaces";
 export const FIFTEEN_SECONDS_FROM_NOW_IN_SECONDS = Math.round(
   new Date(new Date().setSeconds(new Date().getSeconds() + 15)).getTime() / 1000
 );
-export const ONE_MINUTE_FROM_NOW_IN_SECONDS = Math.round(
-  new Date(new Date().setMinutes(new Date().getMinutes() + 1)).getTime() / 1000
+export const TEN_MINUTES_FROM_NOW_IN_SECONDS = Math.round(
+  new Date(new Date().setMinutes(new Date().getMinutes() + 10)).getTime() / 1000
 );
 export const ONE_DAY_FROM_NOW_IN_SECONDS = Math.round(
   new Date(new Date().setHours(new Date().getHours() + 24)).getTime() / 1000
@@ -91,7 +91,7 @@ export const deploymentBonds = [
     },
     auctionOptions: {
       // Make auction no longer cancellable
-      orderCancellationEndDate: ONE_MINUTE_FROM_NOW_IN_SECONDS,
+      orderCancellationEndDate: TEN_MINUTES_FROM_NOW_IN_SECONDS,
     },
   },
   {
@@ -102,15 +102,15 @@ export const deploymentBonds = [
     },
     auctionOptions: {
       // Make auction end
-      auctionEndDate: ONE_MINUTE_FROM_NOW_IN_SECONDS,
-      orderCancellationEndDate: ONE_MINUTE_FROM_NOW_IN_SECONDS,
+      auctionEndDate: TEN_MINUTES_FROM_NOW_IN_SECONDS,
+      orderCancellationEndDate: TEN_MINUTES_FROM_NOW_IN_SECONDS,
     },
   },
   {
     config: {
       ...ConvertibleBondConfig,
       // Make bond mature
-      maturity: FIFTEEN_SECONDS_FROM_NOW_IN_SECONDS,
+      maturity: TEN_MINUTES_FROM_NOW_IN_SECONDS,
       // Make bond paid off (we are paying HALF_FIFTY_MILLION in deploy)
       maxSupply: utils.parseUnits(HALF_FIFTY_MILLION.toString(), 6),
     },

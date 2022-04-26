@@ -1,5 +1,6 @@
 import {
   BigNumber,
+  BigNumberish,
   constants,
   Contract,
   ContractTransaction,
@@ -17,9 +18,9 @@ export const addDaysToNow = (days: number = 0) => {
   );
 };
 
-export async function increaseTime(duration: number): Promise<void> {
-  ethers.provider.send("evm_increaseTime", [duration]);
-  ethers.provider.send("evm_mine", []);
+export async function setNextBlockTimestamp(timestamp: number): Promise<void> {
+  await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp]);
+  await ethers.provider.send("evm_mine", []);
 }
 
 export async function mineBlock(): Promise<void> {
@@ -309,4 +310,86 @@ export const initiateAuction = async (
       accessManagerContractData
     );
   return initiateAuctionTx;
+};
+
+export const placeManyOrders = async ({
+  signer,
+  auction,
+  auctionId,
+  auctionData,
+  biddingToken,
+  auctioningToken,
+  sellAmount,
+  minBuyAmount,
+  nrOfOrders,
+}: {
+  signer: SignerWithAddress;
+  auction: Contract;
+  auctionId: string;
+  auctionData: any;
+  biddingToken: TestERC20;
+  auctioningToken: TestERC20;
+  sellAmount: string;
+  minBuyAmount: string;
+  nrOfOrders: number;
+}) => {
+  const minBuyAmountInAtoms = ethers.utils.parseUnits(
+    minBuyAmount,
+    await biddingToken.decimals()
+  );
+  const sellAmountsInAtoms = ethers.utils.parseUnits(
+    sellAmount,
+    await auctioningToken.decimals()
+  );
+
+  const balance = await biddingToken.callStatic.balanceOf(signer.address);
+  const totalSellingAmountInAtoms = sellAmountsInAtoms.mul(nrOfOrders);
+
+  if (totalSellingAmountInAtoms.gt(balance)) {
+    throw new Error("Balance not sufficient");
+  }
+
+  const allowance = await biddingToken.callStatic.allowance(
+    signer.address,
+    auction.address
+  );
+  if (totalSellingAmountInAtoms.gt(allowance)) {
+    console.log("Approving tokens:");
+    const tx = await auctioningToken
+      .connect(signer)
+      .approve(auction.address, totalSellingAmountInAtoms);
+    await tx.wait();
+    console.log("Approved");
+  }
+  const orderBlockSize = 50;
+  if (nrOfOrders % orderBlockSize !== 0) {
+    throw new Error("nrOfOrders must be a multiple of orderBlockSize");
+  }
+  for (let i = 0; i < nrOfOrders / orderBlockSize; i += 1) {
+    const minBuyAmounts = [];
+    for (let j = 0; j < orderBlockSize; j++) {
+      minBuyAmounts.push(
+        minBuyAmountInAtoms.sub(
+          BigNumber.from(i * orderBlockSize + j).mul(
+            minBuyAmountInAtoms.div(10).div(nrOfOrders)
+          )
+        )
+      );
+    }
+
+    const queueStartElement =
+      "0x0000000000000000000000000000000000000000000000000000000000000001";
+    await (
+      await auction
+        .connect(signer)
+        .placeSellOrders(
+          auctionId,
+          minBuyAmounts,
+          Array(orderBlockSize).fill(sellAmountsInAtoms),
+          Array(orderBlockSize).fill(queueStartElement),
+          "0x"
+        )
+    ).wait();
+    console.log("Placed auction bid");
+  }
 };
