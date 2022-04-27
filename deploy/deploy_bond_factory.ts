@@ -17,14 +17,12 @@ module.exports = async function ({
   });
   const factory = (await ethers.getContractAt(
     "BondFactory",
-    address,
-    deployer
+    address
   )) as BondFactory;
 
   const implementationContract = (await ethers.getContractAt(
     "Bond",
-    await factory.tokenImplementation(),
-    deployer
+    await factory.tokenImplementation()
   )) as Bond;
   try {
     await (

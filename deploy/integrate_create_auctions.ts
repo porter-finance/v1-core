@@ -1,5 +1,9 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { deploymentBonds, easyAuction, mumbaiGnosis } from "../test/constants";
+import {
+  deploymentBonds,
+  easyAuctionAbi,
+  mumbaiGnosis,
+} from "../test/constants";
 import { Bond, TestERC20 } from "../typechain";
 import { BondConfigType } from "../test/interfaces";
 import { ContractTransaction } from "ethers";
@@ -19,14 +23,12 @@ module.exports = async function ({
   const { address: paymentTokenAddress } = await get("PaymentToken");
   const paymentToken = (await ethers.getContractAt(
     "TestERC20",
-    paymentTokenAddress,
-    deployer
+    paymentTokenAddress
   )) as TestERC20;
   const { address: collateralTokenAddress } = await get("CollateralToken");
   const collateralToken = (await ethers.getContractAt(
     "TestERC20",
-    collateralTokenAddress,
-    deployer
+    collateralTokenAddress
   )) as TestERC20;
   for (let i = 0; i < deploymentBonds.length; i++) {
     const {
@@ -43,7 +45,7 @@ module.exports = async function ({
     );
     const { address } = await deployments.get(bondSymbol);
     const bond = (await ethers.getContractAt("Bond", address)) as Bond;
-    const auction = await ethers.getContractAt(easyAuction.abi, mumbaiGnosis);
+    const auction = await ethers.getContractAt(easyAuctionAbi, mumbaiGnosis);
     const signer = await ethers.getSigner(deployer);
     try {
       if ((await paymentToken.allowance(deployer, auction.address)).eq(0)) {

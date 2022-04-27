@@ -16,8 +16,7 @@ module.exports = async function ({
   const { address } = await get("BondFactory");
   const factory = (await ethers.getContractAt(
     "BondFactory",
-    address,
-    deployer
+    address
   )) as BondFactory;
 
   const bondArtifact = await artifacts.readArtifact("Bond");

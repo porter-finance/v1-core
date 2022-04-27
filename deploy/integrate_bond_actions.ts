@@ -16,13 +16,11 @@ module.exports = async function ({
   const { address: collateralTokenAddress } = await get("CollateralToken");
   const paymentToken = (await ethers.getContractAt(
     "TestERC20",
-    paymentTokenAddress,
-    deployer
+    paymentTokenAddress
   )) as TestERC20;
   const collateralToken = (await ethers.getContractAt(
     "TestERC20",
-    collateralTokenAddress,
-    deployer
+    collateralTokenAddress
   )) as TestERC20;
 
   for (let i = 0; i < deploymentBonds.length; i++) {

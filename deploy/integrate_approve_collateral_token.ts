@@ -13,8 +13,7 @@ module.exports = async function ({
   );
   const collateralToken = (await ethers.getContractAt(
     "TestERC20",
-    collateralTokenAddress,
-    deployer
+    collateralTokenAddress
   )) as TestERC20;
   if ((await collateralToken.allowance(deployer, bondFactoryAddress)).gt(0)) {
     console.log(
