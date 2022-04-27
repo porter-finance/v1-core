@@ -54,6 +54,7 @@ module.exports = async function ({
       }
       console.log(`${bondSymbol} found. Skipping.`);
     } catch (e) {
+      console.log(`Could not find a bond ${bondSymbol}. Creating.`);
       const { address } = await createBond(
         config,
         factory,

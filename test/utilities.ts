@@ -1,6 +1,5 @@
 import {
   BigNumber,
-  BigNumberish,
   constants,
   Contract,
   ContractTransaction,
@@ -12,6 +11,7 @@ import { Bond, BondFactory, TestERC20 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { WAD } from "./constants";
 import { BondConfigType } from "./interfaces";
+import { parseUnits } from "ethers/lib/utils";
 export const addDaysToNow = (days: number = 0) => {
   return BigNumber.from(
     Math.floor(new Date().getTime() / 1000) + days * 24 * 60 * 60
@@ -199,7 +199,7 @@ export const getBondInfo = async (
   const collateralTokenSymbol = await collateralToken.symbol();
   const paymentTokenSymbol = await paymentToken.symbol();
   const isConvertible = config.convertibleTokenAmount.gt(0);
-  const productNameShort = `${isConvertible ? "CONVERT" : "SIMPLE"} Bond`;
+  const productNameShort = isConvertible ? "CONVERT" : "SIMPLE";
   const productNameLong = `${
     isConvertible ? "Convertible" : "Non-Convertible"
   } Bond`;
@@ -211,11 +211,6 @@ export const getBondInfo = async (
     })
     .toUpperCase()
     .replace(/[ ,]/g, "");
-  // This put value will be calculated on the front-end with actual prices
-  const putAmount =
-    config.collateralTokenAmount.toString().slice(0, 2) +
-    "-" +
-    config.maxSupply.toString().slice(0, 2);
   // This call value will be calculated on the front-end with acutal prices
   const callAmount =
     config.convertibleTokenAmount.toString().slice(0, 2) +
@@ -282,10 +277,10 @@ export const initiateAuction = async (
       new Date(new Date().setDate(new Date().getDate() + 7)).getTime() / 1000
     );
   const tokenBalance = await bond.balanceOf(owner.address);
-  const _auctionedSellAmount = tokenBalance;
-  const _minBuyAmount = 1;
-  const minimumBiddingAmountPerOrder = 1;
-  const minFundingThreshold = 0;
+  const auctionedSellAmount = tokenBalance;
+  const minBuyAmount = auctionedSellAmount.mul(8).div(10);
+  const minimumBiddingAmountPerOrder = parseUnits((1_000).toString(), 6);
+  const minFundingThreshold = auctionedSellAmount.div(4);
   const isAtomicClosureAllowed = false;
   const accessManagerContract = constants.AddressZero;
   const accessManagerContractData = constants.HashZero;
@@ -301,8 +296,8 @@ export const initiateAuction = async (
       biddingToken,
       orderCancellationEndDate,
       auctionEndDate,
-      _auctionedSellAmount,
-      _minBuyAmount,
+      auctionedSellAmount,
+      minBuyAmount,
       minimumBiddingAmountPerOrder,
       minFundingThreshold,
       isAtomicClosureAllowed,
@@ -342,25 +337,6 @@ export const placeManyOrders = async ({
     await auctioningToken.decimals()
   );
 
-  const balance = await biddingToken.callStatic.balanceOf(signer.address);
-  const totalSellingAmountInAtoms = sellAmountsInAtoms.mul(nrOfOrders);
-
-  if (totalSellingAmountInAtoms.gt(balance)) {
-    throw new Error("Balance not sufficient");
-  }
-
-  const allowance = await biddingToken.callStatic.allowance(
-    signer.address,
-    auction.address
-  );
-  if (totalSellingAmountInAtoms.gt(allowance)) {
-    console.log("Approving tokens:");
-    const tx = await auctioningToken
-      .connect(signer)
-      .approve(auction.address, totalSellingAmountInAtoms);
-    await tx.wait();
-    console.log("Approved");
-  }
   const orderBlockSize = 50;
   if (nrOfOrders % orderBlockSize !== 0) {
     throw new Error("nrOfOrders must be a multiple of orderBlockSize");
@@ -371,7 +347,7 @@ export const placeManyOrders = async ({
       minBuyAmounts.push(
         minBuyAmountInAtoms.sub(
           BigNumber.from(i * orderBlockSize + j).mul(
-            minBuyAmountInAtoms.div(10).div(nrOfOrders)
+            minBuyAmountInAtoms.div(nrOfOrders).div(10)
           )
         )
       );
@@ -390,6 +366,5 @@ export const placeManyOrders = async ({
           "0x"
         )
     ).wait();
-    console.log("Placed auction bid");
   }
 };

@@ -42,6 +42,13 @@ const config: HardhatUserConfig = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+    mumbai: {
+      live: true,
+      gasPrice: 35000000000,
+      url: process.env.POLYGON_ALCHEMY_URL,
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
     hardhat: {
       mining: {
         auto: true,

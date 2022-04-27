@@ -1,14 +1,9 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import {
-  deploymentBonds,
-  FIFTY_MILLION,
-  HALF_FIFTY_MILLION,
-} from "../test/constants";
+import { deploymentBonds, TWENTY_FIVE_MILLION } from "../test/constants";
 import { Bond, TestERC20 } from "../typechain";
 import { BondConfigType } from "../test/interfaces";
 import { BigNumber, ContractTransaction } from "ethers";
-import { getBondInfo, mineBlock } from "../test/utilities";
-import { network } from "hardhat";
+import { getBondInfo } from "../test/utilities";
 
 module.exports = async function ({
   deployments,
@@ -61,8 +56,8 @@ Executing bond actions.
       {
         actionName: "pay",
         action: () =>
-          // some bonds will be fully paid with HALF_FIFTY_MILLION
-          bond.pay(ethers.utils.parseUnits(HALF_FIFTY_MILLION.toString(), 6)),
+          // some bonds will be fully paid with TWENTY_FIVE_MILLION
+          bond.pay(ethers.utils.parseUnits(TWENTY_FIVE_MILLION.toString(), 6)),
         conditions: [async () => (await bond.amountUnpaid()).gt(0)],
       },
       {

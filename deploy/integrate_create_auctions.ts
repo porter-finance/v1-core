@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { deploymentBonds, easyAuction, rinkebyGnosis } from "../test/constants";
+import { deploymentBonds, easyAuction, mumbaiGnosis } from "../test/constants";
 import { Bond, TestERC20 } from "../typechain";
 import { BondConfigType } from "../test/interfaces";
 import { ContractTransaction } from "ethers";
@@ -43,13 +43,22 @@ module.exports = async function ({
     );
     const { address } = await deployments.get(bondSymbol);
     const bond = (await ethers.getContractAt("Bond", address)) as Bond;
-    const auction = await ethers.getContractAt(easyAuction.abi, rinkebyGnosis);
+    const auction = await ethers.getContractAt(easyAuction.abi, mumbaiGnosis);
     const signer = await ethers.getSigner(deployer);
     try {
-      await (
-        await paymentToken.approve(auction.address, ethers.constants.MaxUint256)
-      ).wait();
-
+      if ((await paymentToken.allowance(deployer, auction.address)).eq(0)) {
+        console.log(
+          `Approving auction (${auction.address}) for payment token.`
+        );
+        await (
+          await paymentToken.approve(
+            auction.address,
+            ethers.constants.MaxUint256
+          )
+        ).wait();
+      } else {
+        console.log(`Auction already approved for token.`);
+      }
       const tx: ContractTransaction = await initiateAuction(
         auction,
         signer,
@@ -73,6 +82,11 @@ biddingToken: ${biddingToken}
 orderCancellationEndDate: ${orderCancellationEndDate}
 auctionEndDate: ${auctionEndDate}
 `);
+      const nrOfOrders = 100;
+      const maxSellAmount = (await bond.totalSupply()).mul(3).div(2);
+      const amountToSellPerBid = maxSellAmount
+        .div(nrOfOrders)
+        .div(await bond.decimals());
       await placeManyOrders({
         signer,
         auction,
@@ -80,9 +94,9 @@ auctionEndDate: ${auctionEndDate}
         auctionData,
         biddingToken: paymentToken,
         auctioningToken: bond,
-        sellAmount: "1000",
-        minBuyAmount: "1000",
-        nrOfOrders: 100,
+        sellAmount: (800_000_000).toString(),
+        minBuyAmount: (100_000_000).toString(),
+        nrOfOrders,
       });
     } catch (e) {
       console.log(e);
