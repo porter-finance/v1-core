@@ -1,9 +1,9 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { waitUntilMined } from "../test/utilities";
 import { BondFactory, TestERC20 } from "../typechain";
 
 module.exports = async function ({
   deployments,
-  getNamedAccounts,
   ethers,
 }: HardhatRuntimeEnvironment) {
   const { address: bondFactoryAddress } = await deployments.get("BondFactory");
@@ -21,7 +21,9 @@ module.exports = async function ({
       `Payment token (${paymentTokenAddress}) already approved for ${tokenRole}. Skipping.`
     );
   } else {
-    await (await factory.grantRole(tokenRole, paymentTokenAddress)).wait();
+    await waitUntilMined(
+      await factory.grantRole(tokenRole, paymentTokenAddress)
+    );
     console.log(`Token Role (${tokenRole}) granted to ${paymentTokenAddress}.`);
   }
 };

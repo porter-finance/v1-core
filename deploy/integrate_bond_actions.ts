@@ -3,7 +3,7 @@ import { deploymentBonds, TWENTY_FIVE_MILLION } from "../test/constants";
 import { Bond, TestERC20 } from "../typechain";
 import { BondConfigType } from "../test/interfaces";
 import { BigNumber, ContractTransaction } from "ethers";
-import { getBondInfo } from "../test/utilities";
+import { getBondInfo, waitUntilMined } from "../test/utilities";
 
 module.exports = async function ({
   deployments,
@@ -105,7 +105,7 @@ Executing bond actions.
           }
         }
         if (executeAction) {
-          await (await action()).wait();
+          await waitUntilMined(await action());
           console.log(`✅${actionName}: executed on ${bond.address}.`);
         } else {
           console.log(`🚷${actionName}: skipped - conditions not met.`);

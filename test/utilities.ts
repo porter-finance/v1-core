@@ -2,10 +2,11 @@ import {
   BigNumber,
   constants,
   Contract,
+  ContractReceipt,
   ContractTransaction,
   Event,
 } from "ethers";
-import { use, expect } from "chai";
+import { expect } from "chai";
 import { ethers } from "hardhat";
 import { Bond, BondFactory, TestERC20 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -51,11 +52,16 @@ export async function getEventArgumentsFromLoop(
   return {};
 }
 
-export const getBondContract = async (tx: Promise<any>): Promise<Bond> => {
+export const getBondContract = async (
+  txPromise: Promise<ContractTransaction>
+): Promise<Bond> => {
   const [owner] = await ethers.getSigners();
-
+  const tx = await txPromise;
+  if (process.env.LOG_GAS_USAGE) {
+    logGasOptions(tx);
+  }
   const [newBondAddress] = await getEventArgumentsFromTransaction(
-    await tx,
+    tx,
     "BondCreated"
   );
 
@@ -90,16 +96,6 @@ declare global {
       revertedWithArgs(errorName: string, ...args: any): Promise<void>;
     }
   }
-}
-export async function useCustomErrorMatcher() {
-  use(function (chai) {
-    chai.Assertion.addMethod("revertedWithArgs", function (errorName, ...args) {
-      const expected = `${errorName}(${args
-        .map((arg) => JSON.stringify(arg))
-        .join(", ")})`;
-      new chai.Assertion(this._obj).to.be.revertedWith(expected);
-    });
-  });
 }
 
 export const payAndWithdraw = async ({
@@ -200,23 +196,23 @@ export const getBondInfo = async (
   const paymentTokenSymbol = await paymentToken.symbol();
   const isConvertible = config.convertibleTokenAmount.gt(0);
   const productNameShort = isConvertible ? "CONVERT" : "SIMPLE";
-  const productNameLong = `${
-    isConvertible ? "Convertible" : "Non-Convertible"
-  } Bond`;
+  const productNameLong = `${isConvertible ? "Convertible" : "Simple"} Bond`;
   const maturityDate = new Date(Number(config.maturity) * 1000)
-    .toLocaleString("en-us", {
+    .toLocaleString("en-gb", {
       day: "2-digit",
       year: "numeric",
       month: "short",
     })
     .toUpperCase()
-    .replace(/[ ,]/g, "");
+    .replace(/ /g, "");
   // This call value will be calculated on the front-end with acutal prices
   const callAmount =
     config.convertibleTokenAmount.toString().slice(0, 2) +
     "-" +
     config.maxSupply.toString().slice(0, 2);
-  const bondName = `${collateralTokenSymbol} ${productNameLong}`;
+  const bondName = `${getDAONameFromSymbol(
+    collateralTokenSymbol
+  )} ${productNameLong}`;
   const bondSymbol = `${collateralTokenSymbol.toUpperCase()} ${productNameShort} ${maturityDate} ${
     isConvertible ? callAmount + "C " : ""
   }${paymentTokenSymbol.toUpperCase()}`;
@@ -355,7 +351,7 @@ export const placeManyOrders = async ({
 
     const queueStartElement =
       "0x0000000000000000000000000000000000000000000000000000000000000001";
-    await (
+    await waitUntilMined(
       await auction
         .connect(signer)
         .placeSellOrders(
@@ -365,6 +361,43 @@ export const placeManyOrders = async ({
           Array(orderBlockSize).fill(queueStartElement),
           "0x"
         )
-    ).wait();
+    );
   }
+};
+
+export const waitUntilMined = async (
+  tx: ContractTransaction
+): Promise<ContractReceipt> => {
+  logGasOptions(tx);
+  const receipt = await tx.wait();
+  if (process.env.LOG_GAS_USAGE) {
+    console.log(`⛏️ Transaction mined.
+gas used:${receipt.gasUsed}
+`);
+  }
+  return receipt;
+};
+
+export const logGasOptions = ({
+  nonce,
+  gasPrice,
+  maxFeePerGas,
+  maxPriorityFeePerGas,
+}: ContractTransaction) => {
+  if (process.env.LOG_GAS_USAGE) {
+    console.log(`📒 Transaction sent.
+  nonce: ${nonce}
+  gas price: ${gasPrice}
+  max fee: ${maxFeePerGas}
+  max priority fee: ${maxPriorityFeePerGas}
+`);
+  }
+};
+
+export const getDAONameFromSymbol = (tokenSymbol: string): string => {
+  return (
+    {
+      uni: "Uniswap",
+    }[tokenSymbol.toLowerCase()] || tokenSymbol
+  );
 };

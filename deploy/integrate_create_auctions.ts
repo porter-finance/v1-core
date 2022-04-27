@@ -6,11 +6,11 @@ import {
 } from "../test/constants";
 import { Bond, TestERC20 } from "../typechain";
 import { BondConfigType } from "../test/interfaces";
-import { ContractTransaction } from "ethers";
 import {
   getBondInfo,
   initiateAuction,
   placeManyOrders,
+  waitUntilMined,
 } from "../test/utilities";
 
 module.exports = async function ({
@@ -52,23 +52,25 @@ module.exports = async function ({
         console.log(
           `Approving auction (${auction.address}) for payment token.`
         );
-        await (
+        await waitUntilMined(
           await paymentToken.approve(
             auction.address,
             ethers.constants.MaxUint256
           )
-        ).wait();
+        );
       } else {
         console.log(`Auction already approved for token.`);
       }
-      const tx: ContractTransaction = await initiateAuction(
-        auction,
-        signer,
-        bond,
-        paymentToken,
-        auctionOptions
+
+      await waitUntilMined(
+        await initiateAuction(
+          auction,
+          signer,
+          bond,
+          paymentToken,
+          auctionOptions
+        )
       );
-      await tx.wait();
       const auctionId = await auction.auctionCounter();
       const auctionData = await auction.auctionData(auctionId);
       const {

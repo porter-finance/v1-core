@@ -1,4 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { waitUntilMined } from "../test/utilities";
 import { BondFactory, TestERC20 } from "../typechain";
 
 module.exports = async function ({
@@ -24,7 +25,9 @@ module.exports = async function ({
       `Collateral token (${collateralTokenAddress}) already approved for ${tokenRole}. Skipping.`
     );
   } else {
-    await (await factory.grantRole(tokenRole, collateralTokenAddress)).wait();
+    await waitUntilMined(
+      await factory.grantRole(tokenRole, collateralTokenAddress)
+    );
     console.log(
       `Token Role (${tokenRole}) granted to ${collateralTokenAddress}.`
     );

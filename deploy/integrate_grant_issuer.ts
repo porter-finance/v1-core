@@ -1,4 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { waitUntilMined } from "../test/utilities";
 import { BondFactory } from "../typechain";
 
 module.exports = async function ({
@@ -16,7 +17,7 @@ module.exports = async function ({
   if (await factory.hasRole(issuerRole, deployer)) {
     console.log(`Issuer Role already granted to ${deployer}. Skipping.`);
   } else {
-    await (await factory.grantRole(issuerRole, deployer)).wait();
+    await waitUntilMined(await factory.grantRole(issuerRole, deployer));
     console.log(`Issuer Role (${issuerRole}) granted to ${deployer}.`);
   }
 };

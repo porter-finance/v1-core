@@ -1,5 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { THREE_YEARS_FROM_NOW_IN_SECONDS } from "../test/constants";
+import { waitUntilMined } from "../test/utilities";
 import { Bond, BondFactory } from "../typechain";
 
 module.exports = async function ({
@@ -25,7 +26,7 @@ module.exports = async function ({
     await factory.tokenImplementation()
   )) as Bond;
   try {
-    await (
+    await waitUntilMined(
       await implementationContract.initialize(
         "Placeholder Bond",
         "BOND",
@@ -37,7 +38,7 @@ module.exports = async function ({
         ethers.BigNumber.from(0),
         0
       )
-    ).wait();
+    );
   } catch (e) {
     console.log("Is the contract already initialized?");
     console.log(e);

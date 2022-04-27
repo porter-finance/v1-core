@@ -51,7 +51,8 @@ const config: HardhatUserConfig = {
     },
     hardhat: {
       mining: {
-        auto: true,
+        auto: false,
+        interval: 10,
       },
       forking: {
         blockNumber: 10453255,

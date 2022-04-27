@@ -1,4 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { waitUntilMined } from "../test/utilities";
 import { TestERC20 } from "../typechain";
 
 module.exports = async function ({
@@ -20,13 +21,12 @@ module.exports = async function ({
       `Collateral token for ${deployer} @ factory (${bondFactoryAddress}) already approved. Skipping.`
     );
   } else {
-    await (
+    await waitUntilMined(
       await collateralToken.approve(
         bondFactoryAddress,
         ethers.constants.MaxInt256
       )
-    ).wait();
-
+    );
     console.log(
       `Approved collateral token for ${deployer} @ facotry (${bondFactoryAddress}) <-> token (${collateralTokenAddress}).`
     );
