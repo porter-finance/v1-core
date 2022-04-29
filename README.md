@@ -77,6 +77,7 @@ npx hardhat compile # create contract artifacts
 npx hardhat clean # removes artifacts and maybe other things
 npx hardhat coverage # runs the contract coverage report
 npx hardhat integration # runs the integration task
+npx hardhat settle-auction --auctionId <auctionId> # settles an auction
 npx eslint '**/*.{js,ts}' --fix
 npx prettier '**/*.{json,sol,md,ts}' --write
 npx solhint 'contracts/**/*.sol' --fix
