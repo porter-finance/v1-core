@@ -213,9 +213,7 @@ export const getBondInfo = async (
   const bondName = `${getDAONameFromSymbol(
     collateralTokenSymbol
   )} ${productNameLong}`;
-  const bondSymbol = `${collateralTokenSymbol.toUpperCase()} ${productNameShort} ${maturityDate} ${
-    isConvertible ? callAmount + "C " : ""
-  }${paymentTokenSymbol.toUpperCase()}`;
+  const bondSymbol = `${collateralTokenSymbol.toUpperCase()} ${productNameShort} ${maturityDate} 25C ${paymentTokenSymbol.toUpperCase()}`;
 
   return {
     bondName,
