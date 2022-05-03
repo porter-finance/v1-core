@@ -34,6 +34,12 @@ contract Bond is
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
+    /**
+        @notice A period of time after maturity in which bond redemption is
+            disallowed for non fully paid bonds. This restriction is lifted 
+            once the grace period has ended. The issuer has the ability to
+            pay during this time to fully pay the bond. 
+    */
     uint256 internal constant GRACE_PERIOD = 7 days;
 
     /// @inheritdoc IBond
@@ -64,9 +70,9 @@ contract Bond is
     }
 
     /**
-        @dev Confirms that the Bond is either mature or has been paid.
+        @dev Confirms that the Bond is after the grace period or has been paid.
             This is used in the `redeem` function because bond shares can be
-            redeemed when either the bond is fully paid or mature.
+            redeemed when the Bond is fully paid or past the grace period.
     */
     modifier afterGracePeriodOrPaid() {
         if (isAfterGracePeriod() || amountUnpaid() == 0) {
@@ -410,7 +416,8 @@ contract Bond is
 
     /**
         @notice Checks if the grace period timestamp has passed.
-        @return isGracePeriodOver Whether or not the Bond is passed the grace period
+        @return isGracePeriodOver Whether or not the Bond is past the
+            grace period.
     */
     function isAfterGracePeriod()
         internal

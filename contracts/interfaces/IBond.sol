@@ -7,8 +7,11 @@ interface IBond {
     /// @notice Operation restricted because the Bond has matured.
     error BondPastMaturity();
 
-    /// @notice Operation restricted because the Bond has after the grace period or paid.
-    error BondNotYetAfterGracePeriodOrPaid();
+    /**
+        @notice Bond redemption is impossible because the grace period has not
+            yet passed or the bond has not been fully paid.
+    */
+    error BondBeforeGracePeriodOrPaid();
 
     /// @notice Attempted to pay after payment was met.
     error PaymentAlreadyMet();

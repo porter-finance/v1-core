@@ -740,22 +740,24 @@ describe("Bond", () => {
           });
         });
 
-        describe("Defaulted state (Before Grace Period)", async () => {
+        describe("Defaulted state (during grace period)", async () => {
           beforeEach(async () => {
+            // Skip to maturity as this is the start of the grace period
             await ethers.provider.send("evm_mine", [config.maturity]);
           });
 
-          it("fails when trying to redeem during grace period", async () => {
+          it("fails when trying to redeem", async () => {
             await expect(bond.redeem(1)).to.be.revertedWith(
-              "BondNotYetAfterGracePeriodOrPaid"
+              "BondBeforeGracePeriodOrPaid"
             );
           });
         });
-        describe("Defaulted state (After Grace Period)", async () => {
+        describe("Defaulted state (after grace period)", async () => {
           beforeEach(async () => {
             const gracePeriodEnd = await (
               await bond.gracePeriodEnd()
             ).toNumber();
+            // The grace period is considered over at the timestamp and onward
             await ethers.provider.send("evm_mine", [gracePeriodEnd]);
           });
 
@@ -882,7 +884,7 @@ describe("Bond", () => {
             });
 
             await expect(bond.redeem(ZERO)).to.be.revertedWith(
-              "BondNotYetAfterGracePeriodOrPaid"
+              "BondBeforeGracePeriodOrPaid"
             );
           });
 
