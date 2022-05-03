@@ -69,10 +69,11 @@ contract Bond is
             redeemed when either the bond is fully paid or mature.
     */
     modifier afterGracePeriodOrPaid() {
-        if (!isAfterGracePeriod() && amountUnpaid() != 0) {
-            revert BondNotYetAfterGracePeriodOrPaid();
+        if (isAfterGracePeriod() || amountUnpaid() == 0) {
+            _;
+        } else {
+            revert BondBeforeGracePeriodOrPaid();
         }
-        _;
     }
 
     /// @inheritdoc IBond
