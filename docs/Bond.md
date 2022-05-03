@@ -237,11 +237,6 @@ Emitted when a token is swept by the contract owner.
 
 
 
-### CurrentlyGracePeriod
-* Bonds can not be redeemed during the grace period
-
-
-
 ### NoPaymentToWithdraw
 * Attempted to withdraw with no excess payment in the contract.
 

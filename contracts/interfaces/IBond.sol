@@ -25,9 +25,6 @@ interface IBond {
     /// @notice Attempted to withdraw more collateral than available.
     error NotEnoughCollateral();
 
-    /// @notice Bonds can not be redeemed during the grace period
-    error CurrentlyGracePeriod();
-
     /**
         @notice Emitted when bond shares are converted by a Bond holder.
         @param from The address converting their tokens.
