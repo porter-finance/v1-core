@@ -37,6 +37,7 @@ contract Bond is
     /// @inheritdoc IBond
     uint256 public maturity;
 
+    /// @inheritdoc IBond
     uint256 public gracePeriodEnd;
 
     /// @inheritdoc IBond
@@ -69,7 +70,7 @@ contract Bond is
             redeemed when either the bond is fully paid or mature.
     */
     modifier afterGracePeriodOrPaid() {
-        if (beforeGracePeriodEnd() && amountUnpaid() != 0) {
+        if (!isAfterGracePeriod() && amountUnpaid() != 0) {
             revert BondNotYetAfterGracePeriodOrPaid();
         }
         _;
@@ -394,8 +395,16 @@ contract Bond is
         isBondMature = block.timestamp >= maturity;
     }
 
-    function beforeGracePeriodEnd() internal view returns (bool isGracePeriod) {
-        isGracePeriod = block.timestamp < gracePeriodEnd;
+    /**
+        @notice Checks if the grace period timestamp has passed.
+        @return isGracePeriodOver Whether or not the Bond is passed the grace period
+    */
+    function isAfterGracePeriod()
+        internal
+        view
+        returns (bool isGracePeriodOver)
+    {
+        isGracePeriodOver = block.timestamp >= gracePeriodEnd;
     }
 
     /// @inheritdoc IERC20MetadataUpgradeable

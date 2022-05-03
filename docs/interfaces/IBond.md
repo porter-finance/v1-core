@@ -384,6 +384,27 @@ The number of convertibleTokens the bonds will convert into.
       </tr>
 </table>
 
+### gracePeriodEnd
+
+```solidity
+function gracePeriodEnd() external view returns (uint256)
+```
+
+One week after the maturity date. Bond collateral can be redeemed after this date.
+
+
+#### Returns
+
+
+<table>
+  <tr>
+    <td>
+      uint256    </td>
+        <td>
+    The grace period end date as a timestamp. This is always one week after the maturity date    </td>
+      </tr>
+</table>
+
 ### initialize
 
 ```solidity
