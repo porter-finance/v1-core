@@ -70,7 +70,7 @@ contract Bond is
     */
     modifier afterGracePeriodOrPaid() {
         if (beforeGracePeriodEnd() && amountUnpaid() != 0) {
-            revert BondNotYetMaturedOrPaid();
+            revert BondNotYetAfterGracePeriodOrPaid();
         }
         _;
     }

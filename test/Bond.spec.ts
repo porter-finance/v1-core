@@ -741,7 +741,10 @@ describe("Bond", () => {
         });
         describe("Defaulted state", async () => {
           beforeEach(async () => {
-            await ethers.provider.send("evm_mine", [config.maturity]);
+            const gracePeriodEnd = await (
+              await bond.gracePeriodEnd()
+            ).toNumber();
+            await ethers.provider.send("evm_mine", [gracePeriodEnd]);
           });
 
           it("should not be possible to redeem zero bonds", async () => {
@@ -867,7 +870,7 @@ describe("Bond", () => {
             });
 
             await expect(bond.redeem(ZERO)).to.be.revertedWith(
-              "BondNotYetMaturedOrPaid"
+              "BondNotYetAfterGracePeriodOrPaid"
             );
           });
 

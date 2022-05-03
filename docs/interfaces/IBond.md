@@ -213,8 +213,8 @@ Emitted when a token is swept by the contract owner.
 
 ## Errors
 
-### BondNotYetMaturedOrPaid
-* Operation restricted because the Bond has not matured or paid.
+### BondNotYetAfterGracePeriodOrPaid
+* Operation restricted because the Bond has after the grace period or paid.
 
 
 
