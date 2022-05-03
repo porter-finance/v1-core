@@ -34,6 +34,9 @@ contract Bond is
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
+    /// @notice How long until after maturity date
+    uint256 internal constant GRACE_PERIOD = 7 days;
+
     /// @inheritdoc IBond
     uint256 public maturity;
 
@@ -66,8 +69,8 @@ contract Bond is
             This is used in the `redeem` function because bond shares can be
             redeemed when either the bond is fully paid or mature.
     */
-    modifier afterMaturityOrPaid() {
-        if (!isMature() && amountUnpaid() != 0) {
+    modifier afterGracePeriodOrPaid() {
+        if (beforeGracePeriodEnd() && amountUnpaid() != 0) {
             revert BondNotYetMaturedOrPaid();
         }
         _;
@@ -143,7 +146,11 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function redeem(uint256 bonds) external nonReentrant afterMaturityOrPaid {
+    function redeem(uint256 bonds)
+        external
+        nonReentrant
+        afterGracePeriodOrPaid
+    {
         if (bonds == 0) {
             revert ZeroAmount();
         }
@@ -385,6 +392,14 @@ contract Bond is
     /// @inheritdoc IBond
     function isMature() public view returns (bool isBondMature) {
         isBondMature = block.timestamp >= maturity;
+    }
+
+    function beforeGracePeriodEnd()
+        internal
+        view
+        returns (bool isBondInGracePeriod)
+    {
+        isBondInGracePeriod = block.timestamp < maturity + GRACE_PERIOD;
     }
 
     /// @inheritdoc IERC20MetadataUpgradeable
