@@ -580,10 +580,10 @@ function decreaseAllowance(address spender, uint256 subtractedValue) external no
 ### gracePeriodEnd
 
 ```solidity
-function gracePeriodEnd() external view returns (uint256)
+function gracePeriodEnd() external view returns (uint256 gracePeriodEndTimestamp)
 ```
 
-One week after the maturity date. Bond collateral can be redeemed after this date.
+One week after the maturity date. Bond collateral can be  redeemed after this date.
 
 
 #### Returns
@@ -594,7 +594,7 @@ One week after the maturity date. Bond collateral can be redeemed after this dat
     <td>
       uint256    </td>
         <td>
-    The grace period end date as a timestamp. This is always one week after the maturity date    </td>
+    The grace period end date as  a timestamp. This is always one week after the maturity date    </td>
       </tr>
 </table>
 

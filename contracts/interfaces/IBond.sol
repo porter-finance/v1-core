@@ -207,10 +207,15 @@ interface IBond {
     function maturity() external view returns (uint256);
 
     /**
-        @notice One week after the maturity date. Bond collateral can be redeemed after this date.
-        @return The grace period end date as a timestamp. This is always one week after the maturity date
+        @notice One week after the maturity date. Bond collateral can be 
+            redeemed after this date.
+        @return gracePeriodEndTimestamp The grace period end date as 
+            a timestamp. This is always one week after the maturity date
     */
-    function gracePeriodEnd() external view returns (uint256);
+    function gracePeriodEnd()
+        external
+        view
+        returns (uint256 gracePeriodEndTimestamp);
 
     /**
         @notice Allows the owner to pay the bond by depositing paymentTokens.
