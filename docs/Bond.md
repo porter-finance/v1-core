@@ -105,6 +105,20 @@ Emitted when payment over the required amount is withdrawn.
       </tr>
 </table>
 
+### Initialized
+
+
+
+
+
+
+<table>
+  <tr>
+    <td>uint8 </td>
+    <td>version</td>
+      </tr>
+</table>
+
 ### OwnershipTransferred
 
 

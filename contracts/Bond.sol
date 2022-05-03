@@ -73,6 +73,10 @@ contract Bond is
         _;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @inheritdoc IBond
     function initialize(
         string memory bondName,
