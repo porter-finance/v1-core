@@ -403,6 +403,11 @@ contract Bond is
         isBondMature = block.timestamp >= maturity;
     }
 
+    /// @inheritdoc IERC20MetadataUpgradeable
+    function decimals() public view override returns (uint8) {
+        return IERC20Metadata(paymentToken).decimals();
+    }
+
     /**
         @notice Checks if the grace period timestamp has passed.
         @return isGracePeriodOver Whether or not the Bond is passed the grace period
@@ -413,11 +418,6 @@ contract Bond is
         returns (bool isGracePeriodOver)
     {
         isGracePeriodOver = block.timestamp >= gracePeriodEnd();
-    }
-
-    /// @inheritdoc IERC20MetadataUpgradeable
-    function decimals() public view override returns (uint8) {
-        return IERC20Metadata(paymentToken).decimals();
     }
 
     function _max(uint256 a, uint256 b) internal pure returns (uint256) {
