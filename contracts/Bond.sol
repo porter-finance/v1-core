@@ -34,11 +34,10 @@ contract Bond is
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
-    /// @notice How long until after maturity date
-    uint256 internal constant GRACE_PERIOD = 7 days;
-
     /// @inheritdoc IBond
     uint256 public maturity;
+
+    uint256 public gracePeriodEnd;
 
     /// @inheritdoc IBond
     address public paymentToken;
@@ -92,6 +91,7 @@ contract Bond is
         _transferOwnership(bondOwner);
 
         maturity = _maturity;
+        gracePeriodEnd = _maturity + 7 days;
         paymentToken = _paymentToken;
         collateralToken = _collateralToken;
         collateralRatio = _collateralRatio;
@@ -394,12 +394,8 @@ contract Bond is
         isBondMature = block.timestamp >= maturity;
     }
 
-    function beforeGracePeriodEnd()
-        internal
-        view
-        returns (bool isBondInGracePeriod)
-    {
-        isBondInGracePeriod = block.timestamp < maturity + GRACE_PERIOD;
+    function beforeGracePeriodEnd() internal view returns (bool isGracePeriod) {
+        isGracePeriod = block.timestamp < gracePeriodEnd;
     }
 
     /// @inheritdoc IERC20MetadataUpgradeable

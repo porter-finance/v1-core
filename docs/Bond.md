@@ -577,6 +577,25 @@ function decreaseAllowance(address spender, uint256 subtractedValue) external no
       </tr>
 </table>
 
+### gracePeriodEnd
+
+```solidity
+function gracePeriodEnd() external view returns (uint256)
+```
+
+
+
+
+#### Returns
+
+
+<table>
+  <tr>
+    <td>
+      uint256    </td>
+      </tr>
+</table>
+
 ### increaseAllowance
 
 ```solidity
