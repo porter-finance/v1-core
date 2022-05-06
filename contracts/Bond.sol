@@ -211,6 +211,7 @@ contract Bond is
     /// @inheritdoc IBond
     function withdrawExcessCollateral(uint256 amount, address receiver)
         external
+        nonReentrant
         onlyOwner
     {
         if (amount > previewWithdrawExcessCollateral()) {
