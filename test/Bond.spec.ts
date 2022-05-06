@@ -748,7 +748,7 @@ describe("Bond", () => {
 
           it("fails when trying to redeem", async () => {
             await expect(bond.redeem(1)).to.be.revertedWith(
-              "BondBeforeGracePeriodOrPaid"
+              "BondBeforeGracePeriodAndNotPaid"
             );
           });
         });
@@ -884,7 +884,7 @@ describe("Bond", () => {
             });
 
             await expect(bond.redeem(ZERO)).to.be.revertedWith(
-              "BondBeforeGracePeriodOrPaid"
+              "BondBeforeGracePeriodAndNotPaid"
             );
           });
 
