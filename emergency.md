@@ -29,13 +29,13 @@ In the event of an emergency situation, the following roles should be assigned t
 - Web Lead
 - Ops
 
-A contributor may be assigned up to two of these roles concurrently.
+A contributor may be assigned up to three of these roles concurrently.
 
-### Facilitator
+### Facilitator @bookland, backup @jordan
 
 Facilitates the emergency handling and ensures the process described in this document is followed, engaging with the correct stakeholders and teams in order for the necessary decisions to be made quickly. A suitable Facilitator is any person familiar with the process and is confident that they can drive the team to follow through. It's expected that the person assigned to this role has relevant experience either from having worked real scenarios or through drill training.
 
-### Multi-sig Herder
+### Multi-sig Herder @bookland, backup @jordan 
 
 Responsible for ensuring that different Porter teams' Multi-sig wallets (i.e. bookland.porterfinance.eth, jordan.porterfinance.eth, namaskar.porterfinance.eth) are able to execute transactions in a timely manner during the emergency.
 
@@ -43,21 +43,16 @@ Main responsibilities:
 
 - Help clear the queue of any pending operations once the War Room starts
 - Coordinate required signers so they can respond quickly to queued transactions
-- Prepare or help with transactions in different multi-sigs
-  Reference:
-  - [emergency-toolbox](https://github.com/yearn/emergency-toolbox)
 
-### Strategist Lead 
+### Strategist Lead @bookland backup: @jordan
 
 In charge of coordinating quick changes to management and strategist roles during the emergency, including but not limited to:
 
 - Prepare and Execute Strategist Multi-sig transactions and operations
-- Set strategy in emergency exit mode
-- Update debt ratios
-- Remove Strategies from Queue
-- Coordinate Harvests
+- Update issuer list
+- Update allow list 
 
-### Core Dev Lead (Guardian) @namaskar backup @bookland
+### Core Dev Lead (Guardian) @namaskar, backup @bookland
 
 Coordinates quick changes to Governance and Guardian roles during the emergency, including but not limited to:
 
@@ -69,7 +64,7 @@ Coordinates quick changes to Governance and Guardian roles during the emergency,
 
 Coordinates quick changes to UI and Websites as required, including but not limited to:
 
-- Disable deposits/withdrawals through the UI
+- Disable redeem/convert/createBond through the UI
 - Display alerts and banners
 - Other UI related work
 
