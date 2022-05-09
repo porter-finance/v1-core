@@ -95,13 +95,8 @@ The primary objective is minimized the loss of funds, in particular for Porter's
    - If there is no immediate risk for loss of funds, does the team still need to take preventive action or some other mitigation?
    - Is there agreement in the team that the situation is under control and that the War Room can be closed?
 4. Once the issue has been confirmed as valid, the next stop is to take immediate corrective action to prevent further loss of funds. If root cause requires further research, the team must err on the side of caution and take emergency preventive actions while the situation continues to be assessed. A few questions to guide the decisions of the team:
-   - Disable deposits to the affected Vaults? Should migrations and deposits be removed from the UI?
-   - Activate Emergency Exit on the affected Strategies?
-   - Remove one or more strategies from the withdrawal queue from the affected vaults?
-   - Activate Emergency Shutdown in the Vault?
-   - Revoke 1 or more Strategies?
-   - Are multiple Team members able to confirm the corrective actions will stop the immediate risk through local Ganache fork testing? Strategist and Core Dev main roles in particular to confirm this step.
-5. The immediate corrective actions should be scripted or taken from the repository [emergency-toolbox](https://github.com/yearn/emergency-toolbox) and executed ASAP. Multi-sig Herder and Strategist Lead should coordinate this execution within the corresponding roles. **NOTE: This step is meant to give the War Room time to assess and research a more long term solution**.
+   - Disable createBonds for the affected contracts? Should createBond, convert, redeem, withdraw, pay be removed from the UI?
+   - Are multiple Team members able to confirm the corrective actions will stop the immediate risk through local hardhat fork testing? Strategist and Core Dev main roles in particular to confirm this step.
 6. Once corrective measures are in place and there is confirmation by multiple sources that funds are no longer at risk, the next objective is to identify the root cause. A few questions/actions during this step that can help the team make decisions:
    - What communications should be made public at this point in time?
    - Can research among members of the War Room be divided? This step can be open for team members to do live debug sessions sharing screens to help identify the problem using the sample transactions.
@@ -112,7 +107,7 @@ The primary objective is minimized the loss of funds, in particular for Porter's
    - If a solution will take longer than a few hours, are there any further communications and preventive actions needed while the fix is developed?
    - Does the solution require a longer term plan? Is there identified owners for the tasks/steps for the plan's execution?
 8. Once a solution has been implemented, the team will confirm the solution resolves the issue and minimizes the loss of funds. Possible actions needed during this step:
-   - Run in ganache fork simulations of end state to confirm the proposed solution(s)
+   - Run in hardhat fork simulations of end state to confirm the proposed solution(s)
    - Coordinate signatures from multi-sig signers and execution
    - Enable UI changes to normalize operations as needed
 9. Assign a lead to prepare a [disclosure](https://github.com/yearn/yearn-security) (should it be required), preparing a timeline of the events that took place.
@@ -126,8 +121,7 @@ This checklist should be complemented with the [steps](#emergency-steps)
 - [ ] Assign Key Roles to War Room members
 - [ ] Add Strategist or other Expert (or their backup) to the War Room
 - [ ] Clear related Multi-sig queues
-- [ ] Disable deposits and/or withdrawals as needed in the web UI
-- [ ] If share price has been artificially lowered, then call `vault.setDepositLimit(0)` from governance
+- [ ] Disable createBond and/or redeem/convert/withdraw/pay as needed in the web UI
 - [ ] Confirm and identify Issue
 - [ ] Take immediate corrective/preventive actions in order to prevent (further) loss of funds
 - [ ] Communicate the current situation internally and externally (as appropriate)
@@ -153,7 +147,7 @@ List of tools and alternatives in case primary tools are not available during an
 | Communications\*    | Discord                                        |                                Telegram                                 |
 | Transaction Details | [Etherscan](https://etherscan.io/)             |                    [EthTxInfo](https://ethtx.info/)                    |
 | Debugging           | Hardhat                                        |                    [Tenderly](https://tenderly.co/)                    |
-| Transaction Builder | [ape-safe](https://github.com/banteg/ape-safe) |              _Backup if gnosis safe Api is not working?_               |
+| Transaction Builder | [gnosis-safe](https://gnosis-safe.io/app/eth:0xe5a154e2f4b5E394EBb01631d270eCC88Ad7e050/home) |              _Backup if gnosis safe Api is not working?_               |
 | Screen Sharing\*    | Discord                                       |                            Google Hangouts                             |
 
 **Facilitator is responsible to ensure no unauthorized persons enter the War Room or join these tools via invite links that leak.**
