@@ -37,7 +37,7 @@ Facilitates the emergency handling and ensures the process described in this do
 
 ### Multi-sig Herder
 
-Responsible for ensuring that different Yearn teams' Multi-sig wallets (i.e. dev.ychad.eth, brain.ychad.eth, ychad.eth) are able to execute transactions in a timely manner during the emergency.
+Responsible for ensuring that different Porter teams' Multi-sig wallets (i.e. bookland.porterfinance.eth, jordan.porterfinance.eth, namaskar.porterfinance.eth) are able to execute transactions in a timely manner during the emergency.
 
 Main responsibilities:
 
@@ -47,7 +47,7 @@ Main responsibilities:
   Reference:
   - [emergency-toolbox](https://github.com/yearn/emergency-toolbox)
 
-### Strategist Lead
+### Strategist Lead 
 
 In charge of coordinating quick changes to management and strategist roles during the emergency, including but not limited to:
 
@@ -57,7 +57,7 @@ In charge of coordinating quick changes to management and strategist roles durin
 - Remove Strategies from Queue
 - Coordinate Harvests
 
-### Core Dev Lead (Guardian)
+### Core Dev Lead (Guardian) @namaskar backup @bookland
 
 Coordinates quick changes to Governance and Guardian roles during the emergency, including but not limited to:
 
@@ -65,7 +65,7 @@ Coordinates quick changes to Governance and Guardian roles during the emergency,
 - Revoke a Strategy
 - Set vault in emergency shutdown mode
 
-### Web Lead
+### Web Lead @luckyrobot, backup @namaskar, @bookland
 
 Coordinates quick changes to UI and Websites as required, including but not limited to:
 
@@ -73,7 +73,7 @@ Coordinates quick changes to UI and Websites as required, including but not limi
 - Display alerts and banners
 - Other UI related work
 
-### Ops
+### Ops @jordan backup @bookland 
 
 In charge of coordinating comms and operations assistance as required:
 
