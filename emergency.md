@@ -87,7 +87,7 @@ _Also see [Check list](#Emergency-checklist) and [Tools](#tools)._
 
 This acts as a guideline to follow when an incident is reported requiring immediate attention.
 
-The primary objective is minimized the loss of funds, in particular for Yearn's users. All decisions made should be driven by this goal.
+The primary objective is minimized the loss of funds, in particular for Porter's users. All decisions made should be driven by this goal.
 
 1. Open a private chat room (War Room) with a voice channel and invite only the team members that are online that can cover the [roles described above](#Roles). The War Room is limited to members that act in the capacities of the designated roles, as well as additional persons that can provide critical insight into the circumstances of the issue and how it can best be resolved.
 2. All the information that is gathered during the War Room should be considered private to the chat and not to be shared with third parties. Relevant data should be pinned and updated by the Facilitator for the team to have handy.
@@ -95,7 +95,7 @@ The primary objective is minimized the loss of funds, in particular for Yearn's 
    - Is there confirmation from several team members/sources that the issue is valid? Are there example transactions that show the incident occurring? (Pin these in the War Room)
    - Is the Strategist that knows the most about the code in the War Room? Can the Strategist in question be reached? If not, can we reach the backup Strategist?
    - Are funds presently at risk? Is immediate action required?
-   - Is the issue isolated or does it affect several vaults/strategies? Can the affected contracts be identified? (Pin these in the War Room)
+   - Is the issue isolated or does it affect several Bonds? Can the affected contracts be identified? (Pin these in the War Room)
    - Which Multi-sig will require signing to address the issue? The Multi-sig Herder should begin to notify signers and clear the queue in preparation for emergency transactions.
    - If there is no immediate risk for loss of funds, does the team still need to take preventive action or some other mitigation?
    - Is there agreement in the team that the situation is under control and that the War Room can be closed?
@@ -155,17 +155,17 @@ List of tools and alternatives in case primary tools are not available during an
 | Description         | Primary                                        |                               Secondary                                |
 | ------------------- | ---------------------------------------------- | :--------------------------------------------------------------------: |
 | Code Sharing        | Github                                         | [HackMd](https://hackmd.io/), [CodeShare](https://codeshare.io/) |
-| Communications\*    | Telegram                                       |                                Discord                                 |
+| Communications\*    | Discord                                        |                                Telegram                                 |
 | Transaction Details | [Etherscan](https://etherscan.io/)             |                    [EthTxInfo](https://ethtx.info/)                    |
-| Debugging           | Brownie                                        |                    [Tenderly](https://tenderly.co/)                    |
+| Debugging           | Hardhat                                        |                    [Tenderly](https://tenderly.co/)                    |
 | Transaction Builder | [ape-safe](https://github.com/banteg/ape-safe) |              _Backup if gnosis safe Api is not working?_               |
-| Screen Sharing\*    | [jitsi](https://jitsi.org/)                    |                            Google Hangouts                             |
+| Screen Sharing\*    | Discord                                       |                            Google Hangouts                             |
 
 **Facilitator is responsible to ensure no unauthorized persons enter the War Room or join these tools via invite links that leak.**
 
 ## Incident Post Mortem
 
-A Post Mortem should be conducted after an incident to gather data and feedback from War Room participants in order to produce actionable improvements for Yearn processes such as this one.
+A Post Mortem should be conducted after an incident to gather data and feedback from War Room participants in order to produce actionable improvements for Porter processes such as this one.
 
 Following the dissolution of a War Room, the Facilitator should ideally conduct an immediate informal debrief to gather initial notes before they are forgotten by participants.
 
