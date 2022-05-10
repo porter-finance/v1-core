@@ -129,7 +129,10 @@ export const deploymentBonds = [
       // Make bond paid off (we are paying TWENTY_FIVE_MILLION in deploy)
       maxSupply: utils.parseUnits(TWENTY_FIVE_MILLION.toString(), 6),
     },
-    auctionOptions: {},
+    auctionOptions: {
+      orderCancellationEndDate: ONE_MONTH_FROM_NOW_IN_SECONDS,
+      auctionEndDate: ONE_MONTH_FROM_NOW_IN_SECONDS,
+    },
   },
 ];
 

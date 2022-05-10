@@ -85,6 +85,15 @@ Executing bond actions.
           async () => (await bond.previewWithdrawExcessPayment()).gt(0),
         ],
       },
+      {
+        actionName: "transfer to beneficiary",
+        action: () =>
+          bond.transfer(
+            process.env.BOND_BENEFICIARY || "",
+            config.maxSupply.div(2)
+          ),
+        conditions: [async () => process.env.BOND_BENEFICIARY != null],
+      },
     ];
 
     for (let j = 0; j < actions.length; j++) {
