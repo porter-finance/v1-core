@@ -9,6 +9,10 @@
  <td><a href="https://twitter.com/porterfinance_">twitter</a></td>
 </table>
 
+# Security
+
+Please report any security issues to security@porter.finance
+
 # V1
 
 Smart Contracts powering the Porter protocol.

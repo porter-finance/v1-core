@@ -2,10 +2,9 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
   deploymentBonds,
   easyAuctionAbi,
-  mumbaiGnosis,
+  rinkebyGnosis,
 } from "../test/constants";
 import { Bond, TestERC20 } from "../typechain";
-import { BondConfigType } from "../test/interfaces";
 import {
   getBondInfo,
   initiateAuction,
@@ -31,21 +30,15 @@ module.exports = async function ({
     collateralTokenAddress
   )) as TestERC20;
   for (let i = 0; i < deploymentBonds.length; i++) {
-    const {
-      auctionOptions,
-      config,
-    }: {
-      auctionOptions: object;
-      config: BondConfigType;
-    } = deploymentBonds[i];
+    const { bondConfig, auctionConfig, biddingConfig } = deploymentBonds[i];
     const { bondSymbol } = await getBondInfo(
       paymentToken,
       collateralToken,
-      config
+      bondConfig
     );
     const { address } = await deployments.get(bondSymbol);
     const bond = (await ethers.getContractAt("Bond", address)) as Bond;
-    const auction = await ethers.getContractAt(easyAuctionAbi, mumbaiGnosis);
+    const auction = await ethers.getContractAt(easyAuctionAbi, rinkebyGnosis);
     const signer = await ethers.getSigner(deployer);
     try {
       if ((await paymentToken.allowance(deployer, auction.address)).eq(0)) {
@@ -68,7 +61,7 @@ module.exports = async function ({
           signer,
           bond,
           paymentToken,
-          auctionOptions
+          auctionConfig
         )
       );
       const auctionId = await auction.auctionCounter();
@@ -87,10 +80,6 @@ orderCancellationEndDate: ${orderCancellationEndDate}
 auctionEndDate: ${auctionEndDate}
 `);
       const nrOfOrders = 100;
-      const maxSellAmount = (await bond.totalSupply()).mul(3).div(2);
-      const amountToSellPerBid = maxSellAmount
-        .div(nrOfOrders)
-        .div(await bond.decimals());
       await placeManyOrders({
         signer,
         auction,
@@ -98,9 +87,10 @@ auctionEndDate: ${auctionEndDate}
         auctionData,
         biddingToken: paymentToken,
         auctioningToken: bond,
-        sellAmount: (800_000_000).toString(),
-        minBuyAmount: (100_000_000).toString(),
-        nrOfOrders,
+        // the price is sellAmount/buyAmount so ~9000/1000 = .9 each
+        sellAmount: biddingConfig.sellAmount || (9_000).toString(),
+        minBuyAmount: biddingConfig.minBuyAmount || (10_000).toString(),
+        nrOfOrders: biddingConfig.nrOfOrders || nrOfOrders,
       });
     } catch (e) {
       console.log(e);
