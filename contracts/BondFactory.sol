@@ -103,6 +103,13 @@ contract BondFactory is IBondFactory, AccessControl {
         if (bonds == 0) {
             revert ZeroBondsToMint();
         }
+
+        /*
+            Safety check: Ensure multiplicative result of total bonds does not
+            overflow uint256. If it does, previewRedeem would not be calculable.
+        */
+        bonds * bonds;
+
         if (paymentToken == collateralToken) {
             revert TokensMustBeDifferent();
         }
