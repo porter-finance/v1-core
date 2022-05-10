@@ -231,7 +231,11 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function withdrawExcessPayment(address receiver) external onlyOwner {
+    function withdrawExcessPayment(address receiver)
+        external
+        nonReentrant
+        onlyOwner
+    {
         uint256 overpayment = previewWithdrawExcessPayment();
         if (overpayment <= 0) {
             revert NoPaymentToWithdraw();
