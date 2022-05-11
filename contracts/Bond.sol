@@ -82,6 +82,14 @@ contract Bond is
         }
     }
 
+    constructor() {
+        /*
+        Since the constructor is executed only when creating the
+        implementation contract, prevent its re-initialization.
+    */
+        _disableInitializers();
+    }
+
     /// @inheritdoc IBond
     function initialize(
         string memory bondName,
@@ -94,6 +102,11 @@ contract Bond is
         uint256 _convertibleRatio,
         uint256 maxSupply
     ) external initializer {
+        // Safety checks: Ensure multiplication can not overflow uint256.
+        maxSupply * maxSupply;
+        maxSupply * _collateralRatio;
+        maxSupply * _convertibleRatio;
+
         __ERC20_init(bondName, bondSymbol);
         _transferOwnership(bondOwner);
 
@@ -262,6 +275,10 @@ contract Bond is
 
         uint256 sweepingTokenBalance = sweepingToken.balanceOf(address(this));
 
+        if (sweepingTokenBalance == 0) {
+            revert ZeroAmount();
+        }
+
         sweepingToken.safeTransfer(receiver, sweepingTokenBalance);
 
         uint256 paymentTokenBalanceAfter = IERC20Metadata(paymentToken)
@@ -412,6 +429,11 @@ contract Bond is
     /// @inheritdoc IERC20MetadataUpgradeable
     function decimals() public view override returns (uint8) {
         return IERC20Metadata(paymentToken).decimals();
+    }
+
+    /// @inheritdoc ERC20BurnableUpgradeable
+    function burn(uint256 amount) public override onlyOwner {
+        return super.burn(amount);
     }
 
     /**

@@ -201,6 +201,27 @@ describe("Bond", () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
           });
+          it("reverts when trying to initalize implementation contract", async () => {
+            const tokenImplementation = await ethers.getContractAt(
+              "Bond",
+              await factory.tokenImplementation()
+            );
+            await expect(
+              tokenImplementation.initialize(
+                "Bond",
+                "LUG",
+                owner.address,
+                config.maturity,
+                paymentToken.address,
+                collateralToken.address,
+                utils.parseUnits(".25", decimals),
+                utils.parseUnits(".5", decimals),
+                config.maxSupply
+              )
+            ).to.be.revertedWith(
+              "Initializable: contract is already initialized"
+            );
+          });
           it("should disallow calling initialize again", async () => {
             await expect(
               bond.initialize(
@@ -1026,6 +1047,12 @@ describe("Bond", () => {
             collateralToken.transfer(bond.address, utils.parseEther("1"));
           });
 
+          it("fails to sweep a token with no balance", async () => {
+            await expect(
+              bond.sweep(attackingToken.address, owner.address)
+            ).to.be.revertedWith("ZeroAmount");
+          });
+
           it("should remove a token from the contract", async () => {
             await attackingToken.connect(attacker).transfer(bond.address, 1000);
             await expect(
@@ -1043,6 +1070,20 @@ describe("Bond", () => {
             await expect(
               bond.sweep(collateralToken.address, owner.address)
             ).to.be.revertedWith("SweepDisallowedForToken");
+          });
+        });
+      });
+      describe("burn", async () => {
+        describe("non convertible", async () => {
+          beforeEach(async () => {
+            bond = bondWithTokens.nonConvertible.bond;
+            config = bondWithTokens.nonConvertible.config;
+          });
+
+          it("fails when a non-owner tries to burn bonds", async () => {
+            await expect(
+              bond.connect(bondHolder).burn(config.maxSupply)
+            ).to.be.revertedWith("Ownable: caller is not the owner");
           });
         });
       });
