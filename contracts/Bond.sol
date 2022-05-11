@@ -94,9 +94,7 @@ contract Bond is
         uint256 _convertibleRatio,
         uint256 maxSupply
     ) external initializer {
-        /*
-            Safety check: Ensure multiplication can not overflow uint256.
-        */
+        // Safety checks: Ensure multiplication can not overflow uint256.
         maxSupply * maxSupply;
         maxSupply * _collateralRatio;
         maxSupply * _convertibleRatio;
