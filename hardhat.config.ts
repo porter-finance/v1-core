@@ -46,12 +46,13 @@ const config: HardhatUserConfig = {
       live: true,
       gasPrice: 35000000000,
       url: process.env.POLYGON_RPC_URL,
+      gasMultiplier: 2,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     hardhat: {
       mining: {
-        auto: false,
+        auto: true,
         interval: 10,
       },
       forking: {

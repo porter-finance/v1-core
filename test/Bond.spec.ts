@@ -20,6 +20,7 @@ import {
   NonConvertibleBondConfig,
   ConvertibleBondConfig,
   UncollateralizedBondConfig,
+  MaliciousBondConfig,
 } from "./constants";
 
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
@@ -100,6 +101,7 @@ describe("Bond", () => {
 
           await factory.grantRole(allowedToken, paymentToken.address);
           await factory.grantRole(allowedToken, collateralToken.address);
+          await factory.grantRole(allowedToken, attackingToken.address);
 
           await collateralToken.approve(
             factory.address,
@@ -156,6 +158,21 @@ describe("Bond", () => {
               ),
               config: UncollateralizedBondConfig,
             },
+            malicious: {
+              bond: await getBondContract(
+                factory.createBond(
+                  "Bond",
+                  "LUG",
+                  MaliciousBondConfig.maturity,
+                  attackingToken.address,
+                  collateralToken.address,
+                  MaliciousBondConfig.collateralTokenAmount,
+                  MaliciousBondConfig.convertibleTokenAmount,
+                  MaliciousBondConfig.maxSupply
+                )
+              ),
+              config: MaliciousBondConfig,
+            },
           };
         }
       })
@@ -201,6 +218,27 @@ describe("Bond", () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
           });
+          it("reverts when trying to initalize implementation contract", async () => {
+            const tokenImplementation = await ethers.getContractAt(
+              "Bond",
+              await factory.tokenImplementation()
+            );
+            await expect(
+              tokenImplementation.initialize(
+                "Bond",
+                "LUG",
+                owner.address,
+                config.maturity,
+                paymentToken.address,
+                collateralToken.address,
+                utils.parseUnits(".25", decimals),
+                utils.parseUnits(".5", decimals),
+                config.maxSupply
+              )
+            ).to.be.revertedWith(
+              "Initializable: contract is already initialized"
+            );
+          });
           it("should disallow calling initialize again", async () => {
             await expect(
               bond.initialize(
@@ -233,7 +271,9 @@ describe("Bond", () => {
             expect(await bond.owner()).to.be.equal(owner.address);
           });
 
-          it("should return configured public parameters");
+          it("should return configured public parameters", async () => {
+            expect(await bond.decimals()).to.equal(decimals);
+          });
 
           it("should have configured ERC20 attributes", async () => {
             expect(await bond.name()).to.be.equal("Bond");
@@ -252,13 +292,19 @@ describe("Bond", () => {
             );
           });
 
-          it("should withdraw zero payment when bond is not overpaid", async () => {
+          it("should preview zero payment when bond is not overpaid", async () => {
             expect(await bond.previewWithdrawExcessPayment()).to.equal(0);
             await paymentToken.transfer(
               bond.address,
               await bond.amountUnpaid()
             );
             expect(await bond.previewWithdrawExcessPayment()).to.equal(0);
+          });
+
+          it("fails to withdraw zero payment when bond is not overpaid", async () => {
+            await expect(
+              bond.withdrawExcessPayment(owner.address)
+            ).to.be.revertedWith("NoPaymentToWithdraw");
           });
 
           it("should withdraw excess payment when bond is overpaid", async () => {
@@ -323,6 +369,12 @@ describe("Bond", () => {
             await bond.withdrawExcessPayment(owner.address);
             expect(await bond.previewWithdrawExcessPayment()).to.equal(0);
           });
+
+          it("fails to withdraw zero payment when bond is not overpaid", async () => {
+            await expect(
+              bond.withdrawExcessPayment(owner.address)
+            ).to.be.revertedWith("NoPaymentToWithdraw");
+          });
         });
       });
 
@@ -333,6 +385,7 @@ describe("Bond", () => {
             config = bondWithTokens.nonConvertible.config;
             await paymentToken.approve(bond.address, config.maxSupply);
           });
+
           it("should accept partial payment", async () => {
             const halfSupplyMinusOne = config.maxSupply
               .div(2)
@@ -391,6 +444,20 @@ describe("Bond", () => {
 
             await expect(bond.pay(2)).to.emit(bond, "Payment");
             expect(await bond.amountUnpaid()).to.equal(ZERO);
+          });
+        });
+        describe("attacking", async () => {
+          beforeEach(async () => {
+            bond = bondWithTokens.malicious.bond;
+            config = bondWithTokens.malicious.config;
+            await attackingToken.approve(bond.address, config.maxSupply);
+          });
+
+          it("records the actual amount transferred", async () => {
+            // The attacking token has a trasnferFrom function that always
+            // transfers 0 tokens. The bond should have nothing paid after pay.
+            await (await bond.connect(attacker).pay(config.maxSupply)).wait();
+            expect(await bond.amountUnpaid()).to.equal(config.maxSupply);
           });
         });
       });
@@ -725,9 +792,26 @@ describe("Bond", () => {
             await expect(bond.redeem(ZERO)).to.be.revertedWith("ZeroAmount");
           });
         });
-        describe("Defaulted state", async () => {
+
+        describe("Defaulted state (during grace period)", async () => {
           beforeEach(async () => {
+            // Skip to maturity as this is the start of the grace period
             await ethers.provider.send("evm_mine", [config.maturity]);
+          });
+
+          it("fails when trying to redeem", async () => {
+            await expect(bond.redeem(1)).to.be.revertedWith(
+              "BondBeforeGracePeriodAndNotPaid"
+            );
+          });
+        });
+        describe("Defaulted state (after grace period)", async () => {
+          beforeEach(async () => {
+            const gracePeriodEnd = await (
+              await bond.gracePeriodEnd()
+            ).toNumber();
+            // The grace period is considered over at the timestamp and onward
+            await ethers.provider.send("evm_mine", [gracePeriodEnd]);
           });
 
           it("should not be possible to redeem zero bonds", async () => {
@@ -853,7 +937,7 @@ describe("Bond", () => {
             });
 
             await expect(bond.redeem(ZERO)).to.be.revertedWith(
-              "BondNotYetMaturedOrPaid"
+              "BondBeforeGracePeriodAndNotPaid"
             );
           });
 
@@ -924,6 +1008,18 @@ describe("Bond", () => {
               config.maxSupply.div(2)
             );
           });
+
+          it("fails to convert zero bonds", async () => {
+            await expect(bond.convert(0)).to.be.revertedWith("ZeroAmount");
+          });
+
+          it("should fail to convert after maturity", async () => {
+            await ethers.provider.send("evm_mine", [config.maturity]);
+
+            await expect(bond.convert(config.maxSupply)).to.be.revertedWith(
+              "BondPastMaturity"
+            );
+          });
         });
         describe("non-convertible", async () => {
           beforeEach(async () => {
@@ -934,6 +1030,18 @@ describe("Bond", () => {
           it("should fail to convert if bond is not convertible", async () => {
             await expect(bond.convert(config.maxSupply)).to.be.revertedWith(
               "ZeroAmount"
+            );
+          });
+
+          it("fails to convert zero bonds", async () => {
+            await expect(bond.convert(0)).to.be.revertedWith("ZeroAmount");
+          });
+
+          it("should fail to convert after maturity", async () => {
+            await ethers.provider.send("evm_mine", [config.maturity]);
+
+            await expect(bond.convert(config.maxSupply)).to.be.revertedWith(
+              "BondPastMaturity"
             );
           });
         });
@@ -948,6 +1056,18 @@ describe("Bond", () => {
               "ZeroAmount"
             );
           });
+
+          it("fails to convert zero bonds", async () => {
+            await expect(bond.convert(0)).to.be.revertedWith("ZeroAmount");
+          });
+
+          it("should fail to convert after maturity", async () => {
+            await ethers.provider.send("evm_mine", [config.maturity]);
+
+            await expect(bond.convert(config.maxSupply)).to.be.revertedWith(
+              "BondPastMaturity"
+            );
+          });
         });
       });
       describe("sweep", async () => {
@@ -957,6 +1077,12 @@ describe("Bond", () => {
             config = bondWithTokens.nonConvertible.config;
             paymentToken.transfer(bond.address, utils.parseEther("1"));
             collateralToken.transfer(bond.address, utils.parseEther("1"));
+          });
+
+          it("fails to sweep a token with no balance", async () => {
+            await expect(
+              bond.sweep(attackingToken.address, owner.address)
+            ).to.be.revertedWith("ZeroAmount");
           });
 
           it("should remove a token from the contract", async () => {
@@ -976,6 +1102,20 @@ describe("Bond", () => {
             await expect(
               bond.sweep(collateralToken.address, owner.address)
             ).to.be.revertedWith("SweepDisallowedForToken");
+          });
+        });
+      });
+      describe("burn", async () => {
+        describe("non convertible", async () => {
+          beforeEach(async () => {
+            bond = bondWithTokens.nonConvertible.bond;
+            config = bondWithTokens.nonConvertible.config;
+          });
+
+          it("fails when a non-owner tries to burn bonds", async () => {
+            await expect(
+              bond.connect(bondHolder).burn(config.maxSupply)
+            ).to.be.revertedWith("Ownable: caller is not the owner");
           });
         });
       });

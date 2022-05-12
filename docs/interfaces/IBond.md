@@ -213,8 +213,11 @@ Emitted when a token is swept by the contract owner.
 
 ## Errors
 
-### BondNotYetMaturedOrPaid
-* Operation restricted because the Bond has not matured or paid.
+
+### BondBeforeGracePeriodAndNotPaid
+
+* Bond redemption is impossible because the grace period has not yet passed and the bond has not been fully paid.
+
 
 
 
@@ -376,6 +379,27 @@ The number of convertibleTokens the bonds will convert into.
       uint256    </td>
         <td>
     The number of convertibleTokens per Bond.    </td>
+      </tr>
+</table>
+
+### gracePeriodEnd
+
+```solidity
+function gracePeriodEnd() external view returns (uint256 gracePeriodEndTimestamp)
+```
+
+One week after the maturity date. Bond collateral can be  redeemed after this date.
+
+
+#### Returns
+
+
+<table>
+  <tr>
+    <td>
+      uint256    </td>
+        <td>
+    The grace period end date as  a timestamp. This is always one week after the maturity date    </td>
       </tr>
 </table>
 
@@ -625,7 +649,7 @@ At maturity, if the given bond shares are redeemed, this would be the number of 
 function previewWithdrawExcessCollateral() external view returns (uint256 collateralTokens)
 ```
 
-The number of collateralTokens that the owner would be able to  withdraw from the contract. This does not take into account an amount of payment like `previewWithdrawAfterPayment` does. See that function for more information.
+The number of collateralTokens that the owner would be able to  withdraw from the contract. This does not take into account an amount of payment like `previewWithdrawExcessCollateralAfterPayment` does. See that function for more information.
 
 
 #### Returns

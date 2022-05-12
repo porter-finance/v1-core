@@ -34,6 +34,14 @@ contract Bond is
     using SafeERC20 for IERC20Metadata;
     using FixedPointMathLib for uint256;
 
+    /**
+        @notice A period of time after maturity in which bond redemption is
+            disallowed for non fully paid bonds. This restriction is lifted 
+            once the grace period has ended. The issuer has the ability to
+            pay during this time to fully pay the bond. 
+    */
+    uint256 internal constant GRACE_PERIOD = 7 days;
+
     /// @inheritdoc IBond
     uint256 public maturity;
 
@@ -62,15 +70,24 @@ contract Bond is
     }
 
     /**
-        @dev Confirms that the Bond is either mature or has been paid.
+        @dev Confirms that the Bond is after the grace period or has been paid.
             This is used in the `redeem` function because bond shares can be
-            redeemed when either the bond is fully paid or mature.
+            redeemed when the Bond is fully paid or past the grace period.
     */
-    modifier afterMaturityOrPaid() {
-        if (!isMature() && amountUnpaid() != 0) {
-            revert BondNotYetMaturedOrPaid();
+    modifier afterGracePeriodOrPaid() {
+        if (isAfterGracePeriod() || amountUnpaid() == 0) {
+            _;
+        } else {
+            revert BondBeforeGracePeriodAndNotPaid();
         }
-        _;
+    }
+
+    constructor() {
+        /*
+        Since the constructor is executed only when creating the
+        implementation contract, prevent its re-initialization.
+    */
+        _disableInitializers();
     }
 
     /// @inheritdoc IBond
@@ -85,6 +102,11 @@ contract Bond is
         uint256 _convertibleRatio,
         uint256 maxSupply
     ) external initializer {
+        // Safety checks: Ensure multiplication can not overflow uint256.
+        maxSupply * maxSupply;
+        maxSupply * _collateralRatio;
+        maxSupply * _convertibleRatio;
+
         __ERC20_init(bondName, bondSymbol);
         _transferOwnership(bondOwner);
 
@@ -125,7 +147,7 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function pay(uint256 amount) external nonReentrant {
+    function pay(uint256 amount) external {
         if (amountUnpaid() == 0) {
             revert PaymentAlreadyMet();
         }
@@ -133,17 +155,36 @@ contract Bond is
             revert ZeroAmount();
         }
 
+        uint256 balanceBefore = IERC20Metadata(paymentToken).balanceOf(
+            address(this)
+        );
         IERC20Metadata(paymentToken).safeTransferFrom(
             _msgSender(),
             address(this),
             amount
         );
+        uint256 balanceAfter = IERC20Metadata(paymentToken).balanceOf(
+            address(this)
+        );
 
-        emit Payment(_msgSender(), amount);
+        emit Payment(_msgSender(), balanceAfter - balanceBefore);
     }
 
     /// @inheritdoc IBond
-    function redeem(uint256 bonds) external nonReentrant afterMaturityOrPaid {
+    function gracePeriodEnd()
+        public
+        view
+        returns (uint256 gracePeriodEndTimestamp)
+    {
+        gracePeriodEndTimestamp = maturity + GRACE_PERIOD;
+    }
+
+    /// @inheritdoc IBond
+    function redeem(uint256 bonds)
+        external
+        nonReentrant
+        afterGracePeriodOrPaid
+    {
         if (bonds == 0) {
             revert ZeroAmount();
         }
@@ -189,6 +230,7 @@ contract Bond is
     /// @inheritdoc IBond
     function withdrawExcessCollateral(uint256 amount, address receiver)
         external
+        nonReentrant
         onlyOwner
     {
         if (amount > previewWithdrawExcessCollateral()) {
@@ -208,7 +250,11 @@ contract Bond is
     }
 
     /// @inheritdoc IBond
-    function withdrawExcessPayment(address receiver) external onlyOwner {
+    function withdrawExcessPayment(address receiver)
+        external
+        nonReentrant
+        onlyOwner
+    {
         uint256 overpayment = previewWithdrawExcessPayment();
         if (overpayment <= 0) {
             revert NoPaymentToWithdraw();
@@ -239,6 +285,10 @@ contract Bond is
             .balanceOf(address(this));
 
         uint256 sweepingTokenBalance = sweepingToken.balanceOf(address(this));
+
+        if (sweepingTokenBalance == 0) {
+            revert ZeroAmount();
+        }
 
         sweepingToken.safeTransfer(receiver, sweepingTokenBalance);
 
@@ -308,8 +358,10 @@ contract Bond is
         returns (uint256 collateralTokens)
     {
         uint256 tokensCoveredByPayment = paymentBalance() + payment;
-        uint256 collateralTokensRequired = 0;
         uint256 bondSupply = totalSupply();
+
+        uint256 collateralTokensRequired;
+
         if (tokensCoveredByPayment < bondSupply) {
             collateralTokensRequired = (bondSupply - tokensCoveredByPayment)
                 .mulWadUp(collateralRatio);
@@ -390,6 +442,24 @@ contract Bond is
     /// @inheritdoc IERC20MetadataUpgradeable
     function decimals() public view override returns (uint8) {
         return IERC20Metadata(paymentToken).decimals();
+    }
+
+    /// @inheritdoc ERC20BurnableUpgradeable
+    function burn(uint256 amount) public override onlyOwner {
+        return super.burn(amount);
+    }
+
+    /**
+        @notice Checks if the grace period timestamp has passed.
+        @return isGracePeriodOver Whether or not the Bond is past the
+            grace period.
+    */
+    function isAfterGracePeriod()
+        internal
+        view
+        returns (bool isGracePeriodOver)
+    {
+        isGracePeriodOver = block.timestamp >= gracePeriodEnd();
     }
 
     function _max(uint256 a, uint256 b) internal pure returns (uint256) {

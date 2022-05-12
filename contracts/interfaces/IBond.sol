@@ -7,8 +7,11 @@ interface IBond {
     /// @notice Operation restricted because the Bond has matured.
     error BondPastMaturity();
 
-    /// @notice Operation restricted because the Bond has not matured or paid.
-    error BondNotYetMaturedOrPaid();
+    /**
+        @notice Bond redemption is impossible because the grace period has not
+            yet passed and the bond has not been fully paid.
+    */
+    error BondBeforeGracePeriodAndNotPaid();
 
     /// @notice Attempted to pay after payment was met.
     error PaymentAlreadyMet();
@@ -204,6 +207,17 @@ interface IBond {
     function maturity() external view returns (uint256);
 
     /**
+        @notice One week after the maturity date. Bond collateral can be 
+            redeemed after this date.
+        @return gracePeriodEndTimestamp The grace period end date as 
+            a timestamp. This is always one week after the maturity date
+    */
+    function gracePeriodEnd()
+        external
+        view
+        returns (uint256 gracePeriodEndTimestamp);
+
+    /**
         @notice Allows the owner to pay the bond by depositing paymentTokens.
         @dev Emits `Payment` event.
         @param amount The number of paymentTokens to deposit.
@@ -302,9 +316,10 @@ interface IBond {
     /**
         @notice The number of collateralTokens that the owner would be able to 
             withdraw from the contract. This does not take into account an
-            amount of payment like `previewWithdrawAfterPayment` does. See that
-            function for more information.
-        @dev Calls `previewWithdrawAfterPayment` with a payment amount of 0.
+            amount of payment like `previewWithdrawExcessCollateralAfterPayment`
+            does. See that function for more information.
+        @dev Calls `previewWithdrawExcessCollateralAfterPayment` with a payment
+            amount of 0.
         @return collateralTokens The number of collateralTokens that would be
             withdrawn.
     */
