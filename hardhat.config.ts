@@ -39,6 +39,8 @@ const config: HardhatUserConfig = {
         interval: 10,
       },
       url: process.env.RINKEBY_RPC_URL,
+      gasMultiplier: 2,
+      gasPrice: 4_000_000_000,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
