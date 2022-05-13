@@ -979,7 +979,6 @@ describe("Bond", () => {
             });
 
             it("redeems correct amount of tokens when partially paid", async () => {
-              console.log(decimals, await bond.amountUnpaid());
               const amountUnpaid = (await bond.amountUnpaid()).div(2);
 
               await bond.pay(amountUnpaid);
