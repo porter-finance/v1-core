@@ -978,18 +978,19 @@ describe("Bond", () => {
               ).to.be.revertedWith("ZeroAmount");
             });
 
-            it("should allow redemption of payment token when bond is partially paid and Defaulted", async () => {
-              const paymentAmount = utils.parseUnits("400000", decimals);
-              await bond.pay(paymentAmount);
+            it.only("redeems correct amount of tokens when partially paid", async () => {
+              console.log(decimals, await bond.amountUnpaid());
+              const amountUnpaid = (await bond.amountUnpaid()).div(2);
 
-              const portionOfTotalBonds = utils
-                .parseUnits("400000", decimals)
+              await bond.pay(amountUnpaid);
+
+              const portionOfTotalBonds = amountUnpaid
                 .mul(ONE)
                 .div(config.maxSupply);
               const portionOfPaymentAmount = portionOfTotalBonds
-                .mul(paymentAmount)
+                .mul(amountUnpaid)
                 .div(ONE);
-              const sharesToRedeem = utils.parseUnits("400000", decimals);
+              const sharesToRedeem = amountUnpaid;
 
               await bond.transfer(bondHolder.address, sharesToRedeem);
               await redeemAndCheckTokens({
