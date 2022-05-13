@@ -107,71 +107,45 @@ describe("Bond", () => {
             factory.address,
             ethers.constants.MaxUint256
           );
+
+          const getConfig = async (
+            configWithDecimals: (decimals: number) => BondConfigType,
+            decimals: number,
+            paymentTokenOverride: string = paymentToken.address
+          ) => {
+            const config = configWithDecimals(decimals);
+            return {
+              config,
+              bond: await getBondContract(
+                factory.createBond(
+                  "Bond",
+                  "LUG",
+                  config.maturity,
+                  paymentTokenOverride, // Malicious config uses the attacking token!
+                  collateralToken.address,
+                  config.collateralTokenAmount,
+                  config.convertibleTokenAmount,
+                  config.maxSupply
+                )
+              ),
+            };
+          };
           return {
             decimals,
             attackingToken,
             paymentToken,
             collateralToken,
-            nonConvertible: {
-              bond: await getBondContract(
-                factory.createBond(
-                  "Bond",
-                  "LUG",
-                  NonConvertibleBondConfig.maturity,
-                  paymentToken.address,
-                  collateralToken.address,
-                  NonConvertibleBondConfig.collateralTokenAmount,
-                  NonConvertibleBondConfig.convertibleTokenAmount,
-                  NonConvertibleBondConfig.maxSupply
-                )
-              ),
-              config: NonConvertibleBondConfig,
-            },
-            convertible: {
-              bond: await getBondContract(
-                factory.createBond(
-                  "Bond",
-                  "LUG",
-                  ConvertibleBondConfig.maturity,
-                  paymentToken.address,
-                  collateralToken.address,
-                  ConvertibleBondConfig.collateralTokenAmount,
-                  ConvertibleBondConfig.convertibleTokenAmount,
-                  ConvertibleBondConfig.maxSupply
-                )
-              ),
-              config: ConvertibleBondConfig,
-            },
-            uncollateralized: {
-              bond: await getBondContract(
-                factory.createBond(
-                  "Bond",
-                  "LUG",
-                  UncollateralizedBondConfig.maturity,
-                  paymentToken.address,
-                  collateralToken.address,
-                  UncollateralizedBondConfig.collateralTokenAmount,
-                  UncollateralizedBondConfig.convertibleTokenAmount,
-                  UncollateralizedBondConfig.maxSupply
-                )
-              ),
-              config: UncollateralizedBondConfig,
-            },
-            malicious: {
-              bond: await getBondContract(
-                factory.createBond(
-                  "Bond",
-                  "LUG",
-                  MaliciousBondConfig.maturity,
-                  attackingToken.address,
-                  collateralToken.address,
-                  MaliciousBondConfig.collateralTokenAmount,
-                  MaliciousBondConfig.convertibleTokenAmount,
-                  MaliciousBondConfig.maxSupply
-                )
-              ),
-              config: MaliciousBondConfig,
-            },
+            nonConvertible: await getConfig(NonConvertibleBondConfig, decimals),
+            convertible: await getConfig(ConvertibleBondConfig, decimals),
+            uncollateralized: await getConfig(
+              UncollateralizedBondConfig,
+              decimals
+            ),
+            malicious: await getConfig(
+              MaliciousBondConfig,
+              decimals,
+              attackingToken.address
+            ),
           };
         }
       })
@@ -216,7 +190,7 @@ describe("Bond", () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
           });
-          it("reverts when trying to initalize implementation contract", async () => {
+          it("reverts when trying to initialize implementation contract", async () => {
             const tokenImplementation = await ethers.getContractAt(
               "Bond",
               await factory.tokenImplementation()
@@ -471,7 +445,9 @@ describe("Bond", () => {
           beforeEach(async () => {
             bond = bondWithTokens.malicious.bond;
             config = bondWithTokens.malicious.config;
-            await attackingToken.approve(bond.address, config.maxSupply);
+            await attackingToken
+              .connect(attacker)
+              .approve(bond.address, config.maxSupply);
           });
 
           it("records the actual amount transferred", async () => {
