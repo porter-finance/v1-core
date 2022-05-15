@@ -425,17 +425,29 @@ contract Bond is
 
         uint256 collateralTokensRequired;
 
+        /*
+         Calculates number of collateralTokens that required to stay 
+         in the contract using the collateralRatio.
+        */
         if (tokensCoveredByPayment < bondSupply) {
             collateralTokensRequired = (bondSupply - tokensCoveredByPayment)
                 .mulWadUp(collateralRatio);
         }
 
+        /*
+         Calculates number of collateralTokens that required to stay 
+         in the contract using the convertibleRatio.
+        */
         uint256 convertibleTokensRequired = bondSupply.mulWadUp(
             convertibleRatio
         );
 
         uint256 totalRequiredCollateral;
 
+        /*
+         Calculates how many collateralTokens must stay in the contract 
+         for the current state of the bond. 
+        */
         if (amountUnpaid() == 0) {
             totalRequiredCollateral = isMature()
                 ? 0 // Paid
@@ -449,7 +461,7 @@ contract Bond is
         if (totalRequiredCollateral >= _collateralBalance) {
             return 0;
         }
-
+        // Returns any collateral that is able to be withdrawn.
         collateralTokens = _collateralBalance - totalRequiredCollateral;
     }
 
@@ -465,7 +477,7 @@ contract Bond is
         if (bondSupply >= _paymentBalance) {
             return 0;
         }
-
+        // Returns any paymentTokens above the required amount.
         paymentTokens = _paymentBalance - bondSupply;
     }
 
