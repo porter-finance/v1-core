@@ -1,29 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*                  **********                            *****
-***               *************        *                 *******                
-****             ********.******      ***               *********               
-*****           ********::********   ******            ************             
-*******        ******R-:  :********* *********         **************            
-********     *****E-.     :********************      ****************      *    
-*********  ****T-.        :**********************   ******************   *****  
-*************R-          .-E:********************* ******************** ******* 
-**********O-          .-C**. :-.V******************------------.****************
-*******P-          .-N****:.     .1-***************\\ Bonds For \------.********
-******-.        .-A*******:.        .-**************\\---------.  DAOs |********
-******-.     .-N**********:.        .-***************\\******** \------.********
-******-.  .-I*****************::    .-****************\\************************
-******-.-F***********************::-.-*****************\\***********************
-******.:***************************:.*******************\\**********************
-*********************************************************\\*********************
-**    Porter allows DAOs and other on-chain entities to borrow stablecoins    **
-**   using their tokens as collateral with fixed rates and no liquidations.   **
-**                                                                            **
-**  For more information about Porter Finance, visit https://porter.finance   **
-**                                                                            **
-**               Authors: Bookland Jordan Luckyrobot Namaskar                 **
-********************************************************************************
-*/
+ ***               *************        *                 *******
+ ****             ********.******      ***               *********
+ *****           ********::********   ******            ************
+ *******        ******R-:  :********* *********         **************
+ ********     *****E-.     :********************      ****************      *
+ *********  ****T-.        :**********************   ******************   *****
+ *************R-          .-E:********************* ******************** *******
+ **********O-          .-C**. :-.V******************------------.***************
+ *******P-          .-N****:.     .1-***************\\ Bonds For \------.*******
+ ******-.        .-A*******:.        .-**************\\---------.  DAOs |*******
+ ******-.     .-N**********:.        .-***************\\******** \------.*******
+ ******-.  .-I*****************::    .-****************\\***********************
+ ******-.-F***********************::-.-*****************\\**********************
+ ******.:***************************:.*******************\\*********************
+ *********************************************************\\********************
+ **   Porter allows DAOs and other on-chain entities to borrow stablecoins    **
+ **   using their tokens as collateral with fixed rates and no liquidations.  **
+ **                                                                           **
+ **  For more information about Porter Finance, visit https://porter.finance  **
+ **                                                                           **
+ **             Authors: Bookland Jordan Luckyrobot Namaskar                  **
+ *******************************************************************************
+ */
 
 pragma solidity 0.8.9;
 
@@ -110,9 +110,9 @@ contract Bond is
 
     constructor() {
         /*
-        Since the constructor is executed only when creating the
-        implementation contract, prevent its re-initialization.
-    */
+            Since the constructor is executed only when creating the
+            implementation contract, prevent its re-initialization.
+        */
         _disableInitializers();
     }
 
@@ -134,7 +134,8 @@ contract Bond is
         maxSupply * _convertibleRatio;
 
         __ERC20_init(bondName, bondSymbol);
-        // Transfers ownership to the address deploying this contract.
+
+        // Transfer ownership to the address initializing this contract.
         _transferOwnership(bondOwner);
 
         maturity = _maturity;
@@ -143,7 +144,7 @@ contract Bond is
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
 
-        // Transfers 100% of the bonds to the address deploying this contract.
+        // Transfer all bond shares to the address initializing this contract.
         _mint(bondOwner, maxSupply);
     }
 
@@ -152,21 +153,22 @@ contract Bond is
         if (bonds == 0) {
             revert ZeroAmount();
         }
-        // Calculates how many convertible tokens the given bonds can convert into.
+
+        // Calculate how many convertible tokens the bond shares convert into.
         uint256 convertibleTokensToSend = previewConvertBeforeMaturity(bonds);
         if (convertibleTokensToSend == 0) {
             revert ZeroAmount();
         }
 
         /*
-         Burns the callers bond shares, this reduces the required
-         paymentAmount for the borrower.
+            Burn the callers bond shares which reduces the required
+            paymentAmount for the borrower.
         */
         _burn(_msgSender(), bonds);
 
         address _collateralToken = collateralToken;
 
-        // Transfers the correct amount of collateralTokens to the caller.
+        // Transfer the correct amount of collateralTokens to the caller.
         IERC20Metadata(_collateralToken).safeTransfer(
             _msgSender(),
             convertibleTokensToSend
@@ -189,7 +191,7 @@ contract Bond is
             revert ZeroAmount();
         }
 
-        // Calculate balanceBefore to emit the correct event for fee-on-transfer tokens.
+        // Calculate balance before transfer for fee-on-transfer tokens.
         uint256 balanceBefore = IERC20Metadata(paymentToken).balanceOf(
             address(this)
         );
@@ -205,8 +207,8 @@ contract Bond is
         );
 
         /* 
-         balanceAfter and balanceBefore are used to ensure the correct amount is 
-         emitted for fee-on-transfer tokens. 
+            Compare balanceAfter and balanceBefore to ensure the actual amount
+            transferred is emitted for fee-on-transfer tokens. 
         */
         emit Payment(_msgSender(), balanceAfter - balanceBefore);
     }
@@ -231,8 +233,9 @@ contract Bond is
         }
 
         /* 
-         Calculate the amount of paymentTokens and collateralTokens that should be 
-         transferred on redeem. The tokens returned changes based on the state of the bond. 
+            Calculate the amount of paymentTokens and collateralTokens that
+            should be transferred on redeem. The tokens returned will change
+            based on the state of the bond. 
         */
         (
             uint256 paymentTokensToSend,
@@ -244,8 +247,8 @@ contract Bond is
         }
 
         /*
-         Burns the callers bond shares. They will be sent paymentTokens/collateralTokens
-         in exchange for their bond shares. 
+            Burn the callers bond shares. They will be sent paymentTokens
+            and/or collateralTokens in exchange for their bond shares. 
         */
         _burn(_msgSender(), bonds);
 
@@ -253,8 +256,8 @@ contract Bond is
         address _collateralToken = collateralToken;
 
         /*
-         Transfers the caller paymentTokens. PaymentTokens will only be sent if the bond is 
-         in a Paid, PaidEarly, or Defaulted and partially paid states.
+            Transfer the caller paymentTokens. These will only be sent
+            in Paid, PaidEarly, or Defaulted & Partially Paid Bond states.
         */
         if (paymentTokensToSend != 0) {
             IERC20Metadata(_paymentToken).safeTransfer(
@@ -264,8 +267,8 @@ contract Bond is
         }
 
         /*
-         Transfers the caller collateralTokens. Collateral Tokens will only 
-         be sent if the bond is in a Defaulted state.
+            Transfer the caller collateralTokens. These will only be sent if the
+            Bond is in a Defaulted state.
         */
         if (collateralTokensToSend != 0) {
             IERC20Metadata(_collateralToken).safeTransfer(
@@ -291,8 +294,8 @@ contract Bond is
         onlyOwner
     {
         /*
-         Ensures that the amount that is being withdrawn is not greater
-         than the excess collateral sitting in the contract.
+            Ensure the amount being withdrawn is not greater than the excess
+            collateral in the contract.
         */
         if (amount > previewWithdrawExcessCollateral()) {
             revert NotEnoughCollateral();
@@ -300,7 +303,7 @@ contract Bond is
 
         address _collateralToken = collateralToken;
 
-        // Transfers excess collateral to the receiver.
+        // Transfer excess collateral to the receiver.
         IERC20Metadata(_collateralToken).safeTransfer(receiver, amount);
 
         emit CollateralWithdraw(
@@ -320,8 +323,8 @@ contract Bond is
         uint256 overpayment = previewWithdrawExcessPayment();
 
         /*
-         Ensures that the amount that is being withdrawn is not greater
-         than the excess paymentToken sitting in the contract.
+            Ensure the amount being withdrawn is not greater
+            than the excess paymentToken in the contract.
         */
         if (overpayment <= 0) {
             revert NoPaymentToWithdraw();
@@ -345,8 +348,10 @@ contract Bond is
         external
         onlyOwner
     {
-        // To protect against tokens that may proxy transfers through different
-        // addresses, compare the balances before and after.
+        /*
+            To protect against tokens that may proxy transfers through different
+            addresses, compare the balances before and after.
+        */
         uint256 paymentTokenBalanceBefore = IERC20Metadata(paymentToken)
             .balanceOf(address(this));
         uint256 collateralTokenBalanceBefore = IERC20Metadata(collateralToken)
@@ -402,11 +407,11 @@ contract Bond is
         }
 
         /* 
-         PaidAmount can never be greater than the total number of bonds. 
-         For each bond 1 payment token is due at maturity. If the bond
-         is fully paid than paidAmount will be equal to the number of ourstanding bonds. 
-         If the bond has not been fully paid then the paidAmount will be equal to 
-         the paymentTokens in the contract.
+            PaidAmount can never be greater than the total number of bond
+            shares. For each share, 1 payment token is due at maturity.
+            If the Bond is fully paid, paidAmount will be equal to the number of
+            outstanding bond shares. If the Bond has not been fully paid, the
+            paidAmount will be equal to the paymentTokens in the contract.
         */
         uint256 paidAmount = amountUnpaid() == 0
             ? bondSupply
@@ -415,7 +420,7 @@ contract Bond is
         /*
             Paid/PaidEarly: 100% paymentTokens    
             Defaulted: 0 paymentTokens
-            Defaulted & PartiallyPaid: X% paymentToken based on how much was paid
+            Defaulted & Partially Paid: pro-rata amount of paymentTokens
          */
         paymentTokensToSend = bonds.mulDivDown(paidAmount, bondSupply);
 
@@ -424,7 +429,7 @@ contract Bond is
         /*
             Paid/PaidEarly: 0 collateralTokens    
             Defaulted: 100% collateralTokens
-            Defaulted & PartiallyPaid: X% collateralTokens based on how much was paid
+            Defaulted & PartiallyPaid: pro-rata amount of collateralTokens
          */
         collateralTokensToSend = collateralRatio.mulWadDown(
             bonds.mulDivDown(nonPaidAmount, bondSupply)
@@ -452,8 +457,8 @@ contract Bond is
         uint256 collateralTokensRequired;
 
         /*
-         Calculates number of collateralTokens that required to stay 
-         in the contract using the collateralRatio.
+            Calculate number of collateralTokens that are required to stay 
+            in the contract using the collateralRatio.
         */
         if (tokensCoveredByPayment < bondSupply) {
             collateralTokensRequired = (bondSupply - tokensCoveredByPayment)
@@ -461,8 +466,8 @@ contract Bond is
         }
 
         /*
-         Calculates number of collateralTokens that required to stay 
-         in the contract using the convertibleRatio.
+            Calculate number of collateralTokens that are required to stay 
+            in the contract using the convertibleRatio.
         */
         uint256 convertibleTokensRequired = bondSupply.mulWadUp(
             convertibleRatio
@@ -471,23 +476,39 @@ contract Bond is
         uint256 totalRequiredCollateral;
 
         /*
-         Calculates how many collateralTokens must stay in the contract 
-         for the current state of the bond. 
+            Calculate how many collateralTokens must stay in the contract 
+            for the current state of the bond. 
         */
         if (amountUnpaid() == 0) {
+            /*
+                The Bond has been paid. If the Bond is also mature, the Bond is
+                in a Paid sate and 0 collateral is required. If the Bond is not
+                mature, the Bond is in a PaidEarly state and enough collateral
+                is required to cover the convertible tokens of the outstanding
+                bond shares.
+            */
             totalRequiredCollateral = isMature()
-                ? 0 // Paid
-                : convertibleTokensRequired; // PaidEarly
+                ? 0
+                : convertibleTokensRequired;
         } else {
+            /*
+                The Bond has not yet been paid. If the bond is mature, the Bond
+                is in a Defaulted state and must have enough collateral to cover
+                the collateral tokens of the outstanding bond shares. If the
+                Bond is not yet mature, the Bond is in an Active state and needs
+                to have enough collateral to cover either the amount of 
+                convertible tokens or collateral tokens of the outstanding bond
+                shares. Whichever is greater. 
+            */
             totalRequiredCollateral = isMature()
-                ? collateralTokensRequired // Defaulted
-                : _max(convertibleTokensRequired, collateralTokensRequired); // Active
+                ? collateralTokensRequired
+                : _max(convertibleTokensRequired, collateralTokensRequired);
         }
         uint256 _collateralBalance = collateralBalance();
         if (totalRequiredCollateral >= _collateralBalance) {
             return 0;
         }
-        // Returns any collateral that is able to be withdrawn.
+        // Return the amount of collateral that is able to be withdrawn.
         collateralTokens = _collateralBalance - totalRequiredCollateral;
     }
 
@@ -503,7 +524,7 @@ contract Bond is
         if (bondSupply >= _paymentBalance) {
             return 0;
         }
-        // Returns any paymentTokens above the required amount.
+        // Return the amount of paymentTokens above the required amount.
         paymentTokens = _paymentBalance - bondSupply;
     }
 
