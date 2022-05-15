@@ -108,6 +108,7 @@ contract Bond is
         maxSupply * _convertibleRatio;
 
         __ERC20_init(bondName, bondSymbol);
+        // Transfers ownership to the address deploying this contract.
         _transferOwnership(bondOwner);
 
         maturity = _maturity;
@@ -116,6 +117,7 @@ contract Bond is
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
 
+        // Sends 100% of the bonds to the address deploying this contract.
         _mint(bondOwner, maxSupply);
     }
 
@@ -124,15 +126,21 @@ contract Bond is
         if (bonds == 0) {
             revert ZeroAmount();
         }
+        // Calculates how many convertible tokens the given bonds can convert into.
         uint256 convertibleTokensToSend = previewConvertBeforeMaturity(bonds);
         if (convertibleTokensToSend == 0) {
             revert ZeroAmount();
         }
 
+        /*
+         Burns the callers bond shares, this reduces the required
+         paymentAmount for the borrower.
+        */
         _burn(_msgSender(), bonds);
 
         address _collateralToken = collateralToken;
 
+        // Transfers the correct amount of collateralTokens to the caller.
         IERC20Metadata(_collateralToken).safeTransfer(
             _msgSender(),
             convertibleTokensToSend
@@ -155,9 +163,12 @@ contract Bond is
             revert ZeroAmount();
         }
 
+        // Calculate balanceBefore to emit the correct event for fee-on-transfer tokens.
         uint256 balanceBefore = IERC20Metadata(paymentToken).balanceOf(
             address(this)
         );
+
+        // Transfer tokens from caller to the Bond contract.
         IERC20Metadata(paymentToken).safeTransferFrom(
             _msgSender(),
             address(this),
@@ -167,6 +178,10 @@ contract Bond is
             address(this)
         );
 
+        /* 
+         balanceAfter and balanceBefore are used to ensure the correct amount is 
+         emitted for fee-on-transfer tokens. 
+        */
         emit Payment(_msgSender(), balanceAfter - balanceBefore);
     }
 
@@ -189,6 +204,10 @@ contract Bond is
             revert ZeroAmount();
         }
 
+        /* 
+         Calculate the amount of paymentTokens and collateralTokens that should be 
+         transferred on redeem. The tokens returned changes based on the state of the bond. 
+        */
         (
             uint256 paymentTokensToSend,
             uint256 collateralTokensToSend
@@ -198,11 +217,19 @@ contract Bond is
             revert ZeroAmount();
         }
 
+        /*
+         Burns the callers bond shares. They will be sent paymentTokens/collateralTokens
+         in exchange for their bond shares. 
+        */
         _burn(_msgSender(), bonds);
 
         address _paymentToken = paymentToken;
         address _collateralToken = collateralToken;
 
+        /*
+         Sends the caller paymentTokens. PaymentTokens will only be sent if the bond is 
+         in a Paid, PaidEarly, or Defaulted and partially paid states.
+        */
         if (paymentTokensToSend != 0) {
             IERC20Metadata(_paymentToken).safeTransfer(
                 _msgSender(),
@@ -210,6 +237,10 @@ contract Bond is
             );
         }
 
+        /*
+         Sends the caller collateralTokens. Collateral Tokens will only 
+         be sent if the bond is in a Defaulted state.
+        */
         if (collateralTokensToSend != 0) {
             IERC20Metadata(_collateralToken).safeTransfer(
                 _msgSender(),
@@ -233,12 +264,17 @@ contract Bond is
         nonReentrant
         onlyOwner
     {
+        /*
+         Ensures that the amount that is being withdrawn is not greater
+         than the excess collateral sitting in the contract.
+        */
         if (amount > previewWithdrawExcessCollateral()) {
             revert NotEnoughCollateral();
         }
 
         address _collateralToken = collateralToken;
 
+        // Transfers excess collateral to the receiver.
         IERC20Metadata(_collateralToken).safeTransfer(receiver, amount);
 
         emit CollateralWithdraw(
@@ -256,12 +292,18 @@ contract Bond is
         onlyOwner
     {
         uint256 overpayment = previewWithdrawExcessPayment();
+
+        /*
+         Ensures that the amount that is being withdrawn is not greater
+         than the excess paymentToken sitting in the contract.
+        */
         if (overpayment <= 0) {
             revert NoPaymentToWithdraw();
         }
 
         address _paymentToken = paymentToken;
 
+        // Transfers excess paymentToken to the receiver.
         IERC20Metadata(_paymentToken).safeTransfer(receiver, overpayment);
 
         emit ExcessPaymentWithdraw(
@@ -297,6 +339,7 @@ contract Bond is
         uint256 collateralTokenBalanceAfter = IERC20Metadata(collateralToken)
             .balanceOf(address(this));
 
+        // Revert if trying to sweep collateralToken or paymentToken.
         if (
             paymentTokenBalanceBefore != paymentTokenBalanceAfter ||
             collateralTokenBalanceBefore != collateralTokenBalanceAfter
@@ -331,12 +374,32 @@ contract Bond is
         if (bondSupply == 0) {
             return (0, 0);
         }
+
+        /* 
+         PaidAmount can never be greater than the total number of bonds. 
+         For each bond 1 payment token is due at maturity. If the bond
+         is fully paid than paidAmount will be equal to the number of ourstanding bonds. 
+         If the bond has not been fully paid then the paidAmount will be equal to 
+         the paymentTokens in the contract.
+        */
         uint256 paidAmount = amountUnpaid() == 0
             ? bondSupply
             : paymentBalance();
+
+        /*
+            Paid/PaidEarly: 100% paymentTokens    
+            Defaulted: 0 paymentTokens
+            Defaulted & PartiallyPaid: X% paymentToken based on how much was paid
+         */
         paymentTokensToSend = bonds.mulDivDown(paidAmount, bondSupply);
 
         uint256 nonPaidAmount = bondSupply - paidAmount;
+
+        /*
+            Paid/PaidEarly: 0 collateralTokens    
+            Defaulted: 100% collateralTokens
+            Defaulted & PartiallyPaid: X% collateralTokens based on how much was paid
+         */
         collateralTokensToSend = collateralRatio.mulWadDown(
             bonds.mulDivDown(nonPaidAmount, bondSupply)
         );
