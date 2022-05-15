@@ -117,7 +117,7 @@ contract Bond is
         collateralRatio = _collateralRatio;
         convertibleRatio = _convertibleRatio;
 
-        // Sends 100% of the bonds to the address deploying this contract.
+        // Transfers 100% of the bonds to the address deploying this contract.
         _mint(bondOwner, maxSupply);
     }
 
@@ -227,7 +227,7 @@ contract Bond is
         address _collateralToken = collateralToken;
 
         /*
-         Sends the caller paymentTokens. PaymentTokens will only be sent if the bond is 
+         Transfers the caller paymentTokens. PaymentTokens will only be sent if the bond is 
          in a Paid, PaidEarly, or Defaulted and partially paid states.
         */
         if (paymentTokensToSend != 0) {
@@ -238,7 +238,7 @@ contract Bond is
         }
 
         /*
-         Sends the caller collateralTokens. Collateral Tokens will only 
+         Transfers the caller collateralTokens. Collateral Tokens will only 
          be sent if the bond is in a Defaulted state.
         */
         if (collateralTokensToSend != 0) {
