@@ -1,18 +1,31 @@
-/* +----------------------+
- * |    Bonds For DAOs    |
- * +----------------------+
- *
- *  Porter allows DAOs and other on-chain entities to borrow stablecoins using
- *  their tokens as collateral with fixed rates and no liquidations.
- *
- *  For more information about Porter Finance, visit https://porter.finance
- *
- *  Authors: Bookland, Namaskar, Luckyrobot, Jordan
- *
- */
-pragma solidity 0.8.9;
-
 // SPDX-License-Identifier: AGPL-3.0-only
+
+/*                  **********                            *****
+ ***               *************        *                 *******
+ ****             ********.******      ***               *********
+ *****           ********::********   ******            ************
+ *******        ******R-:  :********* *********         **************
+ ********     *****E-.     :********************      ****************      *
+ *********  ****T-.        :**********************   ******************   *****
+ *************R-          .-E:********************* ******************** *******
+ **********O-          .-C**. :-.V******************------------.***************
+ *******P-          .-N****:.     .1-***************\\ Bonds For \------.*******
+ ******-.        .-A*******:.        .-**************\\---------.  DAOs |*******
+ ******-.     .-N**********:.        .-***************\\******** \------.*******
+ ******-.  .-I*****************::    .-****************\\***********************
+ ******-.-F***********************::-.-*****************\\**********************
+ ******.:***************************:.*******************\\*********************
+ *********************************************************\\********************
+ **   Porter allows DAOs and other on-chain entities to borrow stablecoins    **
+ **   using their tokens as collateral with fixed rates and no liquidations.  **
+ **                                                                           **
+ **  For more information about Porter Finance, visit https://porter.finance  **
+ **                                                                           **
+ **             Authors: Bookland Jordan Luckyrobot Namaskar                  **
+ *******************************************************************************
+ */
+
+pragma solidity 0.8.9;
 
 interface IBondFactory {
     /**
