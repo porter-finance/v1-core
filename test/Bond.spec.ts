@@ -354,12 +354,6 @@ describe("Bond", () => {
               bond.withdrawExcessPayment(owner.address)
             ).to.be.revertedWith("NoPaymentToWithdraw");
           });
-
-          it("fails to withdraw when called by non-owner", async () => {
-            await expect(
-              bond.connect(bondHolder).withdrawExcessPayment(owner.address)
-            ).to.be.revertedWith("Ownable: caller is not the owner");
-          });
         });
       });
 
@@ -552,17 +546,6 @@ describe("Bond", () => {
                 config.collateralTokenAmount
               );
             });
-
-            it("fails to withdraw when called by non-owner", async () => {
-              await expect(
-                bond
-                  .connect(bondHolder)
-                  .withdrawExcessCollateral(
-                    await bond.previewWithdrawExcessCollateral(),
-                    owner.address
-                  )
-              ).to.be.revertedWith("Ownable: caller is not the owner");
-            });
           });
 
           describe("convert", async () => {
@@ -595,17 +578,6 @@ describe("Bond", () => {
                 collateralToReceive,
               });
             });
-
-            it("fails to withdraw when called by non-owner", async () => {
-              await expect(
-                bond
-                  .connect(bondHolder)
-                  .withdrawExcessCollateral(
-                    await bond.previewWithdrawExcessCollateral(),
-                    owner.address
-                  )
-              ).to.be.revertedWith("Ownable: caller is not the owner");
-            });
           });
         });
         describe("Defaulted state", async () => {
@@ -620,17 +592,6 @@ describe("Bond", () => {
                 paymentTokenAmount: config.maxSupply.sub(1),
                 collateralToReceive: config.collateralTokenAmount.sub(1),
               });
-            });
-
-            it("fails to withdraw when called by non-owner", async () => {
-              await expect(
-                bond
-                  .connect(bondHolder)
-                  .withdrawExcessCollateral(
-                    await bond.previewWithdrawExcessCollateral(),
-                    owner.address
-                  )
-              ).to.be.revertedWith("Ownable: caller is not the owner");
             });
           });
         });
@@ -722,17 +683,6 @@ describe("Bond", () => {
               );
               expect(await collateralToken.balanceOf(bond.address)).to.equal(0);
             });
-
-            it("fails to withdraw when called by non-owner", async () => {
-              await expect(
-                bond
-                  .connect(bondHolder)
-                  .withdrawExcessCollateral(
-                    await bond.previewWithdrawExcessCollateral(),
-                    owner.address
-                  )
-              ).to.be.revertedWith("Ownable: caller is not the owner");
-            });
           });
           describe("convert", async () => {
             it("should have collateral required to cover convertibleRatio locked", async () => {
@@ -789,17 +739,6 @@ describe("Bond", () => {
               expect(await bond.previewWithdrawExcessCollateral()).to.equal(
                 utils.parseEther("1")
               );
-            });
-
-            it("fails to withdraw when called by non-owner", async () => {
-              await expect(
-                bond
-                  .connect(bondHolder)
-                  .withdrawExcessCollateral(
-                    await bond.previewWithdrawExcessCollateral(),
-                    owner.address
-                  )
-              ).to.be.revertedWith("Ownable: caller is not the owner");
             });
           });
         });
