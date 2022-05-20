@@ -778,7 +778,7 @@ describe("Bond", () => {
           it("should redeem for payment token when bond is PaidEarly", async () => {
             await bond.pay(await bond.amountUnpaid());
             const sharesToRedeem = utils.parseUnits("1000", decimals);
-            bond.transfer(bondHolder.address, sharesToRedeem);
+            await bond.transfer(bondHolder.address, sharesToRedeem);
             await previewRedeem({
               bond,
               sharesToRedeem: sharesToRedeem,
@@ -979,7 +979,7 @@ describe("Bond", () => {
               bond.address,
               config.collateralTokenAmount
             );
-            bond.transfer(bondHolder.address, config.maxSupply);
+            await bond.transfer(bondHolder.address, config.maxSupply);
           });
 
           it("previews convert zero converted", async () => {
@@ -1045,7 +1045,7 @@ describe("Bond", () => {
           beforeEach(async () => {
             bond = bondWithTokens.nonConvertible.bond;
             config = bondWithTokens.nonConvertible.config;
-            bond.transfer(bondHolder.address, config.maxSupply);
+            await bond.transfer(bondHolder.address, config.maxSupply);
           });
 
           it("should fail to convert if bond is not convertible", async () => {
@@ -1072,7 +1072,7 @@ describe("Bond", () => {
           beforeEach(async () => {
             bond = bondWithTokens.uncollateralized.bond;
             config = bondWithTokens.uncollateralized.config;
-            bond.transfer(bondHolder.address, config.maxSupply);
+            await bond.transfer(bondHolder.address, config.maxSupply);
           });
 
           it("should fail to convert if bond is uncollateralized and therefore unconvertible", async () => {
