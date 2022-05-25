@@ -21,6 +21,7 @@ import {
   ConvertibleBondConfig,
   UncollateralizedBondConfig,
   MaliciousBondConfig,
+  GRACE_PERIOD,
 } from "./constants";
 
 // https://ethereum-waffle.readthedocs.io/en/latest/fixtures.html
@@ -473,7 +474,9 @@ describe("Bond", () => {
                 paymentToken,
                 paymentTokenAmount: config.maxSupply,
                 collateralToReceive: config.collateralTokenAmount,
+                receiver: owner,
               });
+              expect(await bond.collateralBalance()).to.equal(ZERO);
             });
 
             it("allows a partial withdraw", async () => {
@@ -490,6 +493,10 @@ describe("Bond", () => {
                 collateralToken,
                 owner,
                 bond.address,
+                config.collateralTokenAmount.div(2)
+              );
+
+              expect(await bond.collateralBalance()).to.equal(
                 config.collateralTokenAmount.div(2)
               );
             });
@@ -557,6 +564,7 @@ describe("Bond", () => {
                 collateralToReceive: config.collateralTokenAmount.sub(
                   config.convertibleTokenAmount
                 ),
+                receiver: owner,
               });
             });
 
@@ -576,6 +584,7 @@ describe("Bond", () => {
                 paymentToken,
                 paymentTokenAmount: config.maxSupply,
                 collateralToReceive,
+                receiver: owner,
               });
             });
           });
@@ -591,6 +600,7 @@ describe("Bond", () => {
                 paymentToken,
                 paymentTokenAmount: config.maxSupply.sub(1),
                 collateralToReceive: config.collateralTokenAmount.sub(1),
+                receiver: owner,
               });
             });
           });
@@ -654,6 +664,7 @@ describe("Bond", () => {
                   .parseUnits("1000", decimals)
                   .mul(await bond.collateralRatio())
                   .div(ONE),
+                receiver: owner,
               });
             });
 
@@ -664,6 +675,7 @@ describe("Bond", () => {
                 paymentToken,
                 paymentTokenAmount: config.maxSupply,
                 collateralToReceive: config.collateralTokenAmount,
+                receiver: owner,
               });
             });
 
@@ -695,6 +707,18 @@ describe("Bond", () => {
                 collateralToReceive: config.collateralTokenAmount.sub(
                   config.convertibleTokenAmount
                 ),
+                receiver: owner,
+              });
+
+              it("fails to withdraw when called by non-owner", async () => {
+                await expect(
+                  bond
+                    .connect(bondHolder)
+                    .withdrawExcessCollateral(
+                      await bond.previewWithdrawExcessCollateral(),
+                      owner.address
+                    )
+                ).to.be.revertedWith("Ownable: caller is not the owner");
               });
 
               it("fails to withdraw when called by non-owner", async () => {
@@ -919,7 +943,6 @@ describe("Bond", () => {
 
             it("redeems correct amount of tokens when partially paid", async () => {
               const amountUnpaid = (await bond.amountUnpaid()).div(2);
-
               await bond.pay(amountUnpaid);
 
               const portionOfTotalBonds = amountUnpaid
@@ -1040,6 +1063,14 @@ describe("Bond", () => {
               bond.connect(bondHolder).convert(config.maxSupply)
             ).to.be.revertedWith("BondPastMaturity");
           });
+
+          it("should fail to convert with zero bonds", async () => {
+            await expect(bond.connect(bondHolder).convert(config.maxSupply)).to
+              .not.be.reverted;
+            await expect(
+              bond.connect(bondHolder).convert(config.maxSupply)
+            ).to.be.revertedWith("ERC20: burn amount exceeds balance");
+          });
         });
         describe("non-convertible", async () => {
           beforeEach(async () => {
@@ -1147,6 +1178,81 @@ describe("Bond", () => {
             await expect(
               bond.sweep(attackingToken.address, owner.address)
             ).to.be.revertedWith("ZeroAmount");
+          });
+        });
+      });
+      describe("configuration", async () => {
+        describe("non convertible", async () => {
+          beforeEach(async () => {
+            bond = bondWithTokens.nonConvertible.bond;
+            config = bondWithTokens.nonConvertible.config;
+          });
+          describe("localConfig", async () => {
+            // sanity check our constant config is set correctly
+            it("has the variables set from local config", async () => {
+              expect(await bond.maturity()).to.be.equal(config.maturity);
+              expect(await bond.totalSupply()).to.be.equal(config.maxSupply);
+            });
+          });
+          describe("#isMature", async () => {
+            it("is not mature before the maturity date", async () => {
+              expect(await bond.isMature()).to.equal(false);
+              await ethers.provider.send("evm_mine", [
+                BigNumber.from(config.maturity).sub(100).toNumber(),
+              ]);
+              expect(await bond.isMature()).to.equal(false);
+            });
+            it("is mature after the maturity date is reached", async () => {
+              await ethers.provider.send("evm_mine", [config.maturity]);
+              expect(await bond.isMature()).to.equal(true);
+              await ethers.provider.send("evm_mine", [
+                BigNumber.from(config.maturity).add(100).toNumber(),
+              ]);
+              expect(await bond.isMature()).to.equal(true);
+            });
+            it("is the correct date", async () => {
+              const maturityDate = await bond.maturity();
+              expect(maturityDate).to.be.equal(config.maturity);
+              await ethers.provider.send("evm_mine", [
+                maturityDate.sub(1000).toNumber(),
+              ]);
+              expect(await bond.isMature()).to.be.equal(false);
+              await ethers.provider.send("evm_mine", [
+                maturityDate.add(1000).toNumber(),
+              ]);
+              expect(await bond.isMature()).to.be.equal(true);
+            });
+          });
+          describe("#gracePeriodEnd", async () => {
+            it("has a gracePeriodEnd that is the maturity + GRACE_PERIOD", async () => {
+              expect(await bond.gracePeriodEnd()).to.be.equal(
+                (await bond.maturity()).add(GRACE_PERIOD)
+              );
+            });
+          });
+          describe("#collateralBalance", async () => {
+            it("has the correct collateralBalance", async () => {
+              expect(await bond.collateralBalance()).to.equal(
+                config.collateralTokenAmount
+              );
+              await paymentToken.approve(bond.address, config.maxSupply);
+
+              await bond.pay(config.maxSupply.div(2));
+              await bond.withdrawExcessCollateral(
+                config.collateralTokenAmount.div(2),
+                owner.address
+              );
+              expect(await bond.collateralBalance()).to.equal(
+                config.collateralTokenAmount.div(2)
+              );
+              await bond.burn(config.maxSupply.div(2));
+
+              await bond.withdrawExcessCollateral(
+                config.collateralTokenAmount.div(2),
+                owner.address
+              );
+              expect(await bond.collateralBalance()).to.equal(ZERO);
+            });
           });
         });
       });

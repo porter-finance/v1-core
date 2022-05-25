@@ -102,15 +102,23 @@ export const payAndWithdraw = async ({
   bond,
   paymentTokenAmount,
   collateralToReceive,
+  receiver,
 }: {
   paymentToken: TestERC20;
   bond: Bond;
   paymentTokenAmount: BigNumber;
   collateralToReceive: BigNumber;
+  receiver: SignerWithAddress;
 }) => {
+  const collateralBalanceBefore = await bond.collateralBalance();
   await paymentToken.approve(bond.address, paymentTokenAmount);
   await (await bond.pay(paymentTokenAmount)).wait();
   expect(await bond.previewWithdrawExcessCollateral()).to.equal(
+    collateralToReceive
+  );
+  await bond.withdrawExcessCollateral(collateralToReceive, receiver.address);
+  const collateralBalanceAfter = await bond.collateralBalance();
+  expect(collateralBalanceBefore.sub(collateralBalanceAfter)).to.equal(
     collateralToReceive
   );
 };
