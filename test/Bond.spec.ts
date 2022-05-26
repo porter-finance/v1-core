@@ -681,11 +681,14 @@ describe("Bond", () => {
 
             it("should allow all collateral to be withdrawn when all bonds are burned", async () => {
               await bond.burn(config.maxSupply);
+              const excessCollateral =
+                await bond.previewWithdrawExcessCollateral();
+              expect(excessCollateral).to.equal(config.collateralTokenAmount);
               expect(await bond.totalSupply()).to.equal(0);
               await expectTokenDelta(
                 async () =>
                   bond.withdrawExcessCollateral(
-                    await bond.previewWithdrawExcessCollateral(),
+                    excessCollateral,
                     owner.address
                   ),
                 collateralToken,
@@ -708,17 +711,6 @@ describe("Bond", () => {
                   config.convertibleTokenAmount
                 ),
                 receiver: owner,
-              });
-
-              it("fails to withdraw when called by non-owner", async () => {
-                await expect(
-                  bond
-                    .connect(bondHolder)
-                    .withdrawExcessCollateral(
-                      await bond.previewWithdrawExcessCollateral(),
-                      owner.address
-                    )
-                ).to.be.revertedWith("Ownable: caller is not the owner");
               });
 
               it("fails to withdraw when called by non-owner", async () => {
