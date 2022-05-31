@@ -744,16 +744,33 @@ describe("Bond", () => {
             });
 
             it("should make excess collateral available to withdraw", async () => {
+              expect(await bond.previewWithdrawExcessCollateral()).to.equal(
+                ZERO
+              );
               await collateralToken.approve(
                 bond.address,
-                utils.parseEther("1")
+                utils.parseEther("100")
+              );
+              await collateralToken.transfer(
+                bond.address,
+                utils.parseEther("0.0001")
+              );
+              expect(await bond.previewWithdrawExcessCollateral()).to.equal(
+                utils.parseEther("0.0001")
               );
               await collateralToken.transfer(
                 bond.address,
                 utils.parseEther("1")
               );
               expect(await bond.previewWithdrawExcessCollateral()).to.equal(
-                utils.parseEther("1")
+                utils.parseEther("1.0001")
+              );
+              await collateralToken.transfer(
+                bond.address,
+                utils.parseEther("100")
+              );
+              expect(await bond.previewWithdrawExcessCollateral()).to.equal(
+                utils.parseEther("101.0001")
               );
             });
           });
