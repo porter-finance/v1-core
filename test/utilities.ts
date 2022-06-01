@@ -28,6 +28,12 @@ export async function mineBlock(): Promise<void> {
   ethers.provider.send("evm_mine", []);
 }
 
+export async function mineToGracePeriod(bond: Bond): Promise<void> {
+  const gracePeriodEnd = await (await bond.gracePeriodEnd()).toNumber();
+  // The grace period is considered over at the timestamp and onward
+  await ethers.provider.send("evm_mine", [gracePeriodEnd]);
+}
+
 export async function getEventArgumentsFromTransaction(
   tx: ContractTransaction,
   eventName: string

@@ -10,6 +10,7 @@ import {
   previewRedeem,
   redeemAndCheckTokens,
   mulWad,
+  mineToGracePeriod,
 } from "./utilities";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { bondFactoryFixture, tokenFixture } from "./shared/fixtures";
@@ -855,11 +856,7 @@ describe("Bond", () => {
         });
         describe("Defaulted state (after grace period)", async () => {
           beforeEach(async () => {
-            const gracePeriodEnd = await (
-              await bond.gracePeriodEnd()
-            ).toNumber();
-            // The grace period is considered over at the timestamp and onward
-            await ethers.provider.send("evm_mine", [gracePeriodEnd]);
+            await mineToGracePeriod(bond);
           });
 
           it("should not be possible to redeem zero bonds", async () => {
@@ -1187,6 +1184,125 @@ describe("Bond", () => {
             await expect(
               bond.sweep(attackingToken.address, owner.address)
             ).to.be.revertedWith("ZeroAmount");
+          });
+        });
+      });
+      describe("#previewWithdrawExcessCollateralAfterPayment", async () => {
+        describe("non convertible", async () => {
+          beforeEach(async () => {
+            bond = bondWithTokens.nonConvertible.bond;
+            config = bondWithTokens.nonConvertible.config;
+          });
+          it("previews after payment before maturity", async () => {
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(ZERO)
+            ).to.equal(ZERO);
+
+            // pay off half of bond
+            await collateralToken.approve(bond.address, config.maxSupply);
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(
+                config.maxSupply.div(2)
+              )
+            ).to.equal(config.collateralTokenAmount.div(2));
+
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(
+                config.maxSupply
+              )
+            ).to.equal(config.collateralTokenAmount);
+
+            // overpay - there should maximum amount of collateral token amount
+            const amountToPay = config.maxSupply.add(utils.parseEther("2"));
+            await collateralToken.approve(bond.address, amountToPay);
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(
+                amountToPay
+              )
+            ).to.equal(config.collateralTokenAmount);
+          });
+          it("has zero excess collateral as is", async () => {
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(ZERO)
+            ).to.equal(ZERO);
+          });
+          it("has half collateral available after half paid", async () => {
+            await collateralToken.approve(bond.address, config.maxSupply);
+            // pay off half of bond
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(
+                config.maxSupply.div(2)
+              )
+            ).to.equal(config.collateralTokenAmount.div(2));
+          });
+          it("has all collateral available after full payment", async () => {
+            await (
+              await bond.transfer(bondHolder.address, config.maxSupply.div(2))
+            ).wait();
+          });
+          it("can not withdraw collateral after bonds have been redeemed", async () => {
+            await bond.transfer(bondHolder.address, config.maxSupply);
+            await mineToGracePeriod(bond);
+            // a bond holder redeems the other half of bonds
+            await expectTokenDelta(
+              () => bond.connect(bondHolder).redeem(config.maxSupply),
+              collateralToken,
+              bondHolder,
+              bondHolder.address,
+              config.collateralTokenAmount
+            );
+
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(ZERO)
+            ).to.equal(ZERO);
+          });
+        });
+        describe("convertible", async () => {
+          beforeEach(async () => {
+            bond = bondWithTokens.convertible.bond;
+            config = bondWithTokens.convertible.config;
+          });
+          it("has zero excess collateral as is", async () => {
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(ZERO)
+            ).to.equal(ZERO);
+          });
+          it("has available collateral to retrieve if convertible amount is covered", async () => {
+            await collateralToken.approve(bond.address, config.maxSupply);
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(
+                config.maxSupply.div(2)
+              )
+            ).to.equal(config.collateralTokenAmount.div(2));
+          });
+          it("requires convertible collateral to remain", async () => {
+            // paying off full bond less
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(
+                config.maxSupply
+              )
+            ).to.equal(
+              config.collateralTokenAmount.sub(config.convertibleTokenAmount)
+            );
+          });
+          it("has collateral available after conversion", async () => {
+            await (
+              await bond.transfer(bondHolder.address, config.maxSupply)
+            ).wait();
+
+            await expectTokenDelta(
+              () => bond.connect(bondHolder).convert(config.maxSupply),
+              collateralToken,
+              bondHolder,
+              bondHolder.address,
+              config.convertibleTokenAmount
+            );
+
+            expect(
+              await bond.previewWithdrawExcessCollateralAfterPayment(ZERO)
+            ).to.equal(
+              config.collateralTokenAmount.sub(config.convertibleTokenAmount)
+            );
           });
         });
       });
