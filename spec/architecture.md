@@ -89,38 +89,49 @@ These are sold as [Zero Coupon Bonds](https://docs.porter.finance/portal/financi
     deposit--yes-->NewBond
     deposit--no-->End
 ```
-### Bond Actions
-Issuers and Bond Holders can both interact with the bond in a few ways.
 
-#### Issuers
-```mermaid
-  flowchart LR
-    subgraph Bond [Bond]
-      pay
-      withdrawExcessCollateral
-      withdrawExcessPayment
-      sweep
-    end
-    issuer((Issuer))
+## Bond States
+Issuers and Bond Holders can both interact with the bond in a few ways. For a simpler view, look at the [state transition diagram](/spec/stateMachine.md). Since the Bond is an ERC20 token, the bond shares may be **`transferred`** at any time by any users.
 
-    issuer-->pay
-    issuer-->withdrawExcessCollateral
-    issuer-->withdrawExcessPayment
-    issuer-->sweep
-```
+### Issuer States
+Issuers can also be thought of as bond holders. In addition to the actions taken by bond holders, Issuers have the ability to **`pay`**, **`withdrawExcessCollateral`**, **`withdrawExcessPayment`** and **`sweep`**. These can be called at any time to affect the Bond.
 
-#### Bond Holders
+#### Decrease of collateral requirement
 
-```mermaid
-  flowchart LR
-    subgraph Bond [Bond]
-      redeem
-      convert
-    end
-    bondHolder((Bond Holder))
+There are three ways in which the collateral requirement can decrease. At any time, the Issuer may `withdrawExcessCollateral` from the contract in order to reclaim some of their collateral.
 
-    bondHolder<--burn bonds for collateral---->convert
-    bondHolder<--burn bonds for payment---->redeem
-```
+1. The total number of bond shares decrease.
+   - Issuers may **`burn`** their excess bonds.
+   - Bond Holders may **`convert`** their bonds before maturity.
+2. The amount of Payment Tokens in the contract covers a portion of the bond shares.
+   - Issuers may **`pay`** a portion of the Payment Token to the contract.
+3. (For a convertible bond) The Bond has reached maturity and no longer requires collateral for convertibility.
+   - After maturity, the locked collateral required to potentially convert all bonds is lifted.
 
+#### Decrease of payment requirement
+
+There are ways in which the payment requirement can decrease. At any time, the Issuer may also `withdrawExcessPayment` to reclaim any excess Payment Token in the contract.
+1. The total number of bond shares decrease.
+   - Issuers may **`burn`** their excess bonds.
+   - Bond Holders may **`convert`** their bonds before maturity.
+
+#### ERC20 Token Accidentally Sent
+
+The Issuer has a utility function, **`sweep`** available to retrieve any ERC20 token sent to the Bond contract by mistake.
+
+### Bond Holder States
+
+The Bond Holders can interact with the Bond contract in different ways before and after maturity is reached.
+
+#### Before Maturity
+
+1. (For a convertible bond) The bond holders may **`convert`** their bond shares into the underlying collateral at a pre-determined ratio.
+2. The bond holders may **`redeem`** for Payment Token if the bond is fully paid.
+
+#### After Maturity
+
+1. The bond holders may **`redeem`** the bond.
+   - If the bond is fully paid, redemption will be for Payment Token
+   - If the bond has no payment, redemption will be for Collateral Token
+   - If the bond is partially paid, redemption will be for a pro-rata amount of Payment Token & Collateral Token
 
