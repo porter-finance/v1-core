@@ -39,9 +39,11 @@ Please report any security issues to security@porter.finance
 
 Smart Contracts powering the Porter protocol.
 
-## Documentation
+## What does it do? How does it work?
 
-The [Porter documentation site](https://docs.porter.finance) gives an overview of **what** the protocol does and some of the concepts like zero coupon bonds and the difference between Simple and Convert Bond types. For **how** the protocol works, check out the [spec](/spec/):
+The Porter V1 protocol allows a borrower to create a Bond. Each minted bond share has some amount of collateral backing and will be redeemable 1 share for 1 stablecoin at maturity. To incentivize lenders, the bond shares will be sold at a discount either OTC or through an auction.
+
+For more information on this process, the [documentation site](https://docs.porter.finance) gives an overview of **what** the protocol does and some of the concepts like zero coupon bonds and the difference between "Simple" and "Convert" Bond types. For **how** the protocol works, check out the [spec](/spec/):
 
 - [overview](/spec/overview.md) — An overview of the Bond and BondFactory as well as what actions Borrowers and Lenders can perform.
   - [bond](/spec/bond.md) — More detailed look at the Bond actions and design decisions.
