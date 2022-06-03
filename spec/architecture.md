@@ -62,15 +62,19 @@ The Bond Factory contract is deployed by the Porter Admin (multi-sig). The contr
 
 ### 2. Issuer Contacts Porter Finance
 
-- Porter Finance evaluates Issuer's credit worthyness
-- Porter Finance creates parameters for the issuance
-  - Amount of ERC20 token backing each share (Collateral Token)
-  - Amount of collateral each share would convert into
-  - Maturity date
+- Porter Finance evaluates Issuer's credit worthiness
+- Porter Finance recommends parameters for the issuance
+  - Amount of ERC20 token backing each bond share or
+    - This is known as the **collateral token**
+  - Amount of collateral each bond share would convert into
+  - Total issuance length
+    - This is known as the **maturity date**
   - Total issuance size
-  - The ERC20 token the Bond is denominated in (Payment Token)
-- Porter Finance adds Issuer to allow list
-- Porter Finance adds Collateral Token & Payment Token to allow list
+    - This is known as the **total supply**
+  - The ERC20 token the Bond is denominated
+    - This is known as the **payment token**
+- Porter Finance adds Issuer to the Issuer Allow List
+- Porter Finance adds both the Collateral & Payment Tokens to the token allow list
 
 ### 3. Issuer Creates a Bond
 
@@ -83,32 +87,32 @@ flowchart TB
     issuer((Issuer))
     subgraph Bond Factory
         %% Names have newlines (\n) to make the shapes smaller
-        createBond[Create Bond Function]
-        issuerList{Is issuer allow\nlist enabled?}
-        hasIssuerRole{Has Issuer\nRole?}
-        tokenList{Is token allow\nlist enabled?}
-        hasTokenRole{Has Token\nRole?}
-        deposit{Has enough\ncollateral?}
-        NewBond[Deposit & Create new Bond]
+        createBond[Create Bond]
+        isIssuerListEnabled{Is Issuer Allow\nList Enabled?}
+        hasIssuerRole{Is Issuer\nAllowed?}
+        isTokenListEnabled{Is Token Allow\nList Enabled?}
+        hasTokenRole{Are Both\nPayment & Collateral\nTokens Allowed?}
+        hasEnoughCollateral{Has enough\ncollateral?}
+        createNewBond[Deposit Collateral\n&\n Create New Bond]
     end
     issuer--with configuration-->createBond
-    createBond-->issuerList
+    createBond-->isIssuerListEnabled
     %% Separate these and organize with ✅ on left
     %% and ❌ on the right to stay consistent
-    issuerList--"✅"-->hasIssuerRole
-    issuerList--"❌"-->tokenList
+    isIssuerListEnabled--"✅"-->hasIssuerRole
+    isIssuerListEnabled--"❌"-->isTokenListEnabled
 
-    tokenList--"✅"-->hasTokenRole
-    tokenList--"❌"-->deposit
+    isTokenListEnabled--"✅"-->hasTokenRole
+    isTokenListEnabled--"❌"-->hasEnoughCollateral
 
-    hasIssuerRole--"✅"-->tokenList
+    hasIssuerRole--"✅"-->isTokenListEnabled
     hasIssuerRole --"❌"-->Reject
 
-    hasTokenRole--"✅"-->deposit
+    hasTokenRole--"✅"-->hasEnoughCollateral
     hasTokenRole--"❌"-->Reject
 
-    deposit--"✅"-->NewBond
-    deposit--"❌"-->Reject
+    hasEnoughCollateral--"✅"-->createNewBond
+    hasEnoughCollateral--"❌"--->Reject
 ```
 
 ## Bond States
@@ -121,7 +125,7 @@ Issuers can also be thought of as bond holders. In addition to the actions taken
 
 #### Decrease of collateral requirement
 
-There are three ways in which the collateral requirement can decrease. At any time, the Issuer may `withdrawExcessCollateral` from the contract in order to reclaim some of their collateral.
+If there is an excess of collateral in the contract at any time, the Issuer may call `withdrawExcessCollateral`. This will transfer collateral out of the Bond contract. There are three ways in which the Bond can have an excess amount of collateral in the contract.
 
 1. The total number of bond shares decrease.
    - Issuers may **`burn`** their excess bonds.
