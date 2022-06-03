@@ -69,7 +69,7 @@ This gives the ability for a borrower to pay their debt. Paying allows the borro
 
 The borrower can call this method to deposit payment tokens and unlock their collateral. This will typically be done a week before the maturity date of the bond.
 
-### `Bond.withdraw()`
+### `Bond.withdrawExcessCollateral()`
 
 After paying, the borrower can call this method to withdraw any collateral that has been unlocked. The borrower can also call `Bond.burn()` to burn any bonds they own and unlock collateral to withdraw at (collateralRatio \* burnedBonds)
 
@@ -92,3 +92,40 @@ If the bond has not been repaid and is in a defaulted state, bond holders are ab
 ### `Bond.convert()`
 
 Bondholders can burn their bond shares in exchange for the collateralToken at any time before bond maturity at the predefined `convertibilityRatio`.
+
+### Flowchart
+
+The following is a typical flow from issuance to redemption.
+
+```mermaid
+flowchart TB
+    issuer((Approved Issuer))
+    bondType{Simple\nor\nConvertible?}
+
+    issuer--Create Bond-->bondType
+
+    subgraph simpleBond[Simple Bond]
+        simplePay[Issuer can\nPay]
+    end
+    subgraph convertibleBond[Convert Bond]
+        convertiblePay[Issuer can\nPay]
+        convertibleConvert[Bond Holder\ncan Convert]
+    end
+
+    bondType--Simple-->simpleBond
+    bondType--Convert-->convertibleBond
+
+    sellBond[Sell Bond\nOTC or Auction]
+
+    simpleBond & convertibleBond --> sellBond
+
+    paid{Is the Bond\nFully Paid?}
+
+    sellBond--Maturity Date Reached-->paid
+
+    bondHoldersRedeemForPayment[Bond Holders\nRedeem for\nPayment Token]
+    bondHoldersRedeemForCollateral[Bond Holders Redeem\n for portion of Collateral\nand Payment Token]
+
+    paid --"✅"--->bondHoldersRedeemForPayment
+    paid --"❌"--->bondHoldersRedeemForCollateral
+```

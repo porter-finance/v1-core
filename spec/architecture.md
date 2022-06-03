@@ -9,35 +9,35 @@ The two entities, Bond and BondFactory, make up the protocol.
 An Issuer (EOA) first creates a Bond comprised of many bond shares via the BondFactory. The Issuer can then distribute those bond shares to BondHolder(s) (EOA(s)).
 
 ```mermaid
-   erDiagram
-      %% Many Issuers to single BondFactory
-      Issuer-EOA }|..|| BondFactory: uses
-      %% Single Issuer to many Bonds
-      Issuer-EOA ||--|{ Bond : creates
-      %% Single Bond to zero or more BondHolder
-      Bond ||--o{ BondHolder-EOA : has
+erDiagram
+   %% Many Issuers to single BondFactory
+   Issuer-EOA }|..|| BondFactory: uses
+   %% Single Issuer to many Bonds
+   Issuer-EOA ||--|{ Bond : creates
+   %% Single Bond to zero or more BondHolder
+   Bond ||--o{ BondHolder-EOA : has
 
-      Bond {
-         string bondName
-         string bondSymbol
-         address bondOwner
-         uint256 maturity
-         address paymentToken
-         address collateralToken
-         uint256 collateralRatio
-         uint256 convertibleRatio
-         uint256 maxSupply
-      }
-      BondFactory {
-         uint256 MAX_TIME_TO_MATURITY "3650"
-         uint8 MAX_DECIMALS "18"
-         bytes32 ISSUER_ROLE
-         bytes32 ALLOWED_TOKEN
-         address tokenImplementation
-         mapping isBond "(address => bool)"
-         bool isIssuerAllowListEnabled
-         bool isTokenAllowListEnabled
-      }
+   Bond {
+      string bondName
+      string bondSymbol
+      address bondOwner
+      uint256 maturity
+      address paymentToken
+      address collateralToken
+      uint256 collateralRatio
+      uint256 convertibleRatio
+      uint256 maxSupply
+   }
+   BondFactory {
+      uint256 MAX_TIME_TO_MATURITY "3650"
+      uint8 MAX_DECIMALS "18"
+      bytes32 ISSUER_ROLE
+      bytes32 ALLOWED_TOKEN
+      address tokenImplementation
+      mapping isBond "(address => bool)"
+      bool isIssuerAllowListEnabled
+      bool isTokenAllowListEnabled
+   }
 ```
 
 ## Lifecycle
@@ -49,14 +49,14 @@ A typical lifecycle starts from issuance and ends when all bond shares have eith
 The Bond Factory contract is deployed by the Porter Admin (multi-sig). The contract assigns the admin role to the deployer and the proxy contract is [initialized](/contracts/BondFactory.sol#L97) with the token implementation (Bond contract).
 
 ```mermaid
-   flowchart LR
-      porterAdmin((Porter Admin))
-      bondFactory[Bond Factory]
-      bond["Bond Implementation"]
+flowchart LR
+   porterAdmin((Porter Admin))
+   bondFactory[Bond Factory]
+   bond["Bond Implementation"]
 
-      bondFactory<-.uses.->bond
-      porterAdmin--deploys---->bondFactory
-      bondFactory--grant admin role---->porterAdmin
+   bondFactory<-.uses.->bond
+   porterAdmin--deploys---->bondFactory
+   bondFactory--grant admin role---->porterAdmin
 
 ```
 
@@ -121,7 +121,7 @@ Issuers and Bond Holders can both interact with the bond in a few ways. For a si
 
 ### Issuer States
 
-Issuers can also be thought of as bond holders. In addition to the actions taken by bond holders, Issuers have the ability to **`pay`**, **`withdrawExcessCollateral`**, **`withdrawExcessPayment`** and **`sweep`**. These can be called at any time to affect the Bond.
+In addition to the actions taken by bond holders, Issuers have the ability to **`pay`**, **`withdrawExcessCollateral`**, **`withdrawExcessPayment`** and **`sweep`**. These can be called at any time to affect the Bond.
 
 #### Decrease of collateral requirement
 
