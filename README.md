@@ -15,7 +15,11 @@
 
 Please report any security issues to security@porter.finance
 
-# Contracts
+# V1
+
+Smart Contracts powering the Porter protocol.
+
+## Contracts
 
 <table>
   <tr>
@@ -34,10 +38,6 @@ Please report any security issues to security@porter.finance
     <td><a href="https://rinkeby.etherscan.io/address/0xebc0d87f2fb27c967a3cb0e36f279579b0116261">0xebc0d87f2fb27c967a3cb0e36f279579b0116261</a></td>
   </tr>
 </table>
-
-# V1
-
-Smart Contracts powering the Porter protocol.
 
 ## What does it do? How does it work?
 
