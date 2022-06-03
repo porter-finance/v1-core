@@ -1,5 +1,38 @@
 # Contracts Overview
 
+```mermaid
+flowchart TB
+    issuer((Approved Issuer))
+    bondType{Simple\nor\nConvertible?}
+
+    issuer--Create Bond-->bondType
+
+    subgraph simpleBond[Simple Bond]
+        simplePay[Issuer can\nPay]
+    end
+    subgraph convertibleBond[Convert Bond]
+        convertiblePay[Issuer can\nPay]
+        convertibleConvert[Bond Holder\ncan Convert]
+    end
+
+    bondType--Simple-->simpleBond
+    bondType--Convert-->convertibleBond
+
+    sellBond[Sell Bond\nOTC or Auction]
+
+    simpleBond & convertibleBond --> sellBond
+
+    paid{Is the Bond\nFully Paid?}
+
+    sellBond--Maturity Date Reached-->paid
+
+    bondHoldersRedeemForPayment[Bond Holders\nRedeem for\nPayment Token]
+    bondHoldersRedeemForCollateral[Bond Holders Redeem\n for portion of Collateral\nand Payment Token]
+
+    paid --"✅"--->bondHoldersRedeemForPayment
+    paid --"❌"--->bondHoldersRedeemForCollateral
+```
+
 ## BondFactory
 
 The `BondFactory` facilitates the creation of new bonds. Initially, only [authorized](spec/permissions.md#issuer---issuer_role) addresses will be able to create a `Bond` through the `BondFactory`.
@@ -92,40 +125,3 @@ If the bond has not been repaid and is in a defaulted state, bond holders are ab
 ### `Bond.convert()`
 
 Bondholders can burn their bond shares in exchange for the collateralToken at any time before bond maturity at the predefined `convertibilityRatio`.
-
-### Flowchart
-
-The following is a typical flow from issuance to redemption.
-
-```mermaid
-flowchart TB
-    issuer((Approved Issuer))
-    bondType{Simple\nor\nConvertible?}
-
-    issuer--Create Bond-->bondType
-
-    subgraph simpleBond[Simple Bond]
-        simplePay[Issuer can\nPay]
-    end
-    subgraph convertibleBond[Convert Bond]
-        convertiblePay[Issuer can\nPay]
-        convertibleConvert[Bond Holder\ncan Convert]
-    end
-
-    bondType--Simple-->simpleBond
-    bondType--Convert-->convertibleBond
-
-    sellBond[Sell Bond\nOTC or Auction]
-
-    simpleBond & convertibleBond --> sellBond
-
-    paid{Is the Bond\nFully Paid?}
-
-    sellBond--Maturity Date Reached-->paid
-
-    bondHoldersRedeemForPayment[Bond Holders\nRedeem for\nPayment Token]
-    bondHoldersRedeemForCollateral[Bond Holders Redeem\n for portion of Collateral\nand Payment Token]
-
-    paid --"✅"--->bondHoldersRedeemForPayment
-    paid --"❌"--->bondHoldersRedeemForCollateral
-```
