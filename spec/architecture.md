@@ -130,6 +130,7 @@ If there is an excess of collateral in the contract at any time, the Issuer may 
 1. The total number of bond shares decrease.
    - Issuers may **`burn`** their excess bonds.
    - Bond Holders may **`convert`** their bonds before maturity.
+   - Bond Holders may **`redeem`** their bonds.
 2. The amount of Payment Tokens in the contract covers a portion of the bond shares.
    - Issuers may **`pay`** a portion of the Payment Token to the contract.
 3. (For a convertible bond) The Bond has reached maturity and no longer requires collateral for convertibility.
